@@ -3,7 +3,6 @@
 namespace App\Actions\Telegram;
 
 use App\DTOs\TelegramUpdateDto;
-use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 
 /**
@@ -27,7 +26,7 @@ class SendStartMessage
         if ($update->typeSource === 'private') {
             $dataQuery = [
                 'chat_id' => $update->chatId,
-                'text' => __('message.start'),
+                'text' => __('messages.start'),
                 'parse_mode' => 'html',
             ];
             TelegramMethods::sendQueryTelegram('sendMessage', $dataQuery);

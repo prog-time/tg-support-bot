@@ -11,13 +11,15 @@ Route::group([
 ], function () {
     Route::post('bot', [TelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
 
-    Route::post('set_webhook', function () {
+    Route::get('set_webhook', function () {
         $queryParams = [
             'url' => env('APP_URL') . '/api/telegram/bot',
             'max_connections' => 40,
             'drop_pending_updates' => true,
             'secret_token' => env('TELEGRAM_SECRET_KEY'),
         ];
-        TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
+        $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
+
+        return response()->json($result->rawData);
     });
 });
