@@ -20,14 +20,23 @@ class TelegramBotController
         $this->dataHook = !empty($dataHook) ? $dataHook : die();
     }
 
+    /**
+     * Check type source
+     * @return bool
+     */
+    protected function isSupergroup(): bool
+    {
+        return $this->dataHook->typeSource === 'supergroup';
+    }
+
     public function bot_query(): void
     {
         if (!$this->dataHook->isBot) {
             if ($this->dataHook->typeQuery === 'message') {
                 if (!$this->dataHook->editedTopicStatus) {
-                    if ($this->dataHook->text === '/contact') {
+                    if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
                         (new SendContactMessage())->executeByTgUpdate($this->dataHook);
-                    } elseif ($this->dataHook->text === '/start') {
+                    } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
                         (new SendStartMessage())->execute($this->dataHook);
                     } else {
                         (new TgMessageService($this->dataHook))->handleUpdate();
