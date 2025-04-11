@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('bot_users', function (Blueprint $table) {
             $table->id();
-            $table->text('chat_id')->unsigned()->index();
+            $table->unsignedBigInteger('chat_id')->index();
             $table->bigInteger('topic_id')->nullable()->index();
             $table->string('platform');
             $table->timestamps();

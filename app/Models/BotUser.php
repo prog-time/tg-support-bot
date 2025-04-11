@@ -20,6 +20,7 @@ class BotUser extends Model
 
     protected $fillable = [
         'chat_id',
+        'topic_id',
         'platform'
     ];
 
