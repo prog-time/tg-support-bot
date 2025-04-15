@@ -10,6 +10,7 @@ readonly class TelegramUpdateDto
         public int     $updateId,
         public bool    $isBot = false,
         public bool    $editedTopicStatus = false,
+        public bool    $pinnedMessageStatus = false,
         public string  $typeQuery,
         public string  $typeSource,
         public ?int    $chatId = null,
@@ -41,10 +42,12 @@ readonly class TelegramUpdateDto
             }
 
             $editedTopicStatus = !empty($data['message']['forum_topic_edited']);
+            $pinnedMessageStatus = !empty($data['message']['pinned_message']);
             return new self(
                 updateId: $data['update_id'] ?? 0,
                 isBot: $data[$type]['from']['is_bot'],
                 editedTopicStatus: $editedTopicStatus,
+                pinnedMessageStatus: $pinnedMessageStatus,
                 typeQuery: $type,
                 typeSource: $data[$type]['chat']['type'],
                 chatId: self::extractChatId($data, $type),
