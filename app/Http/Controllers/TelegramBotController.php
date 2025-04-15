@@ -29,8 +29,21 @@ class TelegramBotController
         return $this->dataHook->typeSource === 'supergroup';
     }
 
+    /**
+     * Check message
+     * @return void
+     */
+    protected function checkBotQuery(): void
+    {
+        if ($this->dataHook->pinnedMessageStatus) {
+            die();
+        }
+    }
+
     public function bot_query(): void
     {
+        $this->checkBotQuery();
+
         if (!$this->dataHook->isBot) {
             if ($this->dataHook->typeQuery === 'message') {
                 if (!$this->dataHook->editedTopicStatus) {
