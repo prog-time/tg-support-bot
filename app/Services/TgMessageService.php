@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
@@ -73,7 +74,12 @@ class TgMessageService extends TgService
     {
         $this->messageParamsDTO->methodQuery = 'sendPhoto';
         $this->messageParamsDTO->photo = $this->update->fileId;
+
         $this->messageParamsDTO->caption = $this->update->caption;
+        if (!empty($this->update->entities)) {
+            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
+            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        }
         return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
@@ -85,7 +91,12 @@ class TgMessageService extends TgService
     {
         $this->messageParamsDTO->methodQuery = 'sendDocument';
         $this->messageParamsDTO->document = $this->update->fileId;
+
         $this->messageParamsDTO->caption = $this->update->caption;
+        if (!empty($this->update->entities)) {
+            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
+            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        }
         return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
@@ -160,6 +171,10 @@ class TgMessageService extends TgService
     protected function sendMessage(): TelegramAnswerDto
     {
         $this->messageParamsDTO->text = $this->update->text;
+        if (!empty($this->update->entities)) {
+            $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
+            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        }
         return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
