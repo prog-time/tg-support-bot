@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
@@ -39,7 +40,12 @@ class TgEditedMessageService extends TgService
     private function editMessageText(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'editMessageText';
+
         $this->messageParamsDTO->text = $this->update->text;
+        if (!empty($this->update->entities)) {
+            $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
+            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        }
 
         $messageData = Message::where([
             'message_type' => $this->typeMessage,
@@ -62,7 +68,12 @@ class TgEditedMessageService extends TgService
     private function editMessageCaption(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'editMessageCaption';
+
         $this->messageParamsDTO->caption = $this->update->caption;
+        if (!empty($this->update->entities)) {
+            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
+            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        }
 
         $messageData = Message::where([
             'message_type' => $this->typeMessage,
