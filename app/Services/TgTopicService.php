@@ -81,7 +81,7 @@ class TgTopicService
             }
 
             return $topicName;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return '#' . $chatId;
         }
     }
