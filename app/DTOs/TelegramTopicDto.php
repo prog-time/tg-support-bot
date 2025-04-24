@@ -7,7 +7,7 @@ use Spatie\LaravelData\Data;
 class TelegramTopicDto extends Data
 {
     public function __construct(
-        public int      $message_thread_id,
+        public int|string      $message_thread_id,
         public ?string  $name,
         public ?string  $icon_color,
         public ?string  $icon_custom_emoji_id

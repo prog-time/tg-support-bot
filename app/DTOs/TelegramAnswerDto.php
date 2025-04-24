@@ -11,6 +11,7 @@ readonly class TelegramAnswerDto
         public ?int     $message_thread_id,
         public ?int     $date,
         public ?string  $message,
+        public ?string  $type_error,
         public ?array   $rawData = null
     ) {}
 
@@ -27,8 +28,24 @@ readonly class TelegramAnswerDto
             message_thread_id: $result['message_thread_id'] ?? null,
             date: $result['date'] ?? null,
             message: $result['message'] ?? null,
+            type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
             rawData: $dataAnswer,
         );
+    }
+
+    /**
+     * Get type error
+     * @param string $textError
+     * @return string|null
+     */
+    private static function exactTypeError(string $textError): ?string
+    {
+        $typeError = null;
+        if (preg_match('/(can\'t parse entities)/', $textError)) {
+            $typeError = 'markdown';
+        }
+
+        return $typeError;
     }
 
 }
