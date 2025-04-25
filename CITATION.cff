@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Lyachuk"
+  given-names: "Iliya"
+title: "My Research Software"
+version: 1.0.0
+date-released: 2025-04-01
+url: "https://github.com/prog-time/tg-support-bot"
