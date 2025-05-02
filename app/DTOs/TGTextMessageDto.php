@@ -2,6 +2,7 @@
 
 namespace App\DTOs;
 
+use \CURLFile;
 use Spatie\LaravelData\Data;
 
 class TGTextMessageDto extends Data

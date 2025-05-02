@@ -5,7 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Logging\LokiLogger;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +18,25 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
+
+        /**
+         * Sending log in Loki
+         */
+        $exceptions->render(function (Throwable $e, Request $request) {
+
+            dump($e->getMessage());
+            dump($e->getFile());
+            dump($e->getLine());
+
+            $logger = new LokiLogger();
+            $logger->log('error', $e->getMessage(), [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+            return response('ok', 200);
+        });
+
         /**
          * For this code to work, you need to install the prog-time/tg-logger module.
          * https://github.com/prog-time/tg-logger
@@ -25,7 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
         if (!empty(env('TG_LOGGER_TOKEN'))) {
             $exceptions->render(function (Throwable $e, Request $request) {
                 (new TgBotException)->render($request, $e);
-                return response(null, 200);
+                return response('ok', 200);
             });
         }
+
     })->create();

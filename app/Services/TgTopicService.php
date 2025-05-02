@@ -47,11 +47,11 @@ class TgTopicService
 
     /**
      * Generate topic name
-     * @param int $chatId
+     * @param BotUser $botUser
      * @return string
      * @throws \Exception
      */
-    protected function generateNameTopic(int $chatId): string
+    protected function generateNameTopic(BotUser $botUser): string
     {
         try {
             $templateTopicName = env('TEMPLATE_TOPIC_NAME');
@@ -59,7 +59,11 @@ class TgTopicService
                 throw new \Exception('Template not found');
             }
 
-            $nameParts = $this->getPartsGenerateName($chatId);
+            if (preg_match('/(\{platform})/', $templateTopicName)) {
+                $templateTopicName = str_replace('{platform}', $botUser->platform, $templateTopicName);
+            }
+
+            $nameParts = $this->getPartsGenerateName($botUser->chat_id);
             if (empty($nameParts)) {
                 throw new \Exception('Name parts not found');
             }
@@ -82,7 +86,7 @@ class TgTopicService
 
             return $topicName;
         } catch (\Exception $e) {
-            return '#' . $chatId;
+            return '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
         }
     }
 
@@ -94,7 +98,7 @@ class TgTopicService
     public function createNewTgTopic(BotUser $botUser): ?TelegramTopicDto
     {
         try {
-            $topicName = $this->generateNameTopic($botUser->chat_id);
+            $topicName = $this->generateNameTopic($botUser);
             $resultQuery = TelegramMethods::sendQueryTelegram('createForumTopic', [
                 'chat_id' => env('TELEGRAM_GROUP_ID'),
                 'name' => $topicName,

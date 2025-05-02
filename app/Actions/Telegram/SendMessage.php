@@ -13,7 +13,7 @@ class SendMessage
     /**
      * @param BotUser $botUser
      * @param TGTextMessageDto $queryParams
-     * @param int $countQuery
+     * @param int $countRepeat
      * @return TelegramAnswerDto|null
      */
     public static function execute(BotUser $botUser, TGTextMessageDto $queryParams, int $countRepeat = 1): ?TelegramAnswerDto

@@ -1,15 +1,18 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\TgVk;
 
+use App\Services\TgService;
 use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
+use App\Actions\VK\SendMessageVk;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\Message;
+use App\DTOs\VK\VkTextMessageDto;
 
-class TgMessageService extends MessageService
+class TgVkMessageService extends TgService
 {
     public function __construct(TelegramUpdateDto $update) {
         parent::__construct($update);
@@ -19,7 +22,7 @@ class TgMessageService extends MessageService
      * @return void
      * @throws \Exception
      */
-    public function handleUpdate(): void
+    public function handleUpdate()
     {
         if ($this->update->typeQuery === 'message') {
             if (!empty($this->update->rawData['message']['photo'])) {
@@ -45,22 +48,11 @@ class TgMessageService extends MessageService
             }
 
             $this->saveMessage($resultQuery);
-            switch ($this->update->typeSource) {
-                case 'private':
-                    $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                        'message_thread_id' => $this->botUser->topic_id,
-                        'icon_custom_emoji_id' => __('icons.incoming'),
-                    ]));
-                    break;
 
-                case 'supergroup':
-                    $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                        'message_thread_id' => $this->botUser->topic_id,
-                        'icon_custom_emoji_id' => __('icons.outgoing'),
-                    ]));
-                    break;
-            }
-
+            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+                'message_thread_id' => $this->botUser->topic_id,
+                'icon_custom_emoji_id' => __('icons.outgoing'),
+            ]));
         } else {
             throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
         }
@@ -168,14 +160,23 @@ class TgMessageService extends MessageService
      * Send text message
      * @return TelegramAnswerDto
      */
-    protected function sendMessage(): TelegramAnswerDto
+    protected function sendMessage()
     {
-        $this->messageParamsDTO->text = $this->update->text;
-        if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
-            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
-        }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'message' => $this->update->text,
+        ];
+
+        SendMessageVk::execute(VkTextMessageDto::from($queryParams));
+
+        // $this->messageParamsDTO->text = $this->update->text;
+        // if (!empty($this->update->entities)) {
+        //     $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
+        //     $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        // }
+        // return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**

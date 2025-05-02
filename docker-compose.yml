@@ -1,0 +1,108 @@
+services:
+    app:
+        build: .
+        container_name: pet
+        image: docker_template:latest
+        user: root
+        depends_on:
+            - pgdb
+            - redis
+            - loki
+        env_file:
+            - .env
+        working_dir: /var/www/
+        volumes:
+            - .:/var/www
+        networks:
+            - pet
+
+    pgdb:
+        container_name: pgdb
+        image: postgres
+        tty: true
+        restart: always
+        environment:
+            - POSTGRES_DB=${DB_DATABASE}
+            - POSTGRES_USER=${DB_USERNAME}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+        ports:
+            - ${PGDB_PORT}
+        volumes:
+            - ./docker/postgres:/var/lib/postgresql/data
+        networks:
+            - pet
+
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        restart: unless-stopped
+        ports:
+            - ${NGINX_PORT}
+#            - "443:443"
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost" ]
+            interval: 10s
+            timeout: 10s
+            retries: 20
+        volumes:
+            - .:/var/www
+            - ./docker/nginx:/etc/nginx/conf.d
+        environment:
+            - TZ=${SYSTEM_TIMEZONE}
+        depends_on:
+            - pgdb
+            - app
+            - pgadmin
+        networks:
+            - pet
+
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        restart: always
+        depends_on:
+            - pgdb
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+            - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+        ports:
+            - ${PGADMIN_PORT}
+        networks:
+            - pet
+
+    redis:
+        image: redis:latest
+        container_name: redis
+        restart: always
+        ports:
+            - ${REDIS_PORT}
+        networks:
+            - pet
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        ports:
+            - ${GRAFANA_PORT}
+        environment:
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+        volumes:
+            - ./docker/grafana:/var/lib/grafana
+        depends_on:
+            - loki
+        networks:
+            - pet
+
+    loki:
+        image: grafana/loki:latest
+        container_name: loki
+        ports:
+            - ${LOKI_PORT}
+        networks:
+            - pet
+
+volumes:
+    pgdbdata: null
+networks:
+    pet:
+        driver: bridge
