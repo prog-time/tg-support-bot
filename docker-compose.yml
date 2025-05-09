@@ -38,15 +38,11 @@ services:
         restart: unless-stopped
         ports:
             - ${NGINX_PORT}
-#            - "443:443"
-        healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost" ]
-            interval: 10s
-            timeout: 10s
-            retries: 20
+            - "443:443"
         volumes:
             - .:/var/www
             - ./docker/nginx:/etc/nginx/conf.d
+            - /etc/letsencrypt:/etc/letsencrypt:ro
         environment:
             - TZ=${SYSTEM_TIMEZONE}
         depends_on:
