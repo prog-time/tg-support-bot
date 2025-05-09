@@ -77,6 +77,7 @@ services:
     grafana:
         image: grafana/grafana:latest
         container_name: grafana
+        user: "472"
         ports:
             - ${GRAFANA_PORT}
         environment:
@@ -98,7 +99,7 @@ services:
             - pet
 
 volumes:
-    pgdbdata: null
+    pgdata:
 networks:
     pet:
         driver: bridge
