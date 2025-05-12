@@ -13,6 +13,11 @@ class VkBotController
 
     public function __construct(Request $request)
     {
+        if (request()->type === 'confirmation') {
+            echo env('VK_CONFIRM_CODE')?? '';
+            die();
+        }
+
         $dataHook = VkUpdateDto::fromRequest($request);
         $this->dataHook = !empty($dataHook) ? $dataHook : die();
     }

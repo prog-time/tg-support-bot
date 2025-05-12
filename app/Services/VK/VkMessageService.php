@@ -10,7 +10,6 @@ use App\DTOs\VK\VkUpdateDto;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgTopicService;
-use App\Services\MessageService;
 use phpDocumentor\Reflection\Exception;
 
 class VkMessageService

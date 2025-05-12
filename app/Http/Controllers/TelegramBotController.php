@@ -16,7 +16,7 @@ class TelegramBotController
 {
     private TelegramUpdateDto $dataHook;
 
-    private string $platform;
+    protected ?string $platform;
 
     public function __construct(Request $request)
     {
@@ -24,7 +24,7 @@ class TelegramBotController
         $this->dataHook = !empty($dataHook) ? $dataHook : die();
 
         if ($this->dataHook->typeSource === 'private') {
-            $this->platform = BotUser::getPlatformByChatId($this->dataHook->chatId);
+            $this->platform = 'telegram';
         } else {
             $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
         }

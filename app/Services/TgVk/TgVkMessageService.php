@@ -2,8 +2,14 @@
 
 namespace App\Services\TgVk;
 
+use App\Actions\Telegram\GetFile;
+use App\Actions\VK\GetMessagesUploadServerVk;
+use App\Actions\VK\SaveFileVk;
+use App\Actions\VK\SendQueryVk;
+use App\Actions\VK\UploadFileVk;
+use App\DTOs\VK\VkAnswerDto;
+use App\Helpers\TelegramHelper;
 use App\Services\TgService;
-use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
 use App\Actions\VK\SendMessageVk;
 use App\DTOs\TelegramAnswerDto;
@@ -29,21 +35,15 @@ class TgVkMessageService extends TgService
                 $resultQuery = $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
                 $resultQuery = $this->sendDocument();
-            } elseif (!empty($this->update->rawData['message']['location'])) {
-                $resultQuery = $this->sendLocation();
-            } elseif (!empty($this->update->rawData['message']['voice'])) {
-                $resultQuery = $this->sendVoice();
             } elseif (!empty($this->update->rawData['message']['sticker'])) {
                 $resultQuery = $this->sendSticker();
-            } elseif (!empty($this->update->rawData['message']['video_note'])) {
-                $resultQuery = $this->sendVideoNote();
             } elseif (!empty($this->update->rawData['message']['contact'])) {
                 $resultQuery = $this->sendContact();
             } elseif (!empty($this->update->text)) {
                 $resultQuery = $this->sendMessage();
             }
 
-            if (empty($resultQuery->ok)) {
+            if (!empty($resultQuery->error)) {
                 throw new \Exception("Ошибка отправки запроса!");
             }
 
@@ -53,43 +53,81 @@ class TgVkMessageService extends TgService
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
+
+            echo 'ok';
         } else {
             throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
         }
     }
 
     /**
-     * Send photo
-     * @return TelegramAnswerDto
+     * @param string $fileId
+     * @param string $typeFile
+     * @param string $typeMethod
+     * @return TelegramAnswerDto|VkAnswerDto|null
+     * @throws \Exception
      */
-    protected function sendPhoto(): TelegramAnswerDto
+    protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod)
     {
-        $this->messageParamsDTO->methodQuery = 'sendPhoto';
-        $this->messageParamsDTO->photo = $this->update->fileId;
-
-        $this->messageParamsDTO->caption = $this->update->caption;
-        if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
-            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        // get telegram file data
+        $fileData = GetFile::execute($fileId);
+        if (empty($fileData->rawData['result']['file_path'])) {
+            throw new \Exception("Ошибка получения данных файла!");
         }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        $fullFilePath = TelegramHelper::getFilePath($fileData->rawData['result']['file_path']);
+
+        // get upload server data
+        $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
+        if (empty($resultData->response['upload_url'])) {
+            throw new \Exception("Ошибка получения ссылки для загрузки файла!");
+        }
+
+        // upload file in VK
+        $urlQuery = $resultData->response['upload_url'];
+        $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
+
+        // save file in VK
+        return SaveFileVk::execute($typeMethod, $responseData);
+    }
+
+    /**
+     * Send photo
+     * @return VkAnswerDto
+     */
+    protected function sendPhoto(): VkAnswerDto
+    {
+        $fileData = $this->uploadFileVk($this->update->fileId, 'photo', 'photos');
+        if (empty($fileData->response)) {
+            throw new \Exception("Ошибка загрузки файла!");
+        }
+        $attachment = "photo{$fileData->response[0]['owner_id']}_{$fileData->response[0]['id']}";
+
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'attachment' => $attachment,
+        ];
+        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
      * Send document
-     * @return TelegramAnswerDto
+     * @return VkAnswerDto
      */
-    protected function sendDocument(): TelegramAnswerDto
+    protected function sendDocument(): VkAnswerDto
     {
-        $this->messageParamsDTO->methodQuery = 'sendDocument';
-        $this->messageParamsDTO->document = $this->update->fileId;
-
-        $this->messageParamsDTO->caption = $this->update->caption;
-        if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
-            $this->messageParamsDTO->parse_mode = 'MarkdownV2';
+        $fileData = $this->uploadFileVk($this->update->fileId, 'doc', 'docs');
+        if (empty($fileData->response)) {
+            throw new \Exception("Ошибка загрузки файла!");
         }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
+
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'attachment' => $attachment,
+        ];
+        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
@@ -106,24 +144,36 @@ class TgVkMessageService extends TgService
 
     /**
      * Send voice
-     * @return TelegramAnswerDto
+     * @return VkAnswerDto
      */
-    protected function sendVoice(): TelegramAnswerDto
+    protected function sendVoice(): VkAnswerDto
     {
-        $this->messageParamsDTO->methodQuery = 'sendVoice';
-        $this->messageParamsDTO->voice = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        $fileData = $this->uploadFileVk($this->update->fileId, 'audio_message', 'docs');
+        if (empty($fileData->response)) {
+            throw new \Exception("Ошибка загрузки файла!");
+        }
+        $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
+
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'attachment' => $attachment,
+        ];
+        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
      * Send sticker
-     * @return TelegramAnswerDto
+     * @return VkAnswerDto
      */
-    protected function sendSticker(): TelegramAnswerDto
+    protected function sendSticker(): VkAnswerDto
     {
-        $this->messageParamsDTO->methodQuery = 'sendSticker';
-        $this->messageParamsDTO->sticker = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'message' => $this->update->rawData['message']['sticker']['emoji'],
+        ];
+        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
@@ -139,11 +189,10 @@ class TgVkMessageService extends TgService
 
     /**
      * Send contact info
-     * @return TelegramAnswerDto
+     * @return VkAnswerDto
      */
-    protected function sendContact(): TelegramAnswerDto
+    protected function sendContact(): VkAnswerDto
     {
-        $this->messageParamsDTO->methodQuery = 'sendMessage';
         $contactData = $this->update->rawData['message']['contact'];
 
         $textMessage = "Контакт: \n";
@@ -152,39 +201,34 @@ class TgVkMessageService extends TgService
             $textMessage .= "Телефон: {$contactData['phone_number']}\n";
         }
 
-        $this->messageParamsDTO->text = $textMessage;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        $queryParams = [
+            'methodQuery' => 'messages.send',
+            'peer_id' => $this->botUser->chat_id,
+            'message' => $textMessage,
+        ];
+        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
      * Send text message
-     * @return TelegramAnswerDto
+     * @return null|VkAnswerDto
      */
-    protected function sendMessage()
+    protected function sendMessage(): ?VkAnswerDto
     {
-        
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->botUser->chat_id,
             'message' => $this->update->text,
         ];
-
-        SendMessageVk::execute(VkTextMessageDto::from($queryParams));
-
-        // $this->messageParamsDTO->text = $this->update->text;
-        // if (!empty($this->update->entities)) {
-        //     $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
-        //     $this->messageParamsDTO->parse_mode = 'MarkdownV2';
-        // }
-        // return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
     }
 
     /**
      * Save message in DB
-     * @param TelegramAnswerDto $resultQuery
+     * @param VkAnswerDto $resultQuery
      * @return void
      */
-    protected function saveMessage(TelegramAnswerDto $resultQuery): void
+    protected function saveMessage(VkAnswerDto $resultQuery): void
     {
         Message::create(
             [
@@ -192,7 +236,7 @@ class TgVkMessageService extends TgService
                 'platform' => $this->source,
                 'message_type' => $this->typeMessage,
                 'from_id' => $this->update->messageId,
-                'to_id' => $resultQuery->message_id,
+                'to_id' => $resultQuery->response,
             ]
         );
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Actions\Telegram\SendContactMessage;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\VK\VkUpdateDto;
+use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -61,6 +62,7 @@ class BotUser extends Model
 
             return $botUser ? $botUser->platform : null;
         } catch (\Exception $e) {
+            (new LokiLogger())->sendBasicLog($e);
             return null;
         }
     }
@@ -77,8 +79,9 @@ class BotUser extends Model
                 ->where('topic_id', $messageThreadId)
                 ->first();
 
-            return $botUser ? $botUser->platform : null;
+            return $botUser->platform ?? null;
         } catch (\Exception $e) {
+            (new LokiLogger())->sendBasicLog($e);
             return null;
         }
     }

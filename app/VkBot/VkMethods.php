@@ -2,8 +2,16 @@
 
 namespace App\VkBot;
 
+use App\DTOs\VK\VkAnswerDto;
+
 class VkMethods {
 
+    /**
+     * Send query in VK
+     * @param string $methodQuery
+     * @param array $params
+     * @return VkAnswerDto
+     */
     public static function sendQueryVk(string $methodQuery, array $params): VkAnswerDto
     {
         try {
@@ -16,17 +24,18 @@ class VkMethods {
             ]);
 
             $url = 'https://api.vk.com/method/' . $methodQuery;
-            $response = self::makeRequest($url, $queryParams);
+            $resultQuery = self::makeRequest($url, $queryParams);
 
-            dd($response);
-
-            if (isset($response['error'])) {
-                throw new \RuntimeException('VK API Error: ' . json_encode($response['error']));
+            if (isset($resultQuery['error'])) {
+                throw new \RuntimeException('VK API Error: ' . json_encode($resultQuery['error']));
             }
 
-            return $response['response'] ?? [];
+            return VkAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
-            
+            return VkAnswerDto::fromData([
+//                'error' => true,
+                'response' => 0,
+            ]);
         }
     }
 
@@ -50,7 +59,7 @@ class VkMethods {
 
             return json_decode($result, true);
         } catch (\Exception $e) {
-            
+
         }
     }
 

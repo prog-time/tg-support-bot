@@ -1,17 +1,23 @@
 <?php
 
-namespace App\DTOs\Vk;
+namespace App\DTOs\VK;
 
 readonly class VkAnswerDto
 {
     public function __construct(
-        public int $response,
+        public ?array $error,
+        public int|array $response,
     ) {}
 
+    /**
+     * @param array $dataAnswer
+     * @return self
+     */
     public static function fromData(array $dataAnswer): self
     {
         return new self(
-            response: $dataAnswer['response']
+            error: $dataAnswer['error'] ?? null,
+            response: $dataAnswer['response'],
         );
     }
 }

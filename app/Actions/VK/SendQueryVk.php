@@ -7,7 +7,7 @@ use App\DTOs\VK\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\VkBot\VkMethods;
 
-class SendMessageVk
+class SendQueryVk
 {
     /**
      * @param VkTextMessageDto $queryParams

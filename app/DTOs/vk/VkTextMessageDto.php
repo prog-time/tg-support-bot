@@ -8,8 +8,11 @@ class VkTextMessageDto extends Data
 {
     public function __construct(
         public string $methodQuery,
-        public int $peer_id,
-        public string $message
+        public ?string $title,
+        public ?string $file,
+        public ?int $peer_id,
+        public ?string $message,
+        public ?string $attachment
     ) {}
 
     /**

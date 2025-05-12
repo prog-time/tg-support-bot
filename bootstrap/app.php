@@ -23,17 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
          * Sending log in Loki
          */
         $exceptions->render(function (Throwable $e, Request $request) {
-
-            dump($e->getMessage());
-            dump($e->getFile());
-            dump($e->getLine());
-
-            $logger = new LokiLogger();
-            $logger->log('error', $e->getMessage(), [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all(),
-            ]);
+            (new LokiLogger())->sendBasicLog($e);
             return response('ok', 200);
         });
 

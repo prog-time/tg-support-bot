@@ -3,6 +3,7 @@
 namespace App\Logging;
 
 use GuzzleHttp\Client;
+use Throwable;
 
 class LokiLogger
 {
@@ -13,6 +14,25 @@ class LokiLogger
     {
         $this->client = new Client();
         $this->url = env('LOKI_URL_PUSH', 'http://loki:3100/loki/api/v1/push');
+    }
+
+    /**
+     * @param Throwable $e
+     * @return void
+     */
+    public function sendBasicLog(Throwable $e): void
+    {
+        $request = request();
+
+        $errorMessageString = 'File: ' . $e->getFile() . '; ';
+        $errorMessageString .= 'Line: ' . $e->getLine() . '; ';
+        $errorMessageString .= 'Error: ' . $e->getMessage();
+
+        $this->log('error', $errorMessageString, [
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all(),
+        ]);
     }
 
     /**
@@ -43,8 +63,8 @@ class LokiLogger
             ],
         ];
 
-//        $this->client->post($this->url, [
-//            'json' => $payload,
-//        ]);
+        $this->client->post($this->url, [
+            'json' => $payload,
+        ]);
     }
 }
