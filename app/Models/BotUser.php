@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Actions\Telegram\SendContactMessage;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\VK\VkUpdateDto;
+use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $topic_id
  * @property int $chat_id
+ * @property string $platform
  */
 class BotUser extends Model
 {
@@ -46,12 +49,50 @@ class BotUser extends Model
     }
 
     /**
+     * Get platform by chat id
+     * @param int $chatId
+     * @return string|null
+     */
+    public static function getPlatformByChatId(int $chatId): ?string
+    {
+        try {
+            $botUser = self::select('platform')
+                ->where('chat_id', $chatId)
+                ->first();
+
+            return $botUser ? $botUser->platform : null;
+        } catch (\Exception $e) {
+            (new LokiLogger())->sendBasicLog($e);
+            return null;
+        }
+    }
+
+    /**
+     * Get platform by topic id
+     * @param int $chatId
+     * @return string|null
+     */
+    public static function getPlatformByTopicId(int $messageThreadId): ?string
+    {
+        try {
+            $botUser = self::select('platform')
+                ->where('topic_id', $messageThreadId)
+                ->first();
+
+            return $botUser->platform ?? null;
+        } catch (\Exception $e) {
+            (new LokiLogger())->sendBasicLog($e);
+            return null;
+        }
+    }
+
+    /**
      * Geg user data
      * @param TelegramUpdateDto $update
      * @param string $source
      * @return BotUser|null
      */
-    public static function getUserData(TelegramUpdateDto $update, string $source): ?BotUser
+    public static function getTelegramUserData(TelegramUpdateDto $update): ?BotUser
     {
         try {
             if ($update->typeSource === 'supergroup') {
@@ -62,12 +103,39 @@ class BotUser extends Model
                         'chat_id' => $update->chatId
                     ],
                     [
-                        'platform' => $source
+                        'platform' => 'telegram'
                     ]
                 );
                 if (empty($botUser->topic_id)) {
                     $botUser->saveNewTopic();
                 }
+            }
+
+            return $botUser ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Geg VK user data
+     * @param VkUpdateDto $update
+     * @param string $source
+     * @return BotUser|null
+     */
+    public static function getVkUserData(VkUpdateDto $update): ?BotUser
+    {
+        try {
+            $botUser = self::firstOrCreate(
+                [
+                    'chat_id' => $update->from_id
+                ],
+                [
+                    'platform' => 'vk'
+                ]
+            );
+            if (empty($botUser->topic_id)) {
+                $botUser->saveNewTopic();
             }
 
             return $botUser ?? null;

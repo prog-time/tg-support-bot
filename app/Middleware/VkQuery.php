@@ -2,14 +2,13 @@
 
 namespace App\Middleware;
 
+use App\Logging\LokiLogger;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Response;
-use App\Logging\LokiLogger;
 
-class TelegramQuery
+class VkQuery
 {
     /**
      * Handle an incoming request.
@@ -19,16 +18,15 @@ class TelegramQuery
     public function handle(Request $request, Closure $next): Response
     {
         try {
-            $receivedToken = $request->header('X-Telegram-Bot-Api-Secret-Token');
-            if (empty($receivedToken)) {
-                throw new Exception('Secret-Token указан неверно!');
-            }
-
-            if ($receivedToken !== env('TELEGRAM_SECRET_KEY')) {
-                throw new Exception('Secret-Token указан неверно!');
+            if (!empty(env('VK_SECRET_CODE'))) {
+                $secretCode = env('VK_SECRET_CODE') ?? '';
+                if ($secretCode !== request()->secret) {
+                    throw new Exception('Secret-Key указан неверно!');
+                }
             }
 
             $this->sendRequestInLoki($request);
+
             return $next($request);
         } catch (\Exception $e) {
             return response()->json([
@@ -38,11 +36,15 @@ class TelegramQuery
         }
     }
 
+    /**
+     * @param Request $request
+     * @return void
+     */
     private function sendRequestInLoki(Request $request): void
     {
         $dataRequest = json_encode($request->all()) ?? "";
 
         $logger = new LokiLogger();
-        $logger->log('tg_request', $dataRequest, $request->all());
+        $logger->log('vk_request', $dataRequest, $request->all());
     }
 }

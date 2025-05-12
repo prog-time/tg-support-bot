@@ -13,7 +13,7 @@ class SendMessage
     /**
      * @param BotUser $botUser
      * @param TGTextMessageDto $queryParams
-     * @param int $countQuery
+     * @param int $countRepeat
      * @return TelegramAnswerDto|null
      */
     public static function execute(BotUser $botUser, TGTextMessageDto $queryParams, int $countRepeat = 1): ?TelegramAnswerDto
@@ -33,11 +33,13 @@ class SendMessage
                     $queryParams->parse_mode = 'html';
                 }
 
-                 if ($typeSource === 'private') {
-                     if ($resultQuery->error_code == 400 && $resultQuery->type_error !== 'markdown') {
+                if ($typeSource === 'private') {
+                    if ($resultQuery->error_code == 400 && $resultQuery->rawData['description'] == 'Bad Request: wrong type of the web page content') {
+                        throw new Exception($resultQuery->rawData['description']);
+                    } elseif ($resultQuery->error_code == 400 && $resultQuery->type_error !== 'markdown') {
                          $messageThreadId = $botUser->saveNewTopic();
                          $queryParams->message_thread_id = $messageThreadId;
-                     }
+                    }
                 } else {
                     if ($resultQuery->error_code == 403) {
                         BanMessage::execute($botUser->topic_id);
@@ -48,7 +50,11 @@ class SendMessage
             }
             return $resultQuery;
         } catch (\Exception $e) {
-            return null;
+            return TelegramAnswerDto::fromData([
+                'ok' => false,
+                'error_code' => 500,
+                'result' => $e->getMessage() ?? 'Ошибка отправки запроса'
+            ]);
         }
     }
 

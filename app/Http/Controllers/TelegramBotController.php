@@ -7,17 +7,27 @@ use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
 use App\Services\TgEditedMessageService;
 use App\Services\TgMessageService;
+use App\Services\TgVk\TgVkMessageService;
 use App\Services\TgTopicService;
 use Illuminate\Http\Request;
+use App\Models\BotUser;
 
 class TelegramBotController
 {
     private TelegramUpdateDto $dataHook;
 
+    protected ?string $platform;
+
     public function __construct(Request $request)
     {
         $dataHook = TelegramUpdateDto::fromRequest($request);
         $this->dataHook = !empty($dataHook) ? $dataHook : die();
+
+        if ($this->dataHook->typeSource === 'private') {
+            $this->platform = 'telegram';
+        } else {
+            $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
+        }
     }
 
     /**
@@ -43,19 +53,21 @@ class TelegramBotController
     public function bot_query(): void
     {
         $this->checkBotQuery();
-
         if (!$this->dataHook->isBot) {
             if ($this->dataHook->typeQuery === 'message') {
-                if (!$this->dataHook->editedTopicStatus) {
-                    if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                        (new SendContactMessage())->executeByTgUpdate($this->dataHook);
-                    } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
-                        (new SendStartMessage())->execute($this->dataHook);
-                    } else {
-                        (new TgMessageService($this->dataHook))->handleUpdate();
-                    }
+                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
+                    (new SendContactMessage())->executeByTgUpdate($this->dataHook);
+                } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
+                    (new SendStartMessage())->execute($this->dataHook);
                 } else {
-                    TgTopicService::deleteNoteInTopic($this->dataHook->messageId);
+                    switch ($this->platform) {
+                        case 'telegram':
+                            $this->controllerPlatformTg();
+                            break;
+                        case 'vk':
+                            $this->controllerPlatformVk();
+                            break;
+                    }
                 }
             } elseif ($this->dataHook->typeQuery === 'edited_message') {
                 (new TgEditedMessageService($this->dataHook))->handleUpdate();
@@ -65,5 +77,23 @@ class TelegramBotController
                 TgTopicService::deleteNoteInTopic($this->dataHook->messageId);
             }
         }
+    }
+
+    /**
+     * Controller tg message
+     * @return void
+     */
+    private function controllerPlatformTg(): void
+    {
+        (new TgMessageService($this->dataHook))->handleUpdate();
+    }
+
+    /**
+     * Controller vk message
+     * @return void
+     */
+    private function controllerPlatformVk(): void
+    {
+        (new TgVkMessageService($this->dataHook))->handleUpdate();
     }
 }

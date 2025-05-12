@@ -61,7 +61,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', env('LOG_STACK', 'single')),
+            'channels' => env('LOG_STACK', 'single'),
             'ignore_exceptions' => false,
         ],
 
@@ -134,6 +134,10 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'loki' => [
+            'driver' => 'custom',
+            'via' => \App\Logging\LokiLogger::class,
+        ],
     ],
 
 ];

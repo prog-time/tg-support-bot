@@ -9,7 +9,7 @@ use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\Message;
 
-class TgMessageService extends TgService
+class TgMessageService extends MessageService
 {
     public function __construct(TelegramUpdateDto $update) {
         parent::__construct($update);
@@ -19,7 +19,7 @@ class TgMessageService extends TgService
      * @return void
      * @throws \Exception
      */
-    public function handleUpdate()
+    public function handleUpdate(): void
     {
         if ($this->update->typeQuery === 'message') {
             if (!empty($this->update->rawData['message']['photo'])) {

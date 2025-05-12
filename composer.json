@@ -9,6 +9,7 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "monolog/monolog": "^3.9",
         "prog-time/tg-logger": "^1.0",
         "spatie/laravel-data": "^4.14"
     },

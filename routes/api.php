@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\TelegramBotController;
 
+use App\Http\Controllers\VkBotController;
 use App\Middleware\TelegramQuery;
+use App\Middleware\VkQuery;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +25,5 @@ Route::group([
         return response()->json($result->rawData);
     });
 });
+
+Route::post('vk/bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);

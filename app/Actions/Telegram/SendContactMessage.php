@@ -5,7 +5,6 @@ namespace App\Actions\Telegram;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
-use phpDocumentor\Reflection\Exception;
 
 /**
  * Send contact data
@@ -19,7 +18,7 @@ class SendContactMessage
      */
     private function execute(BotUser $botUser): void
     {
-        $textMessage = $this->createContactMessage($botUser->chat_id);
+        $textMessage = $this->createContactMessage($botUser);
         $dataQuery = [
             'chat_id' => env('TELEGRAM_GROUP_ID'),
             'message_thread_id' => $botUser->topic_id,
@@ -36,7 +35,7 @@ class SendContactMessage
      */
     public function executeByTgUpdate(TelegramUpdateDto $update): void
     {
-        $botUser = BotUser::getUserData($update, 'telegram');
+        $botUser = BotUser::getTelegramUserData($update);
         $this->execute($botUser);
     }
 
@@ -51,30 +50,26 @@ class SendContactMessage
 
     /**
      * Create contact message
-     * @param int $chatId
+     * @param BotUser $botUser
      * @return string
      */
-    private function createContactMessage(int $chatId): string
+    private function createContactMessage(BotUser $botUser): string
     {
         try {
-            $chat = GetChat::execute($chatId);
-            $chatData = $chat->rawData;
-
-            if (empty($chatData)) {
-                throw new Exception('Чат не найден!');
-            }
-
             $textMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
-            $textMessage .= "Источник: Telegram \n";
-            $textMessage .= "ID: {$chatId} \n";
+            $textMessage .= "Источник: {$botUser->platform} \n";
+            $textMessage .= "ID: {$botUser->chat_id} \n";
 
-            if (!empty($chatData['result']['username'])) {
-                $link = "https://telegram.me/{$chatData['result']['username']}";
-                $textMessage .= "Ссылка: {$link} \n";
+            if ($botUser->platform === 'telegram') {
+                $chat = GetChat::execute($botUser->chat_id);
+                $chatData = $chat->rawData;
+                if (!empty($chatData['result']['username'])) {
+                    $link = "https://telegram.me/{$chatData['result']['username']}";
+                    $textMessage .= "Ссылка: {$link} \n";
+                }
             }
-
             return $textMessage;
-        } catch (\Exception $exception) {
+        } catch (\Exception $e) {
             return "";
         }
     }
