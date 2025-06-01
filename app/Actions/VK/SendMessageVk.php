@@ -7,9 +7,14 @@ use App\DTOs\VK\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\VkBot\VkMethods;
 
+/**
+ * Отправка сообщения в VK
+ */
 class SendMessageVk
 {
     /**
+     * Отправка сообщения в VK
+     *
      * @param VkTextMessageDto $queryParams
      * @return TelegramAnswerDto|null
      */
@@ -22,5 +27,4 @@ class SendMessageVk
             return null;
         }
     }
-
 }

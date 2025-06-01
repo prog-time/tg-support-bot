@@ -7,12 +7,13 @@ use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Send contact data
+ * Отправка контактной информации
  */
 class SendContactMessage
 {
     /**
-     * Sending contact info
+     * Отправка контактной информации
+     *
      * @param BotUser $botUser
      * @return void
      */
@@ -29,7 +30,8 @@ class SendContactMessage
     }
 
     /**
-     * Getting chat info out Telegram
+     * Подготовка сообщения для отправки
+     *
      * @param TelegramUpdateDto $update
      * @return void
      */
@@ -49,7 +51,8 @@ class SendContactMessage
     }
 
     /**
-     * Create contact message
+     * Создание сообщения для отправки
+     *
      * @param BotUser $botUser
      * @return string
      */

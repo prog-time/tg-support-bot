@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use App\Actions\Telegram\DeleteMessage;
-use App\Actions\Telegram\GetChat;
+use Mockery\Exception;
+use App\Models\BotUser;
+use App\Models\ExternalUser;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
-use App\Models\BotUser;
+use App\Actions\Telegram\GetChat;
 use App\TelegramBot\TelegramMethods;
-use Mockery\Exception;
+use App\Actions\Telegram\DeleteMessage;
 
 class TgTopicService
 {
@@ -54,6 +55,11 @@ class TgTopicService
     protected function generateNameTopic(BotUser $botUser): string
     {
         try {
+            if ($botUser->platform === 'external_source') {
+                $source = ExternalUser::getSourceById($botUser->chat_id);
+                return "#{$botUser->chat_id} ({$source})";
+            }
+
             $templateTopicName = env('TEMPLATE_TOPIC_NAME');
             if (empty($templateTopicName)) {
                 throw new \Exception('Template not found');

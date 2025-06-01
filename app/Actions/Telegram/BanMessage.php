@@ -8,6 +8,8 @@ use App\TelegramBot\TelegramMethods;
 class BanMessage
 {
     /**
+     * Сообщение о том, что пользователь забанил бота
+     *
      * @param int $messageThreadId
      * @return TelegramAnswerDto
      */

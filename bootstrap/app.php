@@ -24,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
          */
         $exceptions->render(function (Throwable $e, Request $request) {
             (new LokiLogger())->sendBasicLog($e);
-            return response('ok', 200);
+            if (env('APP_DEBUG') === false) {
+                return response('ok', 200);
+            }
         });
 
         /**
@@ -34,7 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
         if (!empty(env('TG_LOGGER_TOKEN'))) {
             $exceptions->render(function (Throwable $e, Request $request) {
                 (new TgBotException)->render($request, $e);
-                return response('ok', 200);
+                if (env('APP_DEBUG') === false) {
+                    return response('ok', 200);
+                }
             });
         }
 

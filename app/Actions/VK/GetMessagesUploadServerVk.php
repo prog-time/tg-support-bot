@@ -5,9 +5,14 @@ namespace App\Actions\VK;
 use App\DTOs\VK\VkAnswerDto;
 use App\VkBot\VkMethods;
 
+/**
+ * Получение сервера для загрузки документа
+ */
 class GetMessagesUploadServerVk
 {
     /**
+     * Получение сервера для загрузки документа
+     *
      * @param int $chat_id
      * @param string $typeMethod
      * @return VkAnswerDto|null

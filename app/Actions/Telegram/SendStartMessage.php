@@ -6,12 +6,13 @@ use App\DTOs\TelegramUpdateDto;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Send contact data
+ * Отправка стартового сообщения
  */
 class SendStartMessage
 {
     /**
-     * Sending start message
+     * Отправка стартового сообщения
+     *
      * @param TelegramUpdateDto $update
      * @return void
      */

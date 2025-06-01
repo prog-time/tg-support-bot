@@ -5,7 +5,8 @@ namespace App\Helpers;
 class TelegramHelper
 {
     /**
-     * Get telegram file path
+     * Генерация путей к файлам
+     *
      * @param string $localFilePath
      * @return string
      */

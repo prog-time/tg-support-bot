@@ -4,8 +4,53 @@ namespace App\DTOs;
 
 use Illuminate\Http\Request;
 
+/**
+ * DTO для запроса из Telegram
+ *
+ * @property int $updateId
+ * @property bool $isBot
+ * @property bool $editedTopicStatus
+ * @property bool $pinnedMessageStatus
+ * @property string $typeQuery
+ * @property string $typeSource
+ * @property int|null $chatId
+ * @property array|null $replyToMessage
+ * @property int|null $messageThreadId
+ * @property int|null $messageId
+ * @property int|null $callbackId
+ * @property string|null $text
+ * @property array|null $entities
+ * @property string|null $caption
+ * @property string|null $fileId
+ * @property string|null $username
+ * @property string|null $callbackData
+ * @property array|null $location
+ * @property array|null $rawData
+*/
 readonly class TelegramUpdateDto
 {
+
+    /**
+     * @param int $updateId
+     * @param bool $isBot
+     * @param bool $editedTopicStatus
+     * @param bool $pinnedMessageStatus
+     * @param string $typeQuery
+     * @param string $typeSource
+     * @param int|null $chatId
+     * @param array|null $replyToMessage
+     * @param int|null $messageThreadId
+     * @param int|null $messageId
+     * @param int|null $callbackId
+     * @param string|null $text
+     * @param array|null $entities
+     * @param string|null $caption
+     * @param string|null $fileId
+     * @param string|null $username
+     * @param string|null $callbackData
+     * @param array|null $location
+     * @param array|null $rawData
+     */
     public function __construct(
         public int     $updateId,
         public bool    $isBot = false,

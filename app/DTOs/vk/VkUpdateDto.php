@@ -4,8 +4,36 @@ namespace App\DTOs\VK;
 
 use Illuminate\Http\Request;
 
+/**
+ * DTO для запроса из VK
+ *
+ * @property string|null $secret
+ * @property int $group_id
+ * @property string $type
+ * @property string $event_id
+ * @property string $v
+ * @property int $from_id
+ * @property int $id
+ * @property string|null $text
+ * @property array|null $geo
+ * @property array $rawData
+ * @property array $listFileUrl
+ */
 readonly class VkUpdateDto
 {
+    /**
+     * @param string|null $secret
+     * @param int $group_id
+     * @param string $type
+     * @param string $event_id
+     * @param string $v
+     * @param int $from_id
+     * @param int $id
+     * @param string|null $text
+     * @param array|null $geo
+     * @param array $rawData
+     * @param array $listFileUrl
+     */
     public function __construct(
         public ?string $secret,
         public int $group_id,
@@ -20,6 +48,10 @@ readonly class VkUpdateDto
         public array $listFileUrl
     ) {}
 
+    /**
+     * @param Request $request
+     * @return self|null
+     */
     public static function fromRequest(Request $request): ?self
     {
         try {
