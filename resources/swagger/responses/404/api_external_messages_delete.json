@@ -1,0 +1,16 @@
+{
+    "api_external_messages_delete_response_404": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "boolean",
+                "example": false
+            },
+            "error": {
+                "type": "string",
+                "example": "Сообщение не найдено!"
+            }
+        },
+        "required": ["status", "error"]
+    }
+}

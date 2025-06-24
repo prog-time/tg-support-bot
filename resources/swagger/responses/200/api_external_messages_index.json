@@ -1,0 +1,39 @@
+{
+    "api_external_messages_index_response_200": {
+        "type": "object",
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "q123"
+            },
+            "messages": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "message_id": {
+                            "type": "integer",
+                            "example": 1
+                        },
+                        "message_type": {
+                            "type": "string",
+                            "example": "incoming"
+                        },
+                        "text": {
+                            "type": "string",
+                            "example": "Hello"
+                        },
+                        "date": {
+                            "type": "string",
+                            "example": "2021-01-01 00:00:00"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

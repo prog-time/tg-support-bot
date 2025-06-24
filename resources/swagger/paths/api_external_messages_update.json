@@ -1,0 +1,33 @@
+{
+    "/api/external/messages/": {
+        "put": {
+            "summary": "Редактирование сообщения",
+            "operationId": "api_external_messages_update",
+            "tags": [
+                "External Messages"
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_messages_update"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Сообщение успешно изменено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_update_response_200"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

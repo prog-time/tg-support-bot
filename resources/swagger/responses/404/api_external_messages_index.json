@@ -1,0 +1,16 @@
+{
+    "api_external_messages_index_response_404": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "boolean",
+                "example": false
+            },
+            "error": {
+                "type": "string",
+                "example": "Чат не найден!"
+            }
+        },
+        "required": ["status", "error"]
+    }
+}

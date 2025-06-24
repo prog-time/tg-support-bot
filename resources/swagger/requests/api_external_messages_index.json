@@ -1,0 +1,39 @@
+{
+    "api_external_messages_index": {
+        "type": "object",
+        "required": [
+            "source",
+            "external_id"
+        ],
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "0a95b140"
+            },
+            "type_sort": {
+                "type": "string",
+                "example": "asc"
+            },
+            "limit": {
+                "type": "integer",
+                "example": "10"
+            },
+            "offset": {
+                "type": "integer",
+                "example": "10"
+            },
+            "date_start": {
+                "type": "string",
+                "example": "2025-02-01 15:44:36"
+            },
+            "date_end": {
+                "type": "string",
+                "example": "2025-02-10 15:44:36"
+            }
+        }
+    }
+}

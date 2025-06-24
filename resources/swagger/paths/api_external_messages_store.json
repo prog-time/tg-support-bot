@@ -1,0 +1,33 @@
+{
+    "/api/external/messages/": {
+        "post": {
+            "summary": "Отправка сообщения",
+            "operationId": "api_external_messages_store",
+            "tags": [
+                "External Messages"
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_messages_store"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Сообщение успешно отправлено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_store_response_200"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

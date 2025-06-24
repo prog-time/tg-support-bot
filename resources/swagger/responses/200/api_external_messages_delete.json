@@ -1,0 +1,16 @@
+{
+    "api_external_messages_delete_response_200": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "boolean",
+                "example": true
+            },
+            "message_id": {
+                "type": "integer",
+                "example": 1749476217
+            }
+        },
+        "required": ["status", "message_id"]
+    }
+}

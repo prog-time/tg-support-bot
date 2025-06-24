@@ -1,0 +1,16 @@
+{
+    "/api/external/messages/{id_message}": {
+        "get": {
+            "summary": "Получение сообщения по ID",
+            "operationId": "api_external_messages_show",
+            "tags": [
+                "External Messages"
+            ],
+            "responses": {
+                "200": {
+                    "description": "Сообщение успешно получено"
+                }
+            }
+        }
+    }
+}
