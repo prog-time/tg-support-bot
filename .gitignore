@@ -24,3 +24,4 @@ yarn-error.log
 /config/tg-logger.php
 /docker/grafana
 /docker/postgres
+/storage/api-docs
