@@ -25,3 +25,8 @@ yarn-error.log
 /docker/grafana
 /docker/postgres
 /storage/api-docs
+
+
+.phpstan-error-count.json
+.valetphprc
+.tool-versions
