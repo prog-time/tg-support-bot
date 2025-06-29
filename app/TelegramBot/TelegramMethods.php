@@ -6,19 +6,20 @@ use App\DTOs\TelegramAnswerDto;
 
 class TelegramMethods
 {
-
     /**
      * Send request in Telegram
+     *
      * @param string $methodQuery
      * @param ?array $dataQuery
+     *
      * @return TelegramAnswerDto
      */
     public static function sendQueryTelegram(string $methodQuery, array $dataQuery = null): TelegramAnswerDto
     {
         try {
-            $token = env('TELEGRAM_TOKEN');
+            $token = config('traffic_source.settings.telegram.token');
 
-            $domainQuery = "https://api.telegram.org/bot". $token ."/";
+            $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
 
             $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
@@ -27,7 +28,7 @@ class TelegramMethods
             return TelegramAnswerDto::fromData([
                 'ok' => false,
                 'error_code' => 500,
-                'result' => $e->getMessage() ?? 'Ошибка отправки запроса'
+                'result' => $e->getMessage(),
             ]);
         }
     }

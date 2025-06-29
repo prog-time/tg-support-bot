@@ -7,50 +7,46 @@ use Throwable;
 
 class LokiLogger
 {
-    protected $client;
-    protected $url;
+    protected Client $client;
+
+    protected string $url;
 
     public function __construct()
     {
         $this->client = new Client();
-        $this->url = env('LOKI_URL_PUSH', 'http://loki:3100/loki/api/v1/push');
+        $this->url = config('loki_custom.url');
     }
 
     /**
      * @param Throwable $e
+     *
      * @return void
      */
     public function sendBasicLog(Throwable $e): void
     {
-        $request = request();
-
         $errorMessageString = 'File: ' . $e->getFile() . '; ';
         $errorMessageString .= 'Line: ' . $e->getLine() . '; ';
         $errorMessageString .= 'Error: ' . $e->getMessage();
 
-        $this->log('error', $errorMessageString, [
-            'exception' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'request' => $request->all(),
-        ]);
+        $this->log('error', $errorMessageString);
     }
 
     /**
      * Log a message to the given channel.
      *
-     * @param  string  $level
-     * @param  string  $message
-     * @param  array  $context
+     * @param string $level
+     * @param string $message
+     *
      * @return void
      */
-    public function log(string $level, mixed $message, array $context = []): void
+    public function log(string $level, mixed $message): void
     {
         $payload = [
             'streams' => [
                 [
                     'stream' => [
-                        'app' => env('APP_NAME', 'Laravel'),
-                        'env' => env('APP_ENV', 'production'),
+                        'app' => config('app.name'),
+                        'env' => config('app.env'),
                         'level' => $level,
                     ],
                     'values' => [

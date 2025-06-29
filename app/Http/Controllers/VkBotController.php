@@ -14,7 +14,7 @@ class VkBotController
     public function __construct(Request $request)
     {
         if (request()->type === 'confirmation') {
-            echo env('VK_CONFIRM_CODE')?? '';
+            echo config('traffic_source.settings.vk.confirm_code');
             die();
         }
 
@@ -24,14 +24,13 @@ class VkBotController
 
     /**
      * @return void
+     *
      * @throws Exception
      */
     public function bot_query(): void
     {
-        if (!empty($this->dataHook)) {
-            if ($this->dataHook->type === 'message_new') {
-                (new VkMessageService($this->dataHook))->handleUpdate();
-            }
+        if ($this->dataHook->type === 'message_new') {
+            (new VkMessageService($this->dataHook))->handleUpdate();
         }
     }
 }

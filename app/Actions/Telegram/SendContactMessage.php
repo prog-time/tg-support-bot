@@ -15,13 +15,14 @@ class SendContactMessage
      * Отправка контактной информации
      *
      * @param BotUser $botUser
+     *
      * @return void
      */
     private function execute(BotUser $botUser): void
     {
         $textMessage = $this->createContactMessage($botUser);
         $dataQuery = [
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
             'text' => $textMessage,
             'parse_mode' => 'html',
@@ -33,6 +34,7 @@ class SendContactMessage
      * Подготовка сообщения для отправки
      *
      * @param TelegramUpdateDto $update
+     *
      * @return void
      */
     public function executeByTgUpdate(TelegramUpdateDto $update): void
@@ -43,6 +45,7 @@ class SendContactMessage
 
     /**
      * @param BotUser $botUser
+     *
      * @return void
      */
     public function executeByBotUser(BotUser $botUser): void
@@ -54,6 +57,7 @@ class SendContactMessage
      * Создание сообщения для отправки
      *
      * @param BotUser $botUser
+     *
      * @return string
      */
     private function createContactMessage(BotUser $botUser): string
@@ -73,8 +77,7 @@ class SendContactMessage
             }
             return $textMessage;
         } catch (\Exception $e) {
-            return "";
+            return '';
         }
     }
-
 }

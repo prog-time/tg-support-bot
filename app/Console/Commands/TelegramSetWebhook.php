@@ -8,12 +8,17 @@ use Illuminate\Console\Command;
 class TelegramSetWebhook extends Command
 {
     protected $signature = 'telegram:set-webhook';
+
     protected $description = 'Устанавливает Telegram Webhook для бота';
 
-    public function handle()
+    /**
+     * @return int
+     */
+    public function handle(): int
     {
-        $url = env('APP_URL') . '/api/telegram/bot';
-        $secret = env('TELEGRAM_SECRET_KEY');
+        $appUrl = config('app.url');
+        $url = $appUrl . '/api/telegram/bot';
+        $secret = config('traffic_source.settings.telegram.secret_key');
 
         $queryParams = [
             'url' => $url,

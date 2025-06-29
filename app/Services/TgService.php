@@ -9,14 +9,38 @@ use phpDocumentor\Reflection\Exception;
 
 class TgService
 {
+    /**
+     * @var string
+     */
     protected string $typeMessage = '';
+
+    /**
+     * @var string
+     */
     protected string $source = 'telegram';
+
+    /**
+     * @var TelegramUpdateDto
+     */
     protected TelegramUpdateDto $update;
+
+    /**
+     * @var BotUser|null
+     */
     protected ?BotUser $botUser;
+
+    /**
+     * @var TGTextMessageDto
+     */
     protected TGTextMessageDto $messageParamsDTO;
+
+    /**
+     * @var TgTopicService
+     */
     protected TgTopicService $tgTopicService;
 
-    public function __construct(TelegramUpdateDto $update) {
+    public function __construct(TelegramUpdateDto $update)
+    {
         $this->update = $update;
         $this->tgTopicService = new TgTopicService();
         $this->botUser = BotUser::getTelegramUserData($this->update);
@@ -28,8 +52,10 @@ class TgService
         switch ($update->typeSource) {
             case 'private':
                 $this->typeMessage = 'incoming';
+
+                $groupId = config('traffic_source.settings.telegram.group_id');
                 $queryParams = [
-                    'chat_id' => env('TELEGRAM_GROUP_ID'),
+                    'chat_id' => $groupId,
                     'message_thread_id' => $this->botUser->topic_id,
                 ];
                 break;
@@ -49,5 +75,4 @@ class TgService
         $queryParams['typeSource'] = $update->typeSource;
         $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
-
 }

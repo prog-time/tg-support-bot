@@ -19,6 +19,7 @@ class DeleteMessage
      * Удаление сообщения
      *
      * @param ExternalMessageDto $updateData
+     *
      * @return ExternalMessageAnswerDto
      */
     public static function execute(ExternalMessageDto $updateData): ExternalMessageAnswerDto
@@ -51,9 +52,9 @@ class DeleteMessage
             }
 
             TelegramMethods::sendQueryTelegram('deleteMessage', [
-                'chat_id' => env('TELEGRAM_GROUP_ID'),
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_id' => $messageData->to_id,
-                'message_thread_id' => $botUser->topic_id
+                'message_thread_id' => $botUser->topic_id,
             ]);
 
             Message::where($whereParamsMessage)->delete();

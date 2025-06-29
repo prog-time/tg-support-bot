@@ -2,26 +2,31 @@
 
 namespace App\Services\External;
 
+use App\Actions\Telegram\SendMessage;
 use App\DTOs\External\ExternalMessageAnswerDto;
-use App\Models\BotUser;
-use App\Models\Message;
-use App\Models\ExternalUser;
+use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
-use App\DTOs\TelegramAnswerDto;
+use App\Models\BotUser;
+use App\Models\ExternalUser;
+use App\Models\Message;
 use App\Services\TgTopicService;
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\External\ExternalMessageDto;
 
 class ExternalMessageService
 {
     protected string $typeMessage = '';
+
     protected ExternalMessageDto $update;
+
     protected TgTopicService $tgTopicService;
+
     protected ?BotUser $botUser;
+
     protected TGTextMessageDto $messageParamsDTO;
 
-    public function __construct(ExternalMessageDto $update) {
+    public function __construct(ExternalMessageDto $update)
+    {
         $this->update = $update;
         $this->tgTopicService = new TgTopicService();
 
@@ -34,7 +39,7 @@ class ExternalMessageService
         $this->messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
             'typeSource' => 'private',
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
         ]);
     }
@@ -43,6 +48,7 @@ class ExternalMessageService
      * Get user data
      *
      * @param ExternalMessageDto $updateData
+     *
      * @return BotUser|null
      */
     private function getBotUser(ExternalMessageDto $updateData): ?BotUser
@@ -50,10 +56,8 @@ class ExternalMessageService
         try {
             $externalUser = ExternalUser::where([
                 'external_id' => $updateData->external_id,
-                'source' => $updateData->source
+                'source' => $updateData->source,
             ])->first();
-
-            dump($externalUser);
 
             if (!empty($externalUser)) {
                 $botUser = BotUser::where([
@@ -63,7 +67,7 @@ class ExternalMessageService
             } else {
                 $externalUser = ExternalUser::create([
                     'external_id' => $updateData->external_id,
-                    'source' => $updateData->source
+                    'source' => $updateData->source,
                 ]);
 
                 $botUser = BotUser::create([
@@ -82,15 +86,15 @@ class ExternalMessageService
 
     /**
      * @return ExternalMessageAnswerDto
+     *
      * @throws \Exception
      */
     public function handleUpdate(): ExternalMessageAnswerDto
     {
         try {
             if (empty($this->update->attachments) && empty($this->update->text)) {
-                throw new \Exception("Неизвестный тип события!", 1);
+                throw new \Exception('Неизвестный тип события!', 1);
             } else {
-
                 if (!empty($this->update->attachments)) {
                     if (count($this->update->attachments) > 1) {
                         $resultQuery = $this->sendListDocument();
@@ -102,7 +106,7 @@ class ExternalMessageService
                 }
 
                 if (empty($resultQuery->ok)) {
-                    throw new \Exception("Ошибка отправки запроса!", 1);
+                    throw new \Exception('Ошибка отправки запроса!', 1);
                 }
 
                 $saveMessageData = $this->saveMessage($resultQuery);
@@ -124,20 +128,22 @@ class ExternalMessageService
 
     /**
      * Send document
-     * @return TelegramAnswerDto
+     *
+     * @return ?TelegramAnswerDto
      */
-    protected function sendDocument(): TelegramAnswerDto
+    protected function sendDocument(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'sendDocument';
         $this->messageParamsDTO->caption = $this->update->text;
 
+        $resultQuery = null;
         foreach ($this->update->attachments as $attachment) {
             try {
                 $this->messageParamsDTO->document = $attachment->url;
                 $resultQuery = SendMessage::execute($this->botUser, $this->messageParamsDTO);
 
                 if (empty($resultQuery->ok)) {
-                    throw new \Exception("Ошибка отправки запроса!");
+                    throw new \Exception('Ошибка отправки запроса!');
                 }
             } catch (\Exception $e) {
                 break;
@@ -150,19 +156,20 @@ class ExternalMessageService
     /**
      * Send list document
      *
-     * @return TelegramAnswerDto
+     * @return ?TelegramAnswerDto
      */
-    protected function sendListDocument(): TelegramAnswerDto
+    protected function sendListDocument(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'sendDocument';
 
+        $resultQuery = null;
         foreach ($this->update->attachments as $attachment) {
             try {
                 $this->messageParamsDTO->document = $attachment->url;
                 $resultQuery = SendMessage::execute($this->botUser, $this->messageParamsDTO);
 
                 if (empty($resultQuery->ok)) {
-                    throw new \Exception("Ошибка отправки запроса!");
+                    throw new \Exception('Ошибка отправки запроса!');
                 }
             } catch (\Exception $e) {
                 break;
@@ -171,9 +178,9 @@ class ExternalMessageService
 
         if (!empty($this->update->text)) {
             $resultQuery = SendMessage::execute($this->botUser, TGTextMessageDto::from([
-                'methodQuery' =>'sendMessage',
+                'methodQuery' => 'sendMessage',
                 'typeSource' => 'private',
-                'chat_id' => env('TELEGRAM_GROUP_ID'),
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $this->botUser->topic_id,
                 'text' => $this->update->text,
             ]));
@@ -184,6 +191,7 @@ class ExternalMessageService
 
     /**
      * Send text message
+     *
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -194,7 +202,9 @@ class ExternalMessageService
 
     /**
      * Save message in DB
+     *
      * @param TelegramAnswerDto $resultQuery
+     *
      * @return ExternalMessageAnswerDto
      */
     protected function saveMessage(TelegramAnswerDto $resultQuery): ExternalMessageAnswerDto
@@ -213,5 +223,4 @@ class ExternalMessageService
             'message_id' => $messageData['from_id'],
         ]);
     }
-
 }

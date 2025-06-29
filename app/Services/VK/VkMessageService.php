@@ -15,13 +15,19 @@ use phpDocumentor\Reflection\Exception;
 class VkMessageService
 {
     protected string $typeMessage = '';
+
     protected string $source = 'vk';
+
     protected VkUpdateDto $update;
+
     protected ?BotUser $botUser;
+
     protected TGTextMessageDto $messageParamsDTO;
+
     protected TgTopicService $tgTopicService;
 
-    public function __construct(VkUpdateDto $update) {
+    public function __construct(VkUpdateDto $update)
+    {
         $this->update = $update;
 
         $this->tgTopicService = new TgTopicService();
@@ -35,13 +41,14 @@ class VkMessageService
         $this->messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
             'typeSource' => 'private',
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
         ]);
     }
 
     /**
      * @return void
+     *
      * @throws \Exception
      */
     public function handleUpdate(): void
@@ -56,7 +63,7 @@ class VkMessageService
             }
 
             if (empty($resultQuery->ok)) {
-                throw new \Exception("Ошибка отправки запроса!");
+                throw new \Exception('Ошибка отправки запроса!');
             }
 
             $this->saveMessage($resultQuery);
@@ -71,6 +78,7 @@ class VkMessageService
 
     /**
      * Send document
+     *
      * @return TelegramAnswerDto
      */
     protected function sendDocument(): TelegramAnswerDto
@@ -84,6 +92,7 @@ class VkMessageService
 
     /**
      * Send location
+     *
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -96,6 +105,7 @@ class VkMessageService
 
     /**
      * Send text message
+     *
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -106,7 +116,9 @@ class VkMessageService
 
     /**
      * Save message in DB
+     *
      * @param TelegramAnswerDto $resultQuery
+     *
      * @return void
      */
     protected function saveMessage(TelegramAnswerDto $resultQuery): void
@@ -119,5 +131,4 @@ class VkMessageService
             'to_id' => $resultQuery->message_id,
         ]);
     }
-
 }

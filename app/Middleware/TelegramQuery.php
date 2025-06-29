@@ -2,19 +2,18 @@
 
 namespace App\Middleware;
 
+use App\Logging\LokiLogger;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Response;
-use App\Logging\LokiLogger;
 
 class TelegramQuery
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -24,7 +23,7 @@ class TelegramQuery
                 throw new Exception('Secret-Token указан неверно!');
             }
 
-            if ($receivedToken !== env('TELEGRAM_SECRET_KEY')) {
+            if ($receivedToken !== config('traffic_source.settings.telegram.secret_key')) {
                 throw new Exception('Secret-Token указан неверно!');
             }
 
@@ -40,9 +39,7 @@ class TelegramQuery
 
     private function sendRequestInLoki(Request $request): void
     {
-        $dataRequest = json_encode($request->all()) ?? "";
-
         $logger = new LokiLogger();
-        $logger->log('tg_request', $dataRequest, $request->all());
+        $logger->log('tg_request', json_encode($request->all()));
     }
 }
