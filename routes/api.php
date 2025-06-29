@@ -1,13 +1,13 @@
 <?php
 
-use App\Middleware\VkQuery;
-
+use App\Http\Controllers\ExternalTrafficController;
+use App\Http\Controllers\TelegramBotController;
+use App\Http\Controllers\VkBotController;
+use App\Middleware\ApiQuery;
 use App\Middleware\TelegramQuery;
+use App\Middleware\VkQuery;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\VkBotController;
-use App\Http\Controllers\TelegramBotController;
-use App\Http\Controllers\ExternalTrafficController;
 
 Route::group([
     'prefix' => 'telegram',
@@ -16,10 +16,10 @@ Route::group([
 
     Route::get('set_webhook', function () {
         $queryParams = [
-            'url' => env('APP_URL') . '/api/telegram/bot',
+            'url' => config('app.url') . '/api/telegram/bot',
             'max_connections' => 40,
             'drop_pending_updates' => true,
-            'secret_token' => env('TELEGRAM_SECRET_KEY'),
+            'secret_token' => config('traffic_source.settings.telegram.secret_key'),
         ];
         $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
 
@@ -31,8 +31,8 @@ Route::post('vk/bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery
 
 Route::group([
     'prefix' => 'external',
+    'middleware' => ApiQuery::class,
 ], function () {
-
     Route::group([
         'prefix' => 'messages',
     ], function () {
@@ -42,6 +42,4 @@ Route::group([
         Route::put('/', [ExternalTrafficController::class, 'update'])->name('update');
         Route::delete('/', [ExternalTrafficController::class, 'destroy'])->name('destroy');
     });
-
-    Route::post('bot', [TelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
 });
