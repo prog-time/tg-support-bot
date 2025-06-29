@@ -1,0 +1,42 @@
+{
+    "preset": "psr12",
+    "exclude": [
+        "vendor",
+        "storage",
+        "node_modules",
+        "bootstrap/cache"
+    ],
+    "rules": {
+        "array_syntax": {
+            "syntax": "short"
+        },
+        "binary_operator_spaces": {
+            "default": "single_space"
+        },
+        "braces": true,
+        "class_attributes_separation": {
+            "elements": {
+                "const": "one",
+                "method": "one",
+                "property": "one"
+            }
+        },
+        "no_unused_imports": true,
+        "ordered_imports": true,
+        "phpdoc_separation": true,
+        "phpdoc_align": true,
+        "single_quote": true,
+        "ternary_to_null_coalescing": true,
+        "trailing_comma_in_multiline": {
+            "after_heredoc": true
+        },
+        "types_spaces": {
+            "space": "none"
+        },
+        "phpdoc_no_empty_return": false,
+        "no_superfluous_phpdoc_tags": false,
+        "concat_space": {
+            "spacing": "one"
+        }
+    }
+}
