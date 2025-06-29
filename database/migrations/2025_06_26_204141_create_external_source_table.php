@@ -10,8 +10,11 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::table('bot_users', function (Blueprint $table) {
-            $table->string('external_source_id')->nullable();
+        Schema::create('external_sources', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('webhook_url')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -20,8 +23,6 @@ return new class () extends Migration {
      */
     public function down(): void
     {
-        Schema::table('bot_users', function (Blueprint $table) {
-            $table->dropColumn('external_source_id');
-        });
+        Schema::dropIfExists('external_sources');
     }
 };
