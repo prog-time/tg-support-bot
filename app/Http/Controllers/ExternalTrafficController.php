@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\External\ExternalListMessageDto;
-use App\Http\Requests\External\ExternalTrafficDestroyRequest;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\DTOs\External\ExternalMessageDto;
-use App\Services\External\ExternalTrafficService;
 use App\Http\Requests\External\ExternalTrafficStoreRequest;
-use App\Http\Requests\External\ExternalTrafficUpdateRequest;
+use App\Services\External\ExternalTrafficService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Class ExternalTrafficController
@@ -37,9 +35,10 @@ class ExternalTrafficController
     }
 
     /**
-     * Получить список сущностей
+     * Получить список сообщений
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
@@ -48,9 +47,10 @@ class ExternalTrafficController
     }
 
     /**
-     * Получить одну сущность
+     * Получить одно сообщение
      *
      * @param int $id
+     *
      * @return JsonResponse
      */
     public function show(int $id): JsonResponse
@@ -59,9 +59,10 @@ class ExternalTrafficController
     }
 
     /**
-     * Создать сущность
+     * Создать сообщение
      *
      * @param ExternalTrafficStoreRequest $request
+     *
      * @return JsonResponse
      */
     public function store(ExternalTrafficStoreRequest $request): JsonResponse
@@ -71,26 +72,24 @@ class ExternalTrafficController
     }
 
     /**
-     * Обновить сущность
+     * Обновить сообщение
      *
-     * @param ExternalTrafficUpdateRequest $request
      * @return JsonResponse
      */
-    public function update(ExternalTrafficUpdateRequest $request): JsonResponse
+    public function update(): JsonResponse
     {
         $dataDto = $this->dataHook;
         return response()->json($this->externalTrafficService->update($dataDto)->toArray());
     }
 
     /**
-     * Удалить сущность
+     * Удалить сообщение
      *
      * @return JsonResponse
      */
-    public function destroy(ExternalTrafficDestroyRequest $request): JsonResponse
+    public function destroy(): JsonResponse
     {
         $dataDto = $this->dataHook;
         return response()->json($this->externalTrafficService->destroy($dataDto)->toArray());
     }
-
 }

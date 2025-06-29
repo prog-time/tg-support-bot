@@ -3,23 +3,29 @@
 namespace App\Services\External;
 
 use App\DTOs\External\ExternalMessageAnswerDto;
+use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
-use App\DTOs\TGTextMessageDto;
 use App\Services\TgTopicService;
-use App\DTOs\External\ExternalMessageDto;
 use phpDocumentor\Reflection\Exception;
 
 abstract class ExternalService
 {
     protected string $typeMessage = '';
+
     protected ExternalMessageDto $update;
+
     protected TgTopicService $tgTopicService;
+
     protected ?BotUser $botUser;
+
     protected ?ExternalUser $externalUser;
+
     protected TGTextMessageDto $messageParamsDTO;
 
-    public function __construct(ExternalMessageDto $update) {
+    public function __construct(ExternalMessageDto $update)
+    {
         $this->update = $update;
         $this->tgTopicService = new TgTopicService();
 
@@ -32,7 +38,7 @@ abstract class ExternalService
         $this->messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'editTextMessage',
             'typeSource' => 'private',
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
         ]);
     }
@@ -41,6 +47,7 @@ abstract class ExternalService
      * Get user data
      *
      * @param ExternalMessageDto $updateData
+     *
      * @return BotUser|null
      */
     protected function getBotUser(ExternalMessageDto $updateData): ?BotUser
@@ -48,7 +55,7 @@ abstract class ExternalService
         try {
             $this->externalUser = ExternalUser::firstOrCreate([
                 'external_id' => $updateData->external_id,
-                'source' => $updateData->source
+                'source' => $updateData->source,
             ]);
 
             if (empty($this->externalUser)) {
@@ -65,5 +72,4 @@ abstract class ExternalService
     }
 
     abstract public function handleUpdate(): ExternalMessageAnswerDto;
-
 }
