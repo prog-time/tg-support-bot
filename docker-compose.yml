@@ -71,6 +71,20 @@ services:
         restart: always
         ports:
             - ${REDIS_PORT}
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+        networks:
+            - pet
+
+    redisinsight:
+        image: redislabs/redisinsight:latest
+        container_name: redisinsight
+        ports:
+            - ${REDISINSIGHT_PORT}
+        volumes:
+            - ./docker/redisinsight:/db
+        restart: always
         networks:
             - pet
 
