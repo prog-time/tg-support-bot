@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\ExternalTrafficController;
+use App\Http\Controllers\FilesController;
 use App\Http\Controllers\TelegramBotController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\VkBotController;
 use App\Middleware\ApiQuery;
 use App\Middleware\TelegramQuery;
@@ -27,7 +29,11 @@ Route::group([
     });
 });
 
-Route::post('vk/bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
+Route::group([
+    'prefix' => 'vk',
+], function () {
+    Route::post('bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
+});
 
 Route::group([
     'prefix' => 'external',
@@ -42,4 +48,14 @@ Route::group([
         Route::put('/', [ExternalTrafficController::class, 'update'])->name('update');
         Route::delete('/', [ExternalTrafficController::class, 'destroy'])->name('destroy');
     });
+});
+
+Route::get('files/{file_id}', [FilesController::class, 'getFile'])
+    ->where('file_id', '[A-Za-z0-9\-_]+')
+    ->name('download_file');
+
+Route::group([
+    'prefix' => 'test',
+], function () {
+    Route::post('webhook', [TestController::class, 'webhook'])->name('test_webhook');
 });
