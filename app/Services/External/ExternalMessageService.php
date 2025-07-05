@@ -5,12 +5,15 @@ namespace App\Services\External;
 use App\Actions\Telegram\SendMessage;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\Redis\WebhookMessageDto;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
+use App\Helpers\TelegramHelper;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
+use App\Services\Redis\RedisService;
 use App\Services\TgTopicService;
 
 class ExternalMessageService
@@ -218,9 +221,42 @@ class ExternalMessageService
         ];
         Message::create($messageData);
 
+        if (!empty($resultQuery->rawData['ok'])) {
+            $this->redisSaveMessage($resultQuery);
+        }
+
         return ExternalMessageAnswerDto::from([
             'status' => true,
             'message_id' => $messageData['from_id'],
         ]);
+    }
+
+    /**
+     * Сохранения сообщения в Redis
+     *
+     * @param TelegramAnswerDto $resultQuery
+     *
+     * @return bool
+     */
+    private function redisSaveMessage(TelegramAnswerDto $resultQuery): bool
+    {
+        try {
+            $fileId = TelegramHelper::extractFileId($resultQuery->rawData);
+
+            $chatKey = "{$this->update->source}:{$this->update->external_id}";
+            return (new RedisService())->saveMessage($chatKey, WebhookMessageDto::fromArray([
+                'source' => $this->update->source,
+                'external_id' => $this->update->external_id,
+                'message_type' => 'incoming',
+                'text' => $resultQuery->rawData['result']['text'] ?? $resultQuery->rawData['result']['caption'] ?? '',
+                'file_id' => $fileId ?? null,
+                'date' => date('Y-m-d H:i:s', $resultQuery->rawData['result']['date']),
+
+                'to_id' => $resultQuery->message_id,
+                'from_id' => $resultQuery->message_id,
+            ]));
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

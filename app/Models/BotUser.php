@@ -9,11 +9,13 @@ use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * @property int $topic_id
- * @property int $chat_id
+ * @property int    $topic_id
+ * @property int    $chat_id
  * @property string $platform
+ * @property-read ExternalUser $externalUser
  */
 class BotUser extends Model
 {
@@ -24,11 +26,20 @@ class BotUser extends Model
     protected $fillable = [
         'chat_id',
         'topic_id',
-        'platform'
+        'platform',
     ];
 
     /**
+     * @return HasOne
+     */
+    public function externalUser(): HasOne
+    {
+        return $this->hasOne(ExternalUser::class, 'id', 'chat_id');
+    }
+
+    /**
      * Create new TG topic
+     *
      * @return int|null
      */
     public function saveNewTopic(): ?int
@@ -50,7 +61,9 @@ class BotUser extends Model
 
     /**
      * Get platform by chat id
+     *
      * @param int $chatId
+     *
      * @return string|null
      */
     public static function getPlatformByChatId(int $chatId): ?string
@@ -69,7 +82,9 @@ class BotUser extends Model
 
     /**
      * Get platform by topic id
-     * @param int $chatId
+     *
+     * @param int $messageThreadId
+     *
      * @return string|null
      */
     public static function getPlatformByTopicId(int $messageThreadId): ?string
@@ -88,22 +103,25 @@ class BotUser extends Model
 
     /**
      * Geg user data
+     *
      * @param TelegramUpdateDto $update
-     * @param string $source
+     *
      * @return BotUser|null
      */
     public static function getTelegramUserData(TelegramUpdateDto $update): ?BotUser
     {
         try {
             if ($update->typeSource === 'supergroup') {
-                $botUser = self::where('topic_id', $update->messageThreadId)->first();
-            } else if ($update->typeSource === 'private') {
+                $botUser = self::where('topic_id', $update->messageThreadId)
+                    ->with('externalUser')
+                    ->first();
+            } elseif ($update->typeSource === 'private') {
                 $botUser = self::firstOrCreate(
                     [
-                        'chat_id' => $update->chatId
+                        'chat_id' => $update->chatId,
                     ],
                     [
-                        'platform' => 'telegram'
+                        'platform' => 'telegram',
                     ]
                 );
                 if (empty($botUser->topic_id)) {
@@ -119,8 +137,9 @@ class BotUser extends Model
 
     /**
      * Geg VK user data
+     *
      * @param VkUpdateDto $update
-     * @param string $source
+     *
      * @return BotUser|null
      */
     public static function getVkUserData(VkUpdateDto $update): ?BotUser
@@ -128,17 +147,17 @@ class BotUser extends Model
         try {
             $botUser = self::firstOrCreate(
                 [
-                    'chat_id' => $update->from_id
+                    'chat_id' => $update->from_id,
                 ],
                 [
-                    'platform' => 'vk'
+                    'platform' => 'vk',
                 ]
             );
             if (empty($botUser->topic_id)) {
                 $botUser->saveNewTopic();
             }
 
-            return $botUser ?? null;
+            return $botUser;
         } catch (\Exception $e) {
             return null;
         }

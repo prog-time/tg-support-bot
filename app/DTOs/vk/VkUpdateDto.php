@@ -3,7 +3,6 @@
 namespace App\DTOs\VK;
 
 use Illuminate\Http\Request;
-use phpDocumentor\Reflection\Exception;
 
 readonly class VkUpdateDto
 {
@@ -22,14 +21,15 @@ readonly class VkUpdateDto
     ) {
     }
 
+    /**
+     * @param Request $request
+     *
+     * @return self|null
+     */
     public static function fromRequest(Request $request): ?self
     {
         try {
             $data = $request->all();
-
-            if (empty($data)) {
-                throw new Exception('Контекст не найден');
-            }
 
             return new self(
                 secret: $data['secret'] ?? '',

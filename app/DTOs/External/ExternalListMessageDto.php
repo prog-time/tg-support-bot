@@ -2,27 +2,27 @@
 
 namespace App\DTOs\External;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Request;
 use Spatie\LaravelData\Data;
 
 /**
  * DTO для запроса на получение списка сообщений
  *
- * @param string $source
- * @param string $external_id
- * @param ?int $limit
- * @param ?int $offset
+ * @param string  $source
+ * @param string  $external_id
+ * @param ?int    $limit
+ * @param ?int    $offset
  * @param ?string $date_start
  * @param ?string $date_end
  */
 class ExternalListMessageDto extends Data
 {
     /**
-     * @param string $source
-     * @param string $external_id
+     * @param string  $source
+     * @param string  $external_id
      * @param ?string $type_sort
-     * @param ?int $limit
-     * @param ?int $offset
+     * @param ?int    $limit
+     * @param ?int    $offset
      * @param ?string $date_start
      * @param ?string $date_end
      */
@@ -37,7 +37,12 @@ class ExternalListMessageDto extends Data
     ) {
     }
 
-    public static function fromRequest($request): ?self
+    /**
+     * @param Request $request
+     *
+     * @return self|null
+     */
+    public static function fromRequest(Request $request): ?self
     {
         try {
             $data = $request->all();
@@ -60,7 +65,6 @@ class ExternalListMessageDto extends Data
      */
     public function toArray(): array
     {
-        return array_filter(parent::toArray(), fn($value) => !is_null($value));
+        return array_filter(parent::toArray(), fn ($value) => !is_null($value));
     }
-
 }
