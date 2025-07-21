@@ -26,7 +26,7 @@ class ApiQuery
 
             $itemAccessToken = (new ExternalSourceAccessTokens())->where('token', $token)
                 ->first()
-                ->external_source()
+                ?->external_source()
                 ->first();
 
             if (!$itemAccessToken) {

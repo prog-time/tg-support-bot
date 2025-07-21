@@ -12,6 +12,7 @@ use App\Jobs\SendWebhookMessage;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgTopicService;
+use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
 class ExternalUpdateService
@@ -68,65 +69,69 @@ class ExternalUpdateService
      */
     public function handleUpdate(): void
     {
-        if ($this->update->typeQuery === 'message') {
-            $fullFilePath = '';
-            $dopMessageParams = [];
-            if (!empty($this->update->fileId)) {
-                $fileData = GetFile::execute($this->update->fileId);
-                if (!empty($fileData->rawData['result']['file_path'])) {
-                    $localFilePath = $fileData->rawData['result']['file_path'];
-                    $fullFilePath = TelegramHelper::getFilePath($localFilePath);
-                }
-            }
-
-            if (!empty($this->update->rawData['message']['location'])) {
-                $dopMessageParams['location'] = [
-                    'latitude' => $this->update->location['latitude'],
-                    'longitude' => $this->update->location['longitude'],
-                ];
-            }
-
-            if (!empty($this->update->rawData['message']['contact'])) {
-                $contactData = $this->update->rawData['message']['contact'];
-
-                $textMessage = "Контакт: \n";
-                if (!empty($contactData['first_name'])) {
-                    $textMessage .= "Имя: {$contactData['first_name']}\n";
+        try {
+            if ($this->update->typeQuery === 'message') {
+                $fullFilePath = '';
+                $dopMessageParams = [];
+                if (!empty($this->update->fileId)) {
+                    $fileData = GetFile::execute($this->update->fileId);
+                    if (!empty($fileData->rawData['result']['file_path'])) {
+                        $localFilePath = $fileData->rawData['result']['file_path'];
+                        $fullFilePath = TelegramHelper::getFilePath($localFilePath);
+                    }
                 }
 
-                if (!empty($contactData['phone_number'])) {
-                    $textMessage .= "Телефон: {$contactData['phone_number']}\n";
+                if (!empty($this->update->rawData['message']['location'])) {
+                    $dopMessageParams['location'] = [
+                        'latitude' => $this->update->location['latitude'],
+                        'longitude' => $this->update->location['longitude'],
+                    ];
                 }
-                $this->update->text = $textMessage;
+
+                if (!empty($this->update->rawData['message']['contact'])) {
+                    $contactData = $this->update->rawData['message']['contact'];
+
+                    $textMessage = "Контакт: \n";
+                    if (!empty($contactData['first_name'])) {
+                        $textMessage .= "Имя: {$contactData['first_name']}\n";
+                    }
+
+                    if (!empty($contactData['phone_number'])) {
+                        $textMessage .= "Телефон: {$contactData['phone_number']}\n";
+                    }
+                    $this->update->text = $textMessage;
+                }
+
+                $messageData = WebhookMessageDto::fromArray([
+                    'source' => $this->botUser->externalUser->source,
+                    'external_id' => $this->botUser->externalUser->external_id,
+                    'message_type' => 'outgoing',
+
+                    'to_id' => time(),
+                    'from_id' => $this->update->messageId,
+
+                    'dop_params' => $dopMessageParams,
+
+                    'text' => $this->update->text,
+                    'file_path' => $fullFilePath,
+                    'date' => date('d.m.Y H:i'),
+                ]);
+                $this->saveMessage($messageData);
+
+                $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
+                if (!empty($webhookUrl)) {
+                    SendWebhookMessage::dispatch($webhookUrl, $messageData);
+                }
+
+                $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+                    'message_thread_id' => $this->botUser->topic_id,
+                    'icon_custom_emoji_id' => __('icons.outgoing'),
+                ]));
+            } else {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
             }
-
-            $messageData = WebhookMessageDto::fromArray([
-                'source' => $this->botUser->externalUser->source,
-                'external_id' => $this->botUser->externalUser->external_id,
-                'message_type' => 'outgoing',
-
-                'to_id' => time(),
-                'from_id' => $this->update->messageId,
-
-                'dop_params' => $dopMessageParams,
-
-                'text' => $this->update->text,
-                'file_path' => $fullFilePath,
-                'date' => date('d.m.Y H:i'),
-            ]);
-            $this->saveMessage($messageData);
-
-            $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
-            if (!empty($webhookUrl)) {
-                SendWebhookMessage::dispatch($webhookUrl, $messageData);
-            }
-
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                'message_thread_id' => $this->botUser->topic_id,
-                'icon_custom_emoji_id' => __('icons.outgoing'),
-            ]));
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+        } catch (\Exception $exception) {
+            Log::info('Webhook sent', ['exception' => $exception]);
         }
     }
 
