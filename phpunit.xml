@@ -5,17 +5,10 @@
          colors="true"
 >
     <testsuites>
-
-        <testsuite name="Unit-Telegram-Actions">
-            <directory suffix="Test.php">./tests/Unit/Actions/Telegram/**</directory>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
         </testsuite>
-
     </testsuites>
-    <source>
-        <include>
-            <directory>app</directory>
-        </include>
-    </source>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
