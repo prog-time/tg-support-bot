@@ -22,7 +22,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/api_external_messages_update_response_200"
+                                "$ref": "#/components/schemas/api_external_messages_store_response_200"
                             }
                         }
                     }
