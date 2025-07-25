@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Logging\LokiLogger;
-use Illuminate\Support\Facades\Http;
+use App\Services\File\FileService;
+use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -13,49 +14,41 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class FilesController
 {
+    protected FileService $fileService;
+
+    public function __construct(FileService $fileService)
+    {
+        $this->fileService = $fileService;
+    }
+
     /**
-     * Передать файл на скачивание
+     * Передать файл на просмотр
      *
      * @param string $fileId
      *
      * @return StreamedResponse
      */
-    public function getFile(string $fileId): StreamedResponse
+    public function getFileStream(string $fileId): StreamedResponse
     {
         try {
-            if (empty($fileId)) {
-                throw new \Exception('File id не найден!');
-            }
+            return $this->fileService->streamFile($fileId);
+        } catch (\Exception $e) {
+            (new LokiLogger())->log('tg_request', json_encode($e->getMessage()));
+            die();
+        }
+    }
 
-            $botToken = config('traffic_source.settings.telegram.token');
-
-            $fileData = Http::get("https://api.telegram.org/bot{$botToken}/getFile", [
-                'file_id' => $fileId,
-            ])->json();
-
-            $filePath = $fileData['result']['file_path'] ?? null;
-
-            if (!$filePath) {
-                abort(404, 'Файл не найден!');
-            }
-
-            $fileUrl = "https://api.telegram.org/file/bot{$botToken}/{$filePath}";
-
-            // Загружаем файл напрямую
-            $fileResponse = Http::get($fileUrl);
-
-            if (!$fileResponse->ok()) {
-                abort(502, 'Не удалось получить файл');
-            }
-
-            $mimeType = $fileResponse->header('Content-Type');
-
-            return response()->stream(function () use ($fileResponse) {
-                echo $fileResponse->body();
-            }, 200, [
-                'Content-Type' => $mimeType,
-                'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
-            ]);
+    /**
+     * Передать файл на скачивание
+     *
+     * @param string $fileId
+     *
+     * @return Response
+     */
+    public function getFileDownload(string $fileId): Response
+    {
+        try {
+            return $this->fileService->downloadFile($fileId);
         } catch (\Exception $e) {
             (new LokiLogger())->log('tg_request', json_encode($e->getMessage()));
             die();

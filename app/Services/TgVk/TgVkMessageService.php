@@ -237,7 +237,7 @@ class TgVkMessageService extends FromTgMessageService
         if (empty($fileData->rawData['result']['file_path'])) {
             throw new \Exception('Ошибка получения данных файла!');
         }
-        $fullFilePath = TelegramHelper::getFilePath($fileData->rawData['result']['file_path']);
+        $fullFilePath = TelegramHelper::getFilePublicPath($this->update->fileId);
 
         // get upload server data
         $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);

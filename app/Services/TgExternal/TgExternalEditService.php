@@ -2,7 +2,6 @@
 
 namespace App\Services\TgExternal;
 
-use App\Actions\Telegram\GetFile;
 use App\DTOs\Redis\WebhookMessageDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
@@ -78,16 +77,8 @@ class TgExternalEditService extends FromTgEditService
     protected function editMessageCaption(): array
     {
         try {
-            $fileData = GetFile::execute($this->update->fileId);
-
-            if (empty($fileData->rawData['result']['file_path'])) {
-                throw new \Exception('Не удалось получить файл');
-            }
-
-            $localFilePath = $fileData->rawData['result']['file_path'];
-            $fullFilePath = TelegramHelper::getFilePath($localFilePath);
             return [
-                'file_path' => $fullFilePath,
+                'file_path' => TelegramHelper::getFilePublicPath($this->update->fileId),
             ];
         } catch (\Exception $e) {
             return [];

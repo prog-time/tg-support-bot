@@ -5,7 +5,7 @@ namespace App\Helpers;
 class TelegramHelper
 {
     /**
-     * Генерация путей к файлам
+     * Генерация пути к файлу
      *
      * @param string $localFilePath
      *
@@ -15,6 +15,19 @@ class TelegramHelper
     {
         $telegramToken = config('traffic_source.settings.telegram.token');
         return "https://api.telegram.org/file/bot{$telegramToken}/{$localFilePath}";
+    }
+
+    /**
+     * Генерация публичного пути к файлу
+     *
+     * @param string $fileId
+     *
+     * @return string
+     */
+    public static function getFilePublicPath(string $fileId): string
+    {
+        $appUrl = config('app.url');
+        return "{$appUrl}/api/files/{$fileId}";
     }
 
     /**

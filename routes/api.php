@@ -3,7 +3,6 @@
 use App\Http\Controllers\ExternalTrafficController;
 use App\Http\Controllers\FilesController;
 use App\Http\Controllers\TelegramBotController;
-use App\Http\Controllers\TestController;
 use App\Http\Controllers\VkBotController;
 use App\Middleware\ApiQuery;
 use App\Middleware\TelegramQuery;
@@ -50,12 +49,14 @@ Route::group([
     });
 });
 
-Route::get('files/{file_id}', [FilesController::class, 'getFile'])
-    ->where('file_id', '[A-Za-z0-9\-_]+')
-    ->name('download_file');
-
 Route::group([
-    'prefix' => 'test',
+    'prefix' => 'files',
 ], function () {
-    Route::post('webhook', [TestController::class, 'webhook'])->name('test_webhook');
+    Route::get('{file_id}', [FilesController::class, 'getFileStream'])
+        ->where('file_id', '[A-Za-z0-9\-_]+')
+        ->name('stream_file');
+
+    Route::post('{file_id}', [FilesController::class, 'getFileDownload'])
+        ->where('file_id', '[A-Za-z0-9\-_]+')
+        ->name('download_file');
 });
