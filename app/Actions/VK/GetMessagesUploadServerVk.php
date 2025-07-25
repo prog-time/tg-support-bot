@@ -2,7 +2,7 @@
 
 namespace App\Actions\VK;
 
-use App\DTOs\VK\VkAnswerDto;
+use App\DTOs\Vk\VkAnswerDto;
 use App\VkBot\VkMethods;
 
 /**
@@ -13,8 +13,9 @@ class GetMessagesUploadServerVk
     /**
      * Получение сервера для загрузки документа
      *
-     * @param int $chat_id
+     * @param int    $chat_id
      * @param string $typeMethod
+     *
      * @return VkAnswerDto|null
      */
     public static function execute(int $chat_id, string $typeMethod = 'doc'): ?VkAnswerDto
@@ -29,5 +30,4 @@ class GetMessagesUploadServerVk
             return null;
         }
     }
-
 }

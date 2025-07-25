@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\DTOs\Redis\WebhookMessageDto;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,13 +18,13 @@ class SendWebhookMessage implements ShouldQueue
 
     protected string $url;
 
-    protected WebhookMessageDto $payload;
+    protected array $payload;
 
     public int $tries = 3;
 
     public array $backoff = [60, 180, 300];
 
-    public function __construct(string $url, WebhookMessageDto $payload)
+    public function __construct(string $url, array $payload)
     {
         $this->url = $url;
         $this->payload = $payload;
@@ -45,7 +44,7 @@ class SendWebhookMessage implements ShouldQueue
             curl_setopt_array($ch, [
                 CURLOPT_URL => $this->url,
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($this->payload->toArray()),
+                CURLOPT_POSTFIELDS => json_encode($this->payload),
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
                     'Accept: application/json',
@@ -78,7 +77,7 @@ class SendWebhookMessage implements ShouldQueue
             Log::error('Webhook delivery failed', [
                 'url' => $this->url,
                 'error' => $e->getMessage(),
-                'payload' => $this->payload->toArray(),
+                'payload' => $this->payload,
             ]);
 
             $this->fail($e);

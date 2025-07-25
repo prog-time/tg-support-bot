@@ -18,7 +18,7 @@ class VkQuery
     public function handle(Request $request, Closure $next): Response
     {
         try {
-            $secretCode = config('traffic_source.settings.vk.token');
+            $secretCode = config('traffic_source.settings.vk.secret_key');
             if ($secretCode !== request()->secret) {
                 throw new Exception('Secret-Key указан неверно!');
             }

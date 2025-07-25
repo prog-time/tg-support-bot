@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Actions\Telegram\SendContactMessage;
 use App\DTOs\TelegramUpdateDto;
-use App\DTOs\VK\VkUpdateDto;
 use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -135,22 +134,15 @@ class BotUser extends Model
         }
     }
 
-    /**
-     * Geg VK user data
-     *
-     * @param VkUpdateDto $update
-     *
-     * @return BotUser|null
-     */
-    public static function getVkUserData(VkUpdateDto $update): ?BotUser
+    public static function getUserByChatId(string|int $chatId, string $platform): ?BotUser
     {
         try {
             $botUser = self::firstOrCreate(
                 [
-                    'chat_id' => $update->from_id,
+                    'chat_id' => $chatId,
                 ],
                 [
-                    'platform' => 'vk',
+                    'platform' => $platform,
                 ]
             );
             if (empty($botUser->topic_id)) {

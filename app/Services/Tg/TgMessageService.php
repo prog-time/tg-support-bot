@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
@@ -8,8 +8,9 @@ use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\Message;
+use App\Services\ActionService\Send\FromTgMessageService;
 
-class TgMessageService extends MessageService
+class TgMessageService extends FromTgMessageService
 {
     public function __construct(TelegramUpdateDto $update) {
         parent::__construct($update);
@@ -183,7 +184,7 @@ class TgMessageService extends MessageService
      * @param TelegramAnswerDto $resultQuery
      * @return void
      */
-    protected function saveMessage(TelegramAnswerDto $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): void
     {
         Message::create(
             [

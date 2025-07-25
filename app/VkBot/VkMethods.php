@@ -2,7 +2,7 @@
 
 namespace App\VkBot;
 
-use App\DTOs\VK\VkAnswerDto;
+use App\DTOs\Vk\VkAnswerDto;
 
 class VkMethods
 {

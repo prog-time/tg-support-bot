@@ -1,20 +1,24 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\ActionService\Send;
 
 use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
-abstract class MessageService
+/**
+ * Class ToTgMessageService
+ * Класс для работы с сообщениями из "Источник" в TG
+ */
+abstract class ToTgMessageService extends TemplateMessageService
 {
     protected string $typeMessage = '';
 
     protected string $source = 'telegram';
 
-    protected TelegramUpdateDto $update;
+    protected mixed $update;
 
     protected ?BotUser $botUser;
 
@@ -22,39 +26,30 @@ abstract class MessageService
 
     protected TgTopicService $tgTopicService;
 
-    public function __construct(TelegramUpdateDto $update)
+    public function __construct(mixed $update)
     {
-        $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
-        $this->botUser = BotUser::getTelegramUserData($this->update);
+        try {
+            $this->update = $update;
+            $this->tgTopicService = new TgTopicService();
 
-        if (empty($this->botUser)) {
-            throw new Exception('Пользователя не существует!');
+            $this->typeMessage = 'incoming';
+
+            $chatId = $this->update->chatId ?? $this->update->from_id;
+
+            $this->botUser = BotUser::getUserByChatId($chatId, $this->source);
+            if (empty($this->botUser)) {
+                throw new Exception('Пользователя не существует!');
+            }
+
+            $this->messageParamsDTO = TGTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'typeSource' => 'private',
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'message_thread_id' => $this->botUser->topic_id,
+            ]);
+        } catch (Exception $e) {
+            die();
         }
-
-        switch ($update->typeSource) {
-            case 'private':
-                $this->typeMessage = 'incoming';
-                $queryParams = [
-                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
-                    'message_thread_id' => $this->botUser->topic_id,
-                ];
-                break;
-
-            case 'supergroup':
-                $this->typeMessage = 'outgoing';
-                $queryParams = [
-                    'chat_id' => $this->botUser->chat_id,
-                ];
-                break;
-
-            default:
-                throw new Exception('Данный тип запроса не поддерживается!');
-        }
-
-        $queryParams['methodQuery'] = 'sendMessage';
-        $queryParams['typeSource'] = $update->typeSource;
-        $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
 
     /**
@@ -127,5 +122,5 @@ abstract class MessageService
      *
      * @return void
      */
-    abstract protected function saveMessage(TelegramAnswerDto $resultQuery): void;
+    abstract protected function saveMessage(mixed $resultQuery): void;
 }

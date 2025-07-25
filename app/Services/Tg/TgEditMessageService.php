@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\Message;
+use App\Services\ActionService\Edit\FromTgEditService;
 
-class TgEditedMessageService extends TgService
+class TgEditMessageService extends FromTgEditService
 {
     public function __construct(TelegramUpdateDto $update)
     {
@@ -37,7 +38,7 @@ class TgEditedMessageService extends TgService
      * Edit message
      * @return TelegramAnswerDto|null
      */
-    private function editMessageText(): ?TelegramAnswerDto
+    protected function editMessageText(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'editMessageText';
 
@@ -65,7 +66,7 @@ class TgEditedMessageService extends TgService
      * Edit message with photo or document
      * @return TelegramAnswerDto|null
      */
-    private function editMessageCaption(): ?TelegramAnswerDto
+    protected function editMessageCaption(): ?TelegramAnswerDto
     {
         $this->messageParamsDTO->methodQuery = 'editMessageCaption';
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\VK;
+namespace App\DTOs\Vk;
 
 readonly class VkAnswerDto
 {

@@ -34,13 +34,6 @@ abstract class ExternalService
         if (empty($this->botUser)) {
             throw new \Exception('Пользователя не существует!');
         }
-
-        $this->messageParamsDTO = TGTextMessageDto::from([
-            'methodQuery' => 'editTextMessage',
-            'typeSource' => 'private',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
-            'message_thread_id' => $this->botUser->topic_id,
-        ]);
     }
 
     /**

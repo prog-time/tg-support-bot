@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\VK;
+namespace App\DTOs\Vk;
 
 use Spatie\LaravelData\Data;
 
@@ -11,6 +11,7 @@ class VkTextMessageDto extends Data
         public ?string $title,
         public ?string $file,
         public ?int $peer_id,
+        public ?int $message_id,
         public ?string $message,
         public ?string $attachment
     ) {

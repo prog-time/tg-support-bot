@@ -14,30 +14,12 @@ use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Services\Redis\RedisService;
-use App\Services\TgTopicService;
 
-class ExternalMessageService
+class ExternalMessageService extends ExternalService
 {
-    protected string $typeMessage = '';
-
-    protected ExternalMessageDto $update;
-
-    protected TgTopicService $tgTopicService;
-
-    protected ?BotUser $botUser;
-
-    protected TGTextMessageDto $messageParamsDTO;
-
     public function __construct(ExternalMessageDto $update)
     {
-        $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
-
-        $this->botUser = $this->getBotUser($this->update);
-
-        if (empty($this->botUser)) {
-            throw new \Exception('Пользователя не существует!');
-        }
+        parent::__construct($update);
 
         $this->messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
@@ -54,7 +36,7 @@ class ExternalMessageService
      *
      * @return BotUser|null
      */
-    private function getBotUser(ExternalMessageDto $updateData): ?BotUser
+    protected function getBotUser(ExternalMessageDto $updateData): ?BotUser
     {
         try {
             $externalUser = ExternalUser::where([

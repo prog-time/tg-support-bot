@@ -1,45 +1,20 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\ActionService\Edit;
 
+use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
-class TgService
+/**
+ * Class FromTgEditService
+ */
+abstract class FromTgEditService extends TemplateEditService
 {
-    /**
-     * @var string
-     */
-    protected string $typeMessage = '';
-
-    /**
-     * @var string
-     */
-    protected string $source = 'telegram';
-
-    /**
-     * @var TelegramUpdateDto
-     */
-    protected TelegramUpdateDto $update;
-
-    /**
-     * @var BotUser|null
-     */
-    protected ?BotUser $botUser;
-
-    /**
-     * @var TGTextMessageDto
-     */
-    protected TGTextMessageDto $messageParamsDTO;
-
-    /**
-     * @var TgTopicService
-     */
-    protected TgTopicService $tgTopicService;
-
-    public function __construct(TelegramUpdateDto $update)
+    public function __construct(mixed $update)
     {
         $this->update = $update;
         $this->tgTopicService = new TgTopicService();
@@ -75,4 +50,17 @@ class TgService
         $queryParams['typeSource'] = $update->typeSource;
         $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
+
+    /**
+     * Edit text message
+     * @return mixed
+     */
+    abstract protected function editMessageText(): mixed;
+
+    /**
+     * Edit message with photo or document
+     * @return mixed
+     */
+    abstract protected function editMessageCaption(): mixed;
+
 }

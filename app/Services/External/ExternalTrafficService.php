@@ -6,11 +6,10 @@ use App\Actions\External\DeleteMessage;
 use App\DTOs\External\ExternalListMessageAnswerDto;
 use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageAnswerDto;
+use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
-use App\DTOs\External\ExternalMessageDto;
-use App\TelegramBot\TelegramMethods;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -20,11 +19,11 @@ use phpDocumentor\Reflection\Exception;
  */
 class ExternalTrafficService
 {
-
     /**
      * Получить списка сообщений
      *
      * @param ExternalListMessageDto $filterParams
+     *
      * @return array|null
      */
     public function list(ExternalListMessageDto $filterParams): ?array
@@ -84,7 +83,7 @@ class ExternalTrafficService
                 'source' => $filterParams->source,
                 'external_id' => $filterParams->external_id,
                 'total_count' => $totalCount,
-                'messages' => []
+                'messages' => [],
             ];
 
             foreach ($listMessagesData as $message) {
@@ -100,7 +99,7 @@ class ExternalTrafficService
         } catch (Exception $e) {
             return [
                 'status' => false,
-                'error' => $e->getCode() === 1 ? $e->getMessage() : "Неизвестная ошибка!",
+                'error' => $e->getCode() === 1 ? $e->getMessage() : 'Неизвестная ошибка!',
             ];
         }
     }
@@ -109,6 +108,7 @@ class ExternalTrafficService
      * Получить сообщение по ID
      *
      * @param int $id
+     *
      * @return Message|null
      */
     public function show(int $id): ?Message
@@ -120,6 +120,7 @@ class ExternalTrafficService
      * Создать новое сообщение
      *
      * @param ExternalMessageDto $dto
+     *
      * @return ExternalMessageAnswerDto
      */
     public function store(ExternalMessageDto $dto): ExternalMessageAnswerDto
@@ -131,6 +132,7 @@ class ExternalTrafficService
      * Обновить сообщение
      *
      * @param ExternalMessageDto $dto
+     *
      * @return ExternalMessageAnswerDto
      */
     public function update(ExternalMessageDto $dto): ExternalMessageAnswerDto
@@ -142,11 +144,11 @@ class ExternalTrafficService
      * Обновить сообщение
      *
      * @param ExternalMessageDto $dto
+     *
      * @return ExternalMessageAnswerDto
      */
     public function destroy(ExternalMessageDto $dto): ExternalMessageAnswerDto
     {
         return DeleteMessage::execute($dto);
     }
-
 }

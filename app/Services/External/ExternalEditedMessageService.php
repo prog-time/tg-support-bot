@@ -2,33 +2,47 @@
 
 namespace App\Services\External;
 
+use App\Actions\Telegram\SendMessage;
 use App\DTOs\External\ExternalMessageAnswerDto;
-use App\Models\BotUser;
-use App\Models\Message;
-use App\Models\ExternalUser;
+use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
-use App\DTOs\TelegramAnswerDto;
+use App\Models\BotUser;
+use App\Models\ExternalUser;
+use App\Models\Message;
 use App\Services\TgTopicService;
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\External\ExternalMessageDto;
 use phpDocumentor\Reflection\Exception;
 
 class ExternalEditedMessageService extends ExternalService
 {
     protected string $typeMessage = '';
+
     protected ExternalMessageDto $update;
+
     protected TgTopicService $tgTopicService;
+
     protected ?BotUser $botUser;
+
     protected ?ExternalUser $externalUser;
+
     protected TGTextMessageDto $messageParamsDTO;
 
-    public function __construct(ExternalMessageDto $update) {
+    public function __construct(ExternalMessageDto $update)
+    {
         parent::__construct($update);
+
+        $this->messageParamsDTO = TGTextMessageDto::from([
+            'methodQuery' => 'editTextMessage',
+            'typeSource' => 'private',
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'message_thread_id' => $this->botUser->topic_id,
+        ]);
     }
 
     /**
      * @return ExternalMessageAnswerDto
+     *
      * @throws \Exception
      */
     public function handleUpdate(): ExternalMessageAnswerDto
@@ -37,11 +51,11 @@ class ExternalEditedMessageService extends ExternalService
             if (!empty($this->update->text)) {
                 $resultQuery = $this->editMessageText();
             } else {
-                throw new \Exception("Неизвестный тип события!");
+                throw new \Exception('Неизвестный тип события!');
             }
 
             if (empty($resultQuery->ok)) {
-                throw new \Exception("Ошибка отправки запроса!");
+                throw new \Exception('Ошибка отправки запроса!');
             }
 
             $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
@@ -63,6 +77,7 @@ class ExternalEditedMessageService extends ExternalService
 
     /**
      * Edit message
+     *
      * @return ?TelegramAnswerDto
      */
     private function editMessageText(): ?TelegramAnswerDto
@@ -92,10 +107,8 @@ class ExternalEditedMessageService extends ExternalService
             $this->messageParamsDTO->message_id = $toIdMessage;
 
             return SendMessage::execute($this->botUser, $this->messageParamsDTO);
-
         } catch (\Exception $e) {
             return null;
         }
     }
-
 }
