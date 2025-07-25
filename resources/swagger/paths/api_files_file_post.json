@@ -1,0 +1,17 @@
+{
+    "/api/files/{file_id}": {
+        "post": {
+            "summary": "Передача файла на скачивание по Telegram File ID",
+            "operationId": "api_files_file_post",
+            "tags": [
+                "Files"
+            ],
+            "requestBody": {},
+            "responses": {
+                "200": {
+                    "description": "Файл отправлен на скачивание!"
+                }
+            }
+        }
+    }
+}

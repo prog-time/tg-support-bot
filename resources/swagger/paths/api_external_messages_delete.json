@@ -32,7 +32,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/api_external_messages_store_response_404"
+                                "$ref": "#/components/schemas/api_external_messages_delete_response_404"
                             }
                         }
                     }
