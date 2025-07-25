@@ -5,12 +5,13 @@ namespace App\Console\Commands;
 use App\Services\Swagger\SwaggerGenerateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Lang;
 
 class GenerateSwagger extends Command
 {
     protected $signature = 'swagger:generate';
+
     protected $description = 'Генерация Swagger документации';
+
     private SwaggerGenerateService $swaggerService;
 
     public function __construct()
@@ -19,7 +20,10 @@ class GenerateSwagger extends Command
         $this->swaggerService = new SwaggerGenerateService();
     }
 
-    public function handle()
+    /**
+     * @return void
+     */
+    public function handle(): void
     {
         try {
             $this->info('Генерация Swagger документации началась...');
@@ -36,16 +40,30 @@ class GenerateSwagger extends Command
             $schemas = array_merge($schemas, $responses);
 
             $this->info('Собираем финальный OpenAPI JSON');
+
+            $appUrl = config('app.url');
             $swagger = [
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => 'Telegram Support Bot API',
                     'version' => '1.0.0',
                 ],
-                'paths' => $paths,
+                'servers' => [
+                    ['url' => $appUrl],
+                ],
                 'components' => [
                     'schemas' => $schemas,
+                    'securitySchemes' => [
+                        'BearerAuth' => [
+                            'type' => 'http',
+                            'scheme' => 'bearer',
+                        ],
+                    ],
                 ],
+                'security' => [
+                    ['BearerAuth' => []],
+                ],
+                'paths' => $paths,
             ];
 
             $swagger = $this->swaggerService->replaceLangStrings($swagger);
@@ -59,5 +77,4 @@ class GenerateSwagger extends Command
             $this->error($e->getMessage());
         }
     }
-
 }
