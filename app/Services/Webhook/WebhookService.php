@@ -7,6 +7,12 @@ use App\Jobs\SendWebhookMessage;
 
 class WebhookService
 {
+    /**
+     * @param string            $webhookUrl
+     * @param WebhookMessageDto $webhookMessageDto
+     *
+     * @return void
+     */
     public static function sendWebhookMessage(string $webhookUrl, WebhookMessageDto $webhookMessageDto): void
     {
         if (!empty($webhookUrl)) {

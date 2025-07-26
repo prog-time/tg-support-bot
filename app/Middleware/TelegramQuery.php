@@ -37,6 +37,11 @@ class TelegramQuery
         }
     }
 
+    /**
+     * @param Request $request
+     *
+     * @return void
+     */
     private function sendRequestInLoki(Request $request): void
     {
         $logger = new LokiLogger();

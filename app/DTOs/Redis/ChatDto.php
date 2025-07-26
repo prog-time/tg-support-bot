@@ -11,6 +11,9 @@ class ChatDto
     ) {
     }
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         return [
@@ -20,6 +23,11 @@ class ChatDto
         ];
     }
 
+    /**
+     * @param array $data
+     *
+     * @return self
+     */
     public static function fromArray(array $data): self
     {
         return new self(

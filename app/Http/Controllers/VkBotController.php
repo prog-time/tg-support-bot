@@ -6,7 +6,6 @@ use App\DTOs\Vk\VkUpdateDto;
 use App\Services\VK\VkEditService;
 use App\Services\VK\VkMessageService;
 use Illuminate\Http\Request;
-use phpDocumentor\Reflection\Exception;
 
 class VkBotController
 {
@@ -26,7 +25,7 @@ class VkBotController
     /**
      * @return void
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function bot_query(): void
     {

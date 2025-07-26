@@ -30,7 +30,7 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Get user data
+     * Получение информации о пользователе
      *
      * @param ExternalMessageDto $updateData
      *
@@ -112,8 +112,6 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Send document
-     *
      * @return ?TelegramAnswerDto
      */
     protected function sendDocument(): ?TelegramAnswerDto
@@ -139,8 +137,6 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Send list document
-     *
      * @return ?TelegramAnswerDto
      */
     protected function sendListDocument(): ?TelegramAnswerDto
@@ -175,8 +171,6 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Send text message
-     *
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -186,8 +180,6 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Save message in DB
-     *
      * @param TelegramAnswerDto $resultQuery
      *
      * @return ExternalMessageAnswerDto
@@ -214,8 +206,6 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * Сохранения сообщения в Redis
-     *
      * @param TelegramAnswerDto $resultQuery
      *
      * @return bool

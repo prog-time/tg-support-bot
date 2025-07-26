@@ -30,12 +30,7 @@ abstract class ToTgEditService extends TemplateEditService
         $this->tgTopicService = new TgTopicService();
 
         $chatId = $this->update->chatId ?? $this->update->from_id;
-
-        dump($chatId);
-
         $this->botUser = BotUser::getUserByChatId($chatId, $this->source);
-
-        dump($this->botUser);
 
         if (empty($this->botUser)) {
             throw new Exception('Пользователя не существует!');

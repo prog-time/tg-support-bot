@@ -37,8 +37,6 @@ abstract class ExternalService
     }
 
     /**
-     * Get user data
-     *
      * @param ExternalMessageDto $updateData
      *
      * @return BotUser|null

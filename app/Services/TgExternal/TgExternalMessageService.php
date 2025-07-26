@@ -72,16 +72,25 @@ class TgExternalMessageService extends FromTgMessageService
         }
     }
 
+    /**
+     * @return array
+     */
     protected function sendPhoto(): array
     {
         return [];
     }
 
+    /**
+     * @return mixed
+     */
     protected function sendSticker(): mixed
     {
         return null;
     }
 
+    /**
+     * @return array
+     */
     protected function sendLocation(): array
     {
         return [
@@ -89,11 +98,17 @@ class TgExternalMessageService extends FromTgMessageService
         ];
     }
 
+    /**
+     * @return mixed
+     */
     protected function sendMessage(): mixed
     {
         return null;
     }
 
+    /**
+     * @return string[]
+     */
     protected function sendContact(): array
     {
         $contactData = $this->update->rawData['message']['contact'];
@@ -112,6 +127,9 @@ class TgExternalMessageService extends FromTgMessageService
         ];
     }
 
+    /**
+     * @return mixed
+     */
     protected function sendDocument(): mixed
     {
         try {
@@ -123,19 +141,23 @@ class TgExternalMessageService extends FromTgMessageService
         }
     }
 
+    /**
+     * @return mixed
+     */
     protected function sendVideoNote(): mixed
     {
         return null;
     }
 
+    /**
+     * @return mixed
+     */
     protected function sendVoice(): mixed
     {
         return null;
     }
 
     /**
-     * Save message in DB
-     *
      * @param mixed $resultQuery
      *
      * @return void

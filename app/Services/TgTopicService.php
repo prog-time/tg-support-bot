@@ -14,7 +14,7 @@ use Mockery\Exception;
 class TgTopicService
 {
     /**
-     * Get parts chat data
+     * Получаем части для генерации названия чата
      *
      * @param int $chatId
      *
@@ -49,7 +49,7 @@ class TgTopicService
     }
 
     /**
-     * Generate topic name
+     * Генерируем название чата
      *
      * @param BotUser $botUser
      *
@@ -100,7 +100,7 @@ class TgTopicService
     }
 
     /**
-     * Create new topic
+     * Создание новой темы для чата
      *
      * @param BotUser $botUser
      *
@@ -127,7 +127,7 @@ class TgTopicService
     }
 
     /**
-     * Edit topic
+     * Редактируем тему
      *
      * @param TelegramTopicDto $telegramTopicDto
      *
@@ -155,7 +155,7 @@ class TgTopicService
     }
 
     /**
-     * Delete system message
+     * Удаление системного сообщения
      *
      * @param int $messageId
      *

@@ -31,15 +31,11 @@ abstract class TemplateEditService
     abstract public function handleUpdate(): void;
 
     /**
-     * Edit text message
-     *
      * @return mixed
      */
     abstract protected function editMessageText(): mixed;
 
     /**
-     * Edit message with photo or document
-     *
      * @return mixed
      */
     abstract protected function editMessageCaption(): mixed;

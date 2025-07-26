@@ -63,8 +63,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send photo
-     *
      * @return VkAnswerDto
      */
     protected function sendPhoto(): VkAnswerDto
@@ -84,8 +82,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send document
-     *
      * @return VkAnswerDto
      */
     protected function sendDocument(): VkAnswerDto
@@ -105,8 +101,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send location
-     *
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -118,8 +112,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send voice
-     *
      * @return VkAnswerDto
      */
     protected function sendVoice(): VkAnswerDto
@@ -139,8 +131,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send sticker
-     *
      * @return VkAnswerDto
      */
     protected function sendSticker(): VkAnswerDto
@@ -154,8 +144,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send video note
-     *
      * @return TelegramAnswerDto
      */
     protected function sendVideoNote(): TelegramAnswerDto
@@ -166,8 +154,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send contact info
-     *
      * @return VkAnswerDto
      */
     protected function sendContact(): VkAnswerDto
@@ -189,8 +175,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Send text message
-     *
      * @return null|VkAnswerDto
      */
     protected function sendMessage(): ?VkAnswerDto
@@ -204,8 +188,6 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * Save message in DB
-     *
      * @param mixed $resultQuery
      *
      * @return void

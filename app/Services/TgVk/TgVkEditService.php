@@ -35,8 +35,6 @@ class TgVkEditService extends FromTgEditService
     }
 
     /**
-     * Edit message
-     *
      * @return VkAnswerDto|null
      */
     protected function editMessageText(): ?VkAnswerDto
@@ -67,8 +65,6 @@ class TgVkEditService extends FromTgEditService
     }
 
     /**
-     * Edit message with photo or document
-     *
      * @return VkAnswerDto|null
      */
     protected function editMessageCaption(): ?VkAnswerDto

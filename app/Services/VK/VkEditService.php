@@ -36,8 +36,6 @@ class VkEditService extends ToTgEditService
     }
 
     /**
-     * Edit message
-     *
      * @return TelegramAnswerDto|null
      */
     protected function editMessageText(): ?TelegramAnswerDto
@@ -55,8 +53,6 @@ class VkEditService extends ToTgEditService
     }
 
     /**
-     * Edit message with photo or document
-     *
      * @return TelegramAnswerDto|null
      */
     protected function editMessageCaption(): ?TelegramAnswerDto

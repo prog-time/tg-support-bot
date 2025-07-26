@@ -7,7 +7,7 @@ use App\DTOs\Vk\VkAnswerDto;
 class VkMethods
 {
     /**
-     * Send query in VK
+     * Отправка запроса в VK
      *
      * @param string $methodQuery
      * @param array  $params

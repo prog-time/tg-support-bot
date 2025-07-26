@@ -76,8 +76,6 @@ class ExternalEditedMessageService extends ExternalService
     }
 
     /**
-     * Edit message
-     *
      * @return ?TelegramAnswerDto
      */
     private function editMessageText(): ?TelegramAnswerDto

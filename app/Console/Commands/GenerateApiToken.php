@@ -15,7 +15,7 @@ class GenerateApiToken extends Command
 {
     protected $signature = 'app:generate-token {source} {hook_url}';
 
-    protected $description = 'Генерирует токен Sanctum для пользователя, создаёт пользователя если нет';
+    protected $description = 'Генерирует токен для пользователя, создаёт пользователя если нет';
 
     public function handle(): int
     {

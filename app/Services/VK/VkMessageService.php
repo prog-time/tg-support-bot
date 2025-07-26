@@ -62,8 +62,6 @@ class VkMessageService extends ToTgMessageService
     }
 
     /**
-     * Send document
-     *
      * @return TelegramAnswerDto
      */
     protected function sendDocument(): TelegramAnswerDto
@@ -76,8 +74,6 @@ class VkMessageService extends ToTgMessageService
     }
 
     /**
-     * Send location
-     *
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -89,8 +85,6 @@ class VkMessageService extends ToTgMessageService
     }
 
     /**
-     * Send text message
-     *
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -99,6 +93,9 @@ class VkMessageService extends ToTgMessageService
         return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
+    /**
+     * @return TelegramAnswerDto
+     */
     protected function sendPhoto(): TelegramAnswerDto
     {
         return TelegramAnswerDto::fromData([
@@ -108,6 +105,9 @@ class VkMessageService extends ToTgMessageService
         ]);
     }
 
+    /**
+     * @return TelegramAnswerDto
+     */
     protected function sendSticker(): TelegramAnswerDto
     {
         return TelegramAnswerDto::fromData([
@@ -117,6 +117,9 @@ class VkMessageService extends ToTgMessageService
         ]);
     }
 
+    /**
+     * @return TelegramAnswerDto
+     */
     protected function sendContact(): TelegramAnswerDto
     {
         return TelegramAnswerDto::fromData([
@@ -126,6 +129,9 @@ class VkMessageService extends ToTgMessageService
         ]);
     }
 
+    /**
+     * @return TelegramAnswerDto
+     */
     protected function sendVideoNote(): TelegramAnswerDto
     {
         return TelegramAnswerDto::fromData([
@@ -135,6 +141,9 @@ class VkMessageService extends ToTgMessageService
         ]);
     }
 
+    /**
+     * @return TelegramAnswerDto
+     */
     protected function sendVoice(): TelegramAnswerDto
     {
         return TelegramAnswerDto::fromData([
@@ -145,8 +154,6 @@ class VkMessageService extends ToTgMessageService
     }
 
     /**
-     * Save message in DB
-     *
      * @param TelegramAnswerDto $resultQuery
      *
      * @return void

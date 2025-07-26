@@ -33,6 +33,11 @@ class ExternalUser extends Model
         return $this->hasOne(ExternalSource::class, 'name', 'source');
     }
 
+    /**
+     * @param int $id
+     *
+     * @return string
+     */
     public static function getSourceById(int $id): string
     {
         $externalUser = self::select('source')->where('id', $id)->first();

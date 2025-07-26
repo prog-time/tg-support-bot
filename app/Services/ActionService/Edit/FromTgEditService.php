@@ -2,8 +2,6 @@
 
 namespace App\Services\ActionService\Edit;
 
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Services\TgTopicService;
@@ -52,15 +50,16 @@ abstract class FromTgEditService extends TemplateEditService
     }
 
     /**
-     * Edit text message
+     * Редактирование сообщения
+     *
      * @return mixed
      */
     abstract protected function editMessageText(): mixed;
 
     /**
-     * Edit message with photo or document
+     * Редактирование сообщения с фото или документом
+     *
      * @return mixed
      */
     abstract protected function editMessageCaption(): mixed;
-
 }

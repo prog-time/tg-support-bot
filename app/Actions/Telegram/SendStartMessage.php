@@ -14,6 +14,7 @@ class SendStartMessage
      * Отправка стартового сообщения
      *
      * @param TelegramUpdateDto $update
+     *
      * @return void
      */
     public function execute(TelegramUpdateDto $update): void
@@ -33,5 +34,4 @@ class SendStartMessage
             TelegramMethods::sendQueryTelegram('sendMessage', $dataQuery);
         }
     }
-
 }

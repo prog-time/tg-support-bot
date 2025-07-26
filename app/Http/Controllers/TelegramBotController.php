@@ -55,6 +55,11 @@ class TelegramBotController
         }
     }
 
+    /**
+     * @return void
+     *
+     * @throws \Exception
+     */
     public function bot_query(): void
     {
         $this->checkBotQuery();

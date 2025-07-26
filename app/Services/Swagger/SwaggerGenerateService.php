@@ -3,7 +3,6 @@
 namespace App\Services\Swagger;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Lang;
 
 /**
  * SwaggerGenerateService - работа со swagger
@@ -20,7 +19,7 @@ class SwaggerGenerateService
     public function getSwaggerFragments(string $path): array
     {
         try {
-            // 1. Сбор всех path-файлов (JSON)
+            // Сбор всех path-файлов (JSON)
             $pathFiles = File::allFiles($path);
 
             $paths = [];

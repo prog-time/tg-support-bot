@@ -60,63 +60,63 @@ abstract class ToTgMessageService extends TemplateMessageService
     abstract public function handleUpdate(): void;
 
     /**
-     * Send photo
+     * Отправка изображения
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendPhoto(): TelegramAnswerDto;
 
     /**
-     * Send document
+     * Отправка документа
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendDocument(): TelegramAnswerDto;
 
     /**
-     * Send location
+     * Отправка геолокации
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendLocation(): TelegramAnswerDto;
 
     /**
-     * Send voice
+     * Отправка голосового сообщения
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendVoice(): TelegramAnswerDto;
 
     /**
-     * Send sticker
+     * Отправка стикеров
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendSticker(): TelegramAnswerDto;
 
     /**
-     * Send video note
+     * Отправка видео-сообщения
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendVideoNote(): TelegramAnswerDto;
 
     /**
-     * Send contact info
+     * Отправка контакта
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendContact(): TelegramAnswerDto;
 
     /**
-     * Send text message
+     * Отправка текстового сообщения
      *
      * @return TelegramAnswerDto
      */
     abstract protected function sendMessage(): TelegramAnswerDto;
 
     /**
-     * Save message in DB
+     * Сохранения сообщения
      *
      * @param TelegramAnswerDto $resultQuery
      *

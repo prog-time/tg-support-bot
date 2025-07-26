@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Http;
 class ParserMethods
 {
     /**
-     * Send POST request
-     * @param string $urlQuery
+     * Отправка POST запроса
+     *
+     * @param string       $urlQuery
      * @param array|string $queryParams
-     * @param array $queryHeading
+     * @param array        $queryHeading
+     *
      * @return array
      */
     public static function postQuery(string $urlQuery, array|string $queryParams = [], array $queryHeading = []): array
@@ -27,23 +29,25 @@ class ParserMethods
         } catch (\Exception $e) {
             return [
                 'ok' => false,
-                'result' => 'Ошибка отправки запроса'
+                'result' => 'Ошибка отправки запроса',
             ];
         }
     }
 
     /**
-     * Send GET request
-     * @param string $urlQuery
+     * Отправка GET запроса
+     *
+     * @param string       $urlQuery
      * @param array|string $queryParams
-     * @param array $queryHeading
+     * @param array        $queryHeading
+     *
      * @return array
      */
     public static function getQuery(string $urlQuery, array|string $queryParams = [], array $queryHeading = []): array
     {
         try {
             if (!empty($queryParams)) {
-                $urlQuery = $urlQuery ."?" . http_build_query($queryParams);
+                $urlQuery = $urlQuery . '?' . http_build_query($queryParams);
             }
 
             $response = Http::withHeaders($queryHeading)->withoutVerifying()->get($urlQuery);
@@ -57,7 +61,7 @@ class ParserMethods
         } catch (\Exception $e) {
             return [
                 'ok' => false,
-                'result' => 'Ошибка отправки запроса'
+                'result' => 'Ошибка отправки запроса',
             ];
         }
     }

@@ -58,8 +58,6 @@ class TgExternalEditService extends FromTgEditService
     }
 
     /**
-     * Edit message
-     *
      * @return array
      */
     protected function editMessageText(): array
@@ -70,8 +68,6 @@ class TgExternalEditService extends FromTgEditService
     }
 
     /**
-     * Edit message with photo or document
-     *
      * @return array
      */
     protected function editMessageCaption(): array
@@ -85,6 +81,11 @@ class TgExternalEditService extends FromTgEditService
         }
     }
 
+    /**
+     * @param mixed $resultQuery
+     *
+     * @return void
+     */
     protected function saveMessage(mixed $resultQuery): void
     {
         $whereData = [

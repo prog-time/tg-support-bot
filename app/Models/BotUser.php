@@ -134,6 +134,12 @@ class BotUser extends Model
         }
     }
 
+    /**
+     * @param string|int $chatId
+     * @param string     $platform
+     *
+     * @return BotUser|null
+     */
     public static function getUserByChatId(string|int $chatId, string $platform): ?BotUser
     {
         try {

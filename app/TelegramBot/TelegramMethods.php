@@ -7,14 +7,14 @@ use App\DTOs\TelegramAnswerDto;
 class TelegramMethods
 {
     /**
-     * Send request in Telegram
+     * Отправка запроса в Telegram
      *
      * @param string $methodQuery
      * @param ?array $dataQuery
      *
      * @return TelegramAnswerDto
      */
-    public static function sendQueryTelegram(string $methodQuery, array $dataQuery = null): TelegramAnswerDto
+    public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null): TelegramAnswerDto
     {
         try {
             $token = config('traffic_source.settings.telegram.token');

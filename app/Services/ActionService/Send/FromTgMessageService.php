@@ -59,68 +59,67 @@ abstract class FromTgMessageService extends TemplateMessageService
     abstract public function handleUpdate(): void;
 
     /**
-     * Send photo
+     * Отправка изображения
      *
      * @return mixed
      */
     abstract protected function sendPhoto(): mixed;
 
     /**
-     * Send document
+     * Отправка документа
      *
      * @return mixed
      */
     abstract protected function sendDocument(): mixed;
 
     /**
-     * Send location
+     * Отправка геолокации
      *
      * @return mixed
      */
     abstract protected function sendLocation(): mixed;
 
     /**
-     * Send voice
+     * Отправка голосового сообщения
      *
      * @return mixed
      */
     abstract protected function sendVoice(): mixed;
 
     /**
-     * Send sticker
+     * Отправка стикеров
      *
      * @return mixed
      */
     abstract protected function sendSticker(): mixed;
 
     /**
-     * Send video note
+     * Отправка видео-сообщения
      *
      * @return mixed
      */
     abstract protected function sendVideoNote(): mixed;
 
     /**
-     * Send contact info
+     * Отправка контакта
      *
      * @return mixed
      */
     abstract protected function sendContact(): mixed;
 
     /**
-     * Send text message
+     * Отправка текстового сообщения
      *
      * @return mixed
      */
     abstract protected function sendMessage(): mixed;
 
     /**
-     * Save message
+     * Сохранения сообщения
      *
      * @param $resultQuery
      *
      * @return void
      */
     abstract protected function saveMessage($resultQuery): void;
-
 }
