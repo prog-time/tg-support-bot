@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\ExternalTrafficController;
+use App\Http\Controllers\FilesController;
 use App\Http\Controllers\TelegramBotController;
-
 use App\Http\Controllers\VkBotController;
+use App\Middleware\ApiQuery;
 use App\Middleware\TelegramQuery;
 use App\Middleware\VkQuery;
 use App\TelegramBot\TelegramMethods;
@@ -15,10 +17,10 @@ Route::group([
 
     Route::get('set_webhook', function () {
         $queryParams = [
-            'url' => env('APP_URL') . '/api/telegram/bot',
+            'url' => config('app.url') . '/api/telegram/bot',
             'max_connections' => 40,
             'drop_pending_updates' => true,
-            'secret_token' => env('TELEGRAM_SECRET_KEY'),
+            'secret_token' => config('traffic_source.settings.telegram.secret_key'),
         ];
         $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
 
@@ -26,4 +28,35 @@ Route::group([
     });
 });
 
-Route::post('vk/bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
+Route::group([
+    'prefix' => 'vk',
+], function () {
+    Route::post('bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
+});
+
+Route::group([
+    'prefix' => 'external',
+    'middleware' => ApiQuery::class,
+], function () {
+    Route::group([
+        'prefix' => 'messages',
+    ], function () {
+        Route::get('/{id_message}', [ExternalTrafficController::class, 'show'])->name('show');
+        Route::get('/', [ExternalTrafficController::class, 'index'])->name('index');
+        Route::post('/', [ExternalTrafficController::class, 'store'])->name('store');
+        Route::put('/', [ExternalTrafficController::class, 'update'])->name('update');
+        Route::delete('/', [ExternalTrafficController::class, 'destroy'])->name('destroy');
+    });
+});
+
+Route::group([
+    'prefix' => 'files',
+], function () {
+    Route::get('{file_id}', [FilesController::class, 'getFileStream'])
+        ->where('file_id', '[A-Za-z0-9\-_]+')
+        ->name('stream_file');
+
+    Route::post('{file_id}', [FilesController::class, 'getFileDownload'])
+        ->where('file_id', '[A-Za-z0-9\-_]+')
+        ->name('download_file');
+});

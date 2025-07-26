@@ -1,0 +1,43 @@
+{
+    "/api/external/messages/": {
+        "get": {
+            "summary": "Получение списка сообщений",
+            "operationId": "api_external_messages_index",
+            "tags": [
+                "External Messages"
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_messages_index"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Успешно!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_index_response_200"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Чат не найден!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_index_response_404"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

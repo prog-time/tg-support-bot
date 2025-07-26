@@ -2,19 +2,43 @@
 
 namespace App\DTOs;
 
+use App\Helpers\TelegramHelper;
 use Illuminate\Http\Request;
 
+/**
+ * DTO для запроса из Telegram
+ *
+ * @property int         $updateId
+ * @property bool        $isBot
+ * @property bool        $editedTopicStatus
+ * @property bool        $pinnedMessageStatus
+ * @property string      $typeQuery
+ * @property string      $typeSource
+ * @property int|null    $chatId
+ * @property array|null  $replyToMessage
+ * @property int|null    $messageThreadId
+ * @property int|null    $messageId
+ * @property int|null    $callbackId
+ * @property string|null $text
+ * @property array|null  $entities
+ * @property string|null $caption
+ * @property string|null $fileId
+ * @property string|null $username
+ * @property string|null $callbackData
+ * @property array|null  $location
+ * @property array|null  $rawData
+*/
 readonly class TelegramUpdateDto
 {
     public function __construct(
         public int     $updateId,
+        public string  $typeQuery,
+        public string  $typeSource,
         public bool    $isBot = false,
         public bool    $editedTopicStatus = false,
         public bool    $pinnedMessageStatus = false,
-        public string  $typeQuery,
-        public string  $typeSource,
         public ?int    $chatId = null,
-        public ?array  $replyToMessage,
+        public ?array  $replyToMessage = null,
         public ?int    $messageThreadId = null,
         public ?int    $messageId = null,
         public ?int    $callbackId = null,
@@ -24,12 +48,14 @@ readonly class TelegramUpdateDto
         public ?string $fileId = null,
         public ?string $username = null,
         public ?string $callbackData = null,
-        public ?array  $location,
-        public ?array  $rawData
-    ) {}
+        public ?array  $location = null,
+        public ?array  $rawData = null
+    ) {
+    }
 
     /**
      * @param Request $request
+     *
      * @return self|null
      */
     public static function fromRequest(Request $request): ?self
@@ -46,11 +72,11 @@ readonly class TelegramUpdateDto
             $pinnedMessageStatus = !empty($data['message']['pinned_message']);
             return new self(
                 updateId: $data['update_id'] ?? 0,
+                typeQuery: $type,
+                typeSource: $data[$type]['chat']['type'],
                 isBot: $data[$type]['from']['is_bot'],
                 editedTopicStatus: $editedTopicStatus,
                 pinnedMessageStatus: $pinnedMessageStatus,
-                typeQuery: $type,
-                typeSource: $data[$type]['chat']['type'],
                 chatId: self::extractChatId($data, $type),
                 replyToMessage: self::extractReplayToMessage($data),
                 messageThreadId: self::extractMessageThreadId($data, $type),
@@ -59,7 +85,7 @@ readonly class TelegramUpdateDto
                 text: $data[$type]['text'] ?? null,
                 entities: $data[$type]['entities'] ?? $data[$type]['caption_entities'] ?? null,
                 caption: $data[$type]['caption'] ?? null,
-                fileId: self::extractFileId($data),
+                fileId: TelegramHelper::extractFileId($data),
                 username: $data[$type]['from']['username'] ?? null,
                 callbackData: $data['callback_query']['data'] ?? null,
                 location: $data['message']['location'] ?? null,
@@ -72,6 +98,7 @@ readonly class TelegramUpdateDto
 
     /**
      * @param array $data
+     *
      * @return string
      */
     private static function detectType(array $data): string
@@ -95,6 +122,7 @@ readonly class TelegramUpdateDto
 
     /**
      * @param array $data
+     *
      * @return array|null
      */
     private static function extractReplayToMessage(array $data): ?array
@@ -103,8 +131,9 @@ readonly class TelegramUpdateDto
     }
 
     /**
-     * @param array $data
+     * @param array  $data
      * @param string $type
+     *
      * @return int|null
      */
     private static function extractChatId(array $data, string $type): ?int
@@ -113,29 +142,9 @@ readonly class TelegramUpdateDto
     }
 
     /**
-     * @param array $data
-     * @return string|null
-     */
-    private static function extractFileId(array $data): ?string
-    {
-        if (!empty($data['message']['photo'])) {
-            $fileId = end($data['message']['photo'])['file_id'];
-        } else if (!empty($data['message']['document'])) {
-            $fileId = $data['message']['document']['file_id'];
-        } else if (!empty($data['message']['voice'])) {
-            $fileId = $data['message']['voice']['file_id'];
-        } else if (!empty($data['message']['sticker'])) {
-            $fileId = $data['message']['sticker']['file_id'];
-        } else if (!empty($data['message']['video_note'])) {
-            $fileId = $data['message']['video_note']['file_id'];
-        }
-
-        return $fileId ?? null;
-    }
-
-    /**
-     * @param array $data
+     * @param array  $data
      * @param string $type
+     *
      * @return int|null
      */
     private static function extractMessageThreadId(array $data, string $type): ?int

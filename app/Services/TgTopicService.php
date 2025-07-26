@@ -7,16 +7,19 @@ use App\Actions\Telegram\GetChat;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\Models\ExternalUser;
 use App\TelegramBot\TelegramMethods;
 use Mockery\Exception;
 
 class TgTopicService
 {
-
     /**
-     * Get parts chat data
+     * Получаем части для генерации названия чата
+     *
      * @param int $chatId
+     *
      * @return array
+     *
      * @throws \Exception
      */
     protected function getPartsGenerateName(int $chatId): array
@@ -46,15 +49,21 @@ class TgTopicService
     }
 
     /**
-     * Generate topic name
+     * Генерируем название чата
+     *
      * @param BotUser $botUser
+     *
      * @return string
-     * @throws \Exception
      */
     protected function generateNameTopic(BotUser $botUser): string
     {
         try {
-            $templateTopicName = env('TEMPLATE_TOPIC_NAME');
+            if ($botUser->platform === 'external_source') {
+                $source = ExternalUser::getSourceById($botUser->chat_id);
+                return "#{$botUser->chat_id} ({$source})";
+            }
+
+            $templateTopicName = config('traffic_source.settings.telegram.template_topic_name');
             if (empty($templateTopicName)) {
                 throw new \Exception('Template not found');
             }
@@ -91,8 +100,10 @@ class TgTopicService
     }
 
     /**
-     * Create new topic
+     * Создание новой темы для чата
+     *
      * @param BotUser $botUser
+     *
      * @return TelegramTopicDto|null
      */
     public function createNewTgTopic(BotUser $botUser): ?TelegramTopicDto
@@ -100,7 +111,7 @@ class TgTopicService
         try {
             $topicName = $this->generateNameTopic($botUser);
             $resultQuery = TelegramMethods::sendQueryTelegram('createForumTopic', [
-                'chat_id' => env('TELEGRAM_GROUP_ID'),
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'name' => $topicName,
                 'icon_custom_emoji_id' => __('icons.incoming'),
             ]);
@@ -116,8 +127,10 @@ class TgTopicService
     }
 
     /**
-     * Edit topic
+     * Редактируем тему
+     *
      * @param TelegramTopicDto $telegramTopicDto
+     *
      * @return TelegramTopicDto|null
      */
     public function editTgTopic(TelegramTopicDto $telegramTopicDto): ?TelegramTopicDto
@@ -125,7 +138,7 @@ class TgTopicService
         try {
             $queryParams = array_merge(
                 [
-                    'chat_id' => env('TELEGRAM_GROUP_ID')
+                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 ],
                 $telegramTopicDto->toArray()
             );
@@ -142,18 +155,19 @@ class TgTopicService
     }
 
     /**
-     * Delete system message
+     * Удаление системного сообщения
+     *
      * @param int $messageId
+     *
      * @return void
      */
     public static function deleteNoteInTopic(int $messageId): void
     {
         $messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'deleteMessage',
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_id' => $messageId,
         ]);
         DeleteMessage::execute($messageParamsDTO);
     }
-
 }

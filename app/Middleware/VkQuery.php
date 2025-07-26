@@ -13,16 +13,14 @@ class VkQuery
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         try {
-            if (!empty(env('VK_SECRET_CODE'))) {
-                $secretCode = env('VK_SECRET_CODE') ?? '';
-                if ($secretCode !== request()->secret) {
-                    throw new Exception('Secret-Key указан неверно!');
-                }
+            $secretCode = config('traffic_source.settings.vk.secret_key');
+            if ($secretCode !== request()->secret) {
+                throw new Exception('Secret-Key указан неверно!');
             }
 
             $this->sendRequestInLoki($request);
@@ -38,13 +36,14 @@ class VkQuery
 
     /**
      * @param Request $request
+     *
      * @return void
      */
     private function sendRequestInLoki(Request $request): void
     {
-        $dataRequest = json_encode($request->all()) ?? "";
+        $dataRequest = json_encode($request->all());
 
         $logger = new LokiLogger();
-        $logger->log('vk_request', $dataRequest, $request->all());
+        $logger->log('vk_request', $dataRequest);
     }
 }

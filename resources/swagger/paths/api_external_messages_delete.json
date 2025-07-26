@@ -1,0 +1,43 @@
+{
+    "/api/external/messages/": {
+        "delete": {
+            "summary": "@lang(swagger.summary.delete_message)",
+            "operationId": "api_external_messages_delete",
+            "tags": [
+                "External Messages"
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_messages_delete"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Сообщение успешно удалено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_store_response_200"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Сообщение не найдено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_delete_response_404"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

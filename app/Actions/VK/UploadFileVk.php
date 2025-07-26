@@ -2,16 +2,21 @@
 
 namespace App\Actions\VK;
 
-use App\DTOs\TelegramAnswerDto;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * Загрузка файла на сервер VK
+ */
 class UploadFileVk
 {
     /**
+     * Загрузка файла на сервер VK
+     *
      * @param string $typeFile
      * @param string $upload_url
      * @param string $fullFilePath
-     * @return TelegramAnswerDto|null
+     *
+     * @return array|null
      */
     public static function execute(string $upload_url, string $fullFilePath, string $typeFile = 'doc'): ?array
     {
@@ -35,5 +40,4 @@ class UploadFileVk
             return null;
         }
     }
-
 }

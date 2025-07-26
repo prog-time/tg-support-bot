@@ -1,0 +1,20 @@
+parameters:
+    level: 6
+    paths:
+        - app
+        - routes
+    excludePaths:
+        - vendor
+        - storage
+        - bootstrap
+
+    errorFormat: table
+    checkMissingVarTagTypehint: false
+    inferPrivatePropertyTypeFromConstructor: true
+
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+
+includes:
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon

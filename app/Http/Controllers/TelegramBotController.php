@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Actions\Telegram\SendContactMessage;
 use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
-use App\Services\TgEditedMessageService;
-use App\Services\TgMessageService;
-use App\Services\TgVk\TgVkMessageService;
-use App\Services\TgTopicService;
-use Illuminate\Http\Request;
 use App\Models\BotUser;
+use App\Services\Tg\TgEditMessageService;
+use App\Services\Tg\TgMessageService;
+use App\Services\TgExternal\TgExternalEditService;
+use App\Services\TgExternal\TgExternalMessageService;
+use App\Services\TgTopicService;
+use App\Services\TgVk\TgVkEditService;
+use App\Services\TgVk\TgVkMessageService;
+use Illuminate\Http\Request;
 
 class TelegramBotController
 {
@@ -32,6 +35,7 @@ class TelegramBotController
 
     /**
      * Check type source
+     *
      * @return bool
      */
     protected function isSupergroup(): bool
@@ -41,6 +45,7 @@ class TelegramBotController
 
     /**
      * Check message
+     *
      * @return void
      */
     protected function checkBotQuery(): void
@@ -50,27 +55,27 @@ class TelegramBotController
         }
     }
 
+    /**
+     * @return void
+     *
+     * @throws \Exception
+     */
     public function bot_query(): void
     {
         $this->checkBotQuery();
         if (!$this->dataHook->isBot) {
-            if ($this->dataHook->typeQuery === 'message') {
-                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                    (new SendContactMessage())->executeByTgUpdate($this->dataHook);
-                } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
-                    (new SendStartMessage())->execute($this->dataHook);
-                } else {
-                    switch ($this->platform) {
-                        case 'telegram':
-                            $this->controllerPlatformTg();
-                            break;
-                        case 'vk':
-                            $this->controllerPlatformVk();
-                            break;
-                    }
-                }
-            } elseif ($this->dataHook->typeQuery === 'edited_message') {
-                (new TgEditedMessageService($this->dataHook))->handleUpdate();
+            switch ($this->platform) {
+                case 'telegram':
+                    $this->controllerPlatformTg();
+                    break;
+
+                case 'vk':
+                    $this->controllerPlatformVk();
+                    break;
+
+                default:
+                    $this->controllerExternalPlatform();
+                    break;
             }
         } else {
             if ($this->dataHook->editedTopicStatus) {
@@ -81,19 +86,70 @@ class TelegramBotController
 
     /**
      * Controller tg message
+     *
      * @return void
      */
     private function controllerPlatformTg(): void
     {
-        (new TgMessageService($this->dataHook))->handleUpdate();
+        switch ($this->dataHook->typeQuery) {
+            case 'message':
+                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
+                    (new SendContactMessage())->executeByTgUpdate($this->dataHook);
+                } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
+                    (new SendStartMessage())->execute($this->dataHook);
+                } else {
+                    (new TgMessageService($this->dataHook))->handleUpdate();
+                }
+                break;
+
+            case 'edited_message':
+                (new TgEditMessageService($this->dataHook))->handleUpdate();
+                break;
+
+            default:
+                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+        }
     }
 
     /**
      * Controller vk message
+     *
      * @return void
      */
     private function controllerPlatformVk(): void
     {
-        (new TgVkMessageService($this->dataHook))->handleUpdate();
+        switch ($this->dataHook->typeQuery) {
+            case 'message':
+                (new TgVkMessageService($this->dataHook))->handleUpdate();
+                break;
+
+            case 'edited_message':
+                (new TgVkEditService($this->dataHook))->handleUpdate();
+                break;
+
+            default:
+                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+        }
+    }
+
+    /**
+     * Controller external message
+     *
+     * @return void
+     */
+    private function controllerExternalPlatform(): void
+    {
+        switch ($this->dataHook->typeQuery) {
+            case 'message':
+                (new TgExternalMessageService($this->dataHook))->handleUpdate();
+                break;
+
+            case 'edited_message':
+                (new TgExternalEditService($this->dataHook))->handleUpdate();
+                break;
+
+            default:
+                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+        }
     }
 }

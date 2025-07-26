@@ -1,0 +1,48 @@
+{
+    "api_external_messages_store": {
+        "type": "object",
+        "required": [
+            "source",
+            "external_id"
+        ],
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "u123"
+            },
+            "text": {
+                "type": "string",
+                "example": "Привет"
+            },
+            "attachments": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "example": "https://download.samplelib.com/jpeg/sample-clouds-400x300.jpg",
+                            "description": "Ссылка на файл вложения"
+                        },
+                        "filename": {
+                            "type": "string",
+                            "example": "sample-clouds.jpg",
+                            "description": "Имя файла вложения"
+                        },
+                        "mime": {
+                            "type": "string",
+                            "example": "jpg",
+                            "description": "Тип вложения (например, jpg, png, pdf)"
+                        }
+                    },
+                    "required": ["url", "filename", "mime"]
+                }
+            }
+        }
+    }
+}

@@ -6,42 +6,34 @@ use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
-use App\DTOs\VK\VkUpdateDto;
+use App\DTOs\Vk\VkUpdateDto;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Services\ActionService\Send\ToTgMessageService;
 use App\Services\TgTopicService;
-use phpDocumentor\Reflection\Exception;
 
-class VkMessageService
+class VkMessageService extends ToTgMessageService
 {
-    protected string $typeMessage = '';
     protected string $source = 'vk';
-    protected VkUpdateDto $update;
+
+    protected string $typeMessage = 'incoming';
+
+    protected mixed $update;
+
     protected ?BotUser $botUser;
+
     protected TGTextMessageDto $messageParamsDTO;
+
     protected TgTopicService $tgTopicService;
 
-    public function __construct(VkUpdateDto $update) {
-        $this->update = $update;
-
-        $this->tgTopicService = new TgTopicService();
-
-        $this->botUser = BotUser::getVkUserData($this->update);
-        if (empty($this->botUser)) {
-            throw new Exception('Пользователя не существует!');
-        }
-
-        $this->typeMessage = 'incoming';
-        $this->messageParamsDTO = TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
-            'typeSource' => 'private',
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
-            'message_thread_id' => $this->botUser->topic_id,
-        ]);
+    public function __construct(VkUpdateDto $update)
+    {
+        parent::__construct($update);
     }
 
     /**
      * @return void
+     *
      * @throws \Exception
      */
     public function handleUpdate(): void
@@ -56,7 +48,7 @@ class VkMessageService
             }
 
             if (empty($resultQuery->ok)) {
-                throw new \Exception("Ошибка отправки запроса!");
+                throw new \Exception('Ошибка отправки запроса!');
             }
 
             $this->saveMessage($resultQuery);
@@ -70,7 +62,6 @@ class VkMessageService
     }
 
     /**
-     * Send document
      * @return TelegramAnswerDto
      */
     protected function sendDocument(): TelegramAnswerDto
@@ -83,7 +74,6 @@ class VkMessageService
     }
 
     /**
-     * Send location
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -95,7 +85,6 @@ class VkMessageService
     }
 
     /**
-     * Send text message
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -105,11 +94,71 @@ class VkMessageService
     }
 
     /**
-     * Save message in DB
+     * @return TelegramAnswerDto
+     */
+    protected function sendPhoto(): TelegramAnswerDto
+    {
+        return TelegramAnswerDto::fromData([
+            'ok' => false,
+            'error_code' => 500,
+            'result' => 'Метод sendPhoto не поддерживается!',
+        ]);
+    }
+
+    /**
+     * @return TelegramAnswerDto
+     */
+    protected function sendSticker(): TelegramAnswerDto
+    {
+        return TelegramAnswerDto::fromData([
+            'ok' => false,
+            'error_code' => 500,
+            'result' => 'Метод sendSticker не поддерживается!',
+        ]);
+    }
+
+    /**
+     * @return TelegramAnswerDto
+     */
+    protected function sendContact(): TelegramAnswerDto
+    {
+        return TelegramAnswerDto::fromData([
+            'ok' => false,
+            'error_code' => 500,
+            'result' => 'Метод sendContact не поддерживается!',
+        ]);
+    }
+
+    /**
+     * @return TelegramAnswerDto
+     */
+    protected function sendVideoNote(): TelegramAnswerDto
+    {
+        return TelegramAnswerDto::fromData([
+            'ok' => false,
+            'error_code' => 500,
+            'result' => 'Метод sendVideoNote не поддерживается!',
+        ]);
+    }
+
+    /**
+     * @return TelegramAnswerDto
+     */
+    protected function sendVoice(): TelegramAnswerDto
+    {
+        return TelegramAnswerDto::fromData([
+            'ok' => false,
+            'error_code' => 500,
+            'result' => 'Метод sendVoice не поддерживается!',
+        ]);
+    }
+
+    /**
      * @param TelegramAnswerDto $resultQuery
+     *
      * @return void
      */
-    protected function saveMessage(TelegramAnswerDto $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): void
     {
         Message::create([
             'bot_user_id' => $this->botUser->id,
@@ -119,5 +168,4 @@ class VkMessageService
             'to_id' => $resultQuery->message_id,
         ]);
     }
-
 }

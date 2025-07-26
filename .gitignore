@@ -24,3 +24,10 @@ yarn-error.log
 /config/tg-logger.php
 /docker/grafana
 /docker/postgres
+/storage/api-docs
+
+
+.phpstan-error-count.json
+.valetphprc
+.tool-versions
+.DS_Store

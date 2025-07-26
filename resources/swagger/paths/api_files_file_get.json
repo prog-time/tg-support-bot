@@ -1,0 +1,17 @@
+{
+    "/api/files/{file_id}": {
+        "get": {
+            "summary": "Получение файла по Telegram File ID",
+            "operationId": "api_files_file_get",
+            "tags": [
+                "Files"
+            ],
+            "requestBody": {},
+            "responses": {
+                "200": {
+                    "description": "Файл получен!"
+                }
+            }
+        }
+    }
+}

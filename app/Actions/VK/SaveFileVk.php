@@ -2,16 +2,21 @@
 
 namespace App\Actions\VK;
 
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\VK\VkAnswerDto;
+use App\DTOs\Vk\VkAnswerDto;
 use App\VkBot\VkMethods;
 
+/**
+ * Сохранение файла
+ */
 class SaveFileVk
 {
     /**
+     * Сохранение файла
+     *
      * @param string $typeFile
-     * @param array $dataQuery
-     * @return TelegramAnswerDto|null
+     * @param array  $dataQuery
+     *
+     * @return VkAnswerDto|null
      */
     public static function execute(string $typeFile, array $dataQuery): ?VkAnswerDto
     {
@@ -25,10 +30,14 @@ class SaveFileVk
                     $methodQuery = 'docs.save';
                     break;
             }
+
+            if (empty($methodQuery)) {
+                throw new \Exception('Метод для сохранения файла не найден!');
+            }
+
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
         } catch (\Exception $e) {
             return null;
         }
     }
-
 }

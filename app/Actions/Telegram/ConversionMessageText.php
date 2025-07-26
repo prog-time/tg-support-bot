@@ -5,7 +5,8 @@ namespace App\Actions\Telegram;
 class ConversionMessageText {
 
     /**
-     * Conversion message to MarkdownV2
+     * Конвертирование сообщения в MarkdownV2
+     *
      * @param string $text
      * @param array $entities
      * @return string

@@ -1,22 +1,19 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\ActionService\Edit;
 
-use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
-class TgService
+/**
+ * Class FromTgEditService
+ */
+abstract class FromTgEditService extends TemplateEditService
 {
-    protected string $typeMessage = '';
-    protected string $source = 'telegram';
-    protected TelegramUpdateDto $update;
-    protected ?BotUser $botUser;
-    protected TGTextMessageDto $messageParamsDTO;
-    protected TgTopicService $tgTopicService;
-
-    public function __construct(TelegramUpdateDto $update) {
+    public function __construct(mixed $update)
+    {
         $this->update = $update;
         $this->tgTopicService = new TgTopicService();
         $this->botUser = BotUser::getTelegramUserData($this->update);
@@ -28,8 +25,10 @@ class TgService
         switch ($update->typeSource) {
             case 'private':
                 $this->typeMessage = 'incoming';
+
+                $groupId = config('traffic_source.settings.telegram.group_id');
                 $queryParams = [
-                    'chat_id' => env('TELEGRAM_GROUP_ID'),
+                    'chat_id' => $groupId,
                     'message_thread_id' => $this->botUser->topic_id,
                 ];
                 break;
@@ -50,4 +49,17 @@ class TgService
         $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
 
+    /**
+     * Редактирование сообщения
+     *
+     * @return mixed
+     */
+    abstract protected function editMessageText(): mixed;
+
+    /**
+     * Редактирование сообщения с фото или документом
+     *
+     * @return mixed
+     */
+    abstract protected function editMessageCaption(): mixed;
 }

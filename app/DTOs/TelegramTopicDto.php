@@ -4,15 +4,33 @@ namespace App\DTOs;
 
 use Spatie\LaravelData\Data;
 
+/**
+ * TelegramTopicDto
+ *
+ * @property int|string $message_thread_id,
+ * @property ?string $name,
+ * @property ?string $icon_color,
+ * @property ?string $icon_custom_emoji_id
+ */
 class TelegramTopicDto extends Data
 {
+    /**
+     * @param int|string $message_thread_id,
+     * @param?string $name,
+     * @param?string $icon_color,
+     * @param?string $icon_custom_emoji_id
+     */
     public function __construct(
-        public int|string      $message_thread_id,
-        public ?string  $name,
-        public ?string  $icon_color,
-        public ?string  $icon_custom_emoji_id
+        public int|string $message_thread_id,
+        public ?string $name,
+        public ?string $icon_color,
+        public ?string $icon_custom_emoji_id
     ) {}
 
+    /**
+     * @param array $dataTopic
+     * @return self
+     */
     public static function fromData(array $dataTopic): self
     {
         return new self(
@@ -23,6 +41,9 @@ class TelegramTopicDto extends Data
         );
     }
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         $dataMessage = array_filter(parent::toArray(), fn($value) => !is_null($value));

@@ -2,20 +2,22 @@
 
 namespace App\VkBot;
 
-use App\DTOs\VK\VkAnswerDto;
+use App\DTOs\Vk\VkAnswerDto;
 
-class VkMethods {
-
+class VkMethods
+{
     /**
-     * Send query in VK
+     * Отправка запроса в VK
+     *
      * @param string $methodQuery
-     * @param array $params
+     * @param array  $params
+     *
      * @return VkAnswerDto
      */
     public static function sendQueryVk(string $methodQuery, array $params): VkAnswerDto
     {
         try {
-            $accessToken = env('VK_TOKEN');
+            $accessToken = config('traffic_source.settings.vk.token');
 
             $queryParams = array_merge($params, [
                 'access_token' => $accessToken,
@@ -26,6 +28,10 @@ class VkMethods {
             $url = 'https://api.vk.com/method/' . $methodQuery;
             $resultQuery = self::makeRequest($url, $queryParams);
 
+            if (empty($resultQuery)) {
+                throw new \RuntimeException('VK API Error: Запрос без результата!');
+            }
+
             if (isset($resultQuery['error'])) {
                 throw new \RuntimeException('VK API Error: ' . json_encode($resultQuery['error']));
             }
@@ -33,13 +39,18 @@ class VkMethods {
             return VkAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return VkAnswerDto::fromData([
-//                'error' => true,
                 'response' => 0,
             ]);
         }
     }
 
-    private static function makeRequest(string $url, array $params)
+    /**
+     * @param string $url
+     * @param array  $params
+     *
+     * @return mixed
+     */
+    private static function makeRequest(string $url, array $params): mixed
     {
         try {
             $curl = curl_init();
@@ -59,8 +70,7 @@ class VkMethods {
 
             return json_decode($result, true);
         } catch (\Exception $e) {
-
+            return null;
         }
     }
-
 }

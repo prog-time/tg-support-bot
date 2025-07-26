@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\DTOs\VK\VkUpdateDto;
+use App\DTOs\Vk\VkUpdateDto;
+use App\Services\VK\VkEditService;
 use App\Services\VK\VkMessageService;
 use Illuminate\Http\Request;
-use phpDocumentor\Reflection\Exception;
 
 class VkBotController
 {
@@ -14,7 +14,7 @@ class VkBotController
     public function __construct(Request $request)
     {
         if (request()->type === 'confirmation') {
-            echo env('VK_CONFIRM_CODE')?? '';
+            echo config('traffic_source.settings.vk.confirm_code');
             die();
         }
 
@@ -24,14 +24,19 @@ class VkBotController
 
     /**
      * @return void
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public function bot_query(): void
     {
-        if (!empty($this->dataHook)) {
-            if ($this->dataHook->type === 'message_new') {
+        switch ($this->dataHook->type) {
+            case 'message_new':
                 (new VkMessageService($this->dataHook))->handleUpdate();
-            }
+                break;
+
+            case 'message_edit':
+                (new VkEditService($this->dataHook))->handleUpdate();
+                break;
         }
     }
 }

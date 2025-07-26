@@ -1,0 +1,24 @@
+{
+    "api_external_messages_delete": {
+        "type": "object",
+        "required": [
+            "source",
+            "external_id",
+            "message_id"
+        ],
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "u123"
+            },
+            "message_id": {
+                "type": "integer",
+                "example": "123456"
+            }
+        }
+    }
+}

@@ -1,16 +1,18 @@
 <?php
 
-namespace App\DTOs\VK;
+namespace App\DTOs\Vk;
 
 readonly class VkAnswerDto
 {
     public function __construct(
         public ?array $error,
         public int|array $response,
-    ) {}
+    ) {
+    }
 
     /**
      * @param array $dataAnswer
+     *
      * @return self
      */
     public static function fromData(array $dataAnswer): self

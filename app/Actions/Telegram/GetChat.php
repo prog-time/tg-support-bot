@@ -6,12 +6,13 @@ use App\DTOs\TelegramAnswerDto;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Get TG chat
+ * Получение чата
  */
 class GetChat
 {
     /**
-     * Getting telegram chat
+     * Получение telegram чата
+     *
      * @param int $chatId
      * @return TelegramAnswerDto
      */

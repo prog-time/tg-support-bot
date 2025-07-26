@@ -3,32 +3,34 @@
 namespace App\Services\TgVk;
 
 use App\Actions\Telegram\GetFile;
+use App\Actions\Telegram\SendMessage;
 use App\Actions\VK\GetMessagesUploadServerVk;
 use App\Actions\VK\SaveFileVk;
+use App\Actions\VK\SendMessageVk;
 use App\Actions\VK\SendQueryVk;
 use App\Actions\VK\UploadFileVk;
-use App\DTOs\VK\VkAnswerDto;
-use App\Helpers\TelegramHelper;
-use App\Services\TgService;
-use App\Actions\Telegram\SendMessage;
-use App\Actions\VK\SendMessageVk;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\Vk\VkAnswerDto;
+use App\DTOs\Vk\VkTextMessageDto;
+use App\Helpers\TelegramHelper;
 use App\Models\Message;
-use App\DTOs\VK\VkTextMessageDto;
+use App\Services\ActionService\Send\FromTgMessageService;
 
-class TgVkMessageService extends TgService
+class TgVkMessageService extends FromTgMessageService
 {
-    public function __construct(TelegramUpdateDto $update) {
+    public function __construct(TelegramUpdateDto $update)
+    {
         parent::__construct($update);
     }
 
     /**
      * @return void
+     *
      * @throws \Exception
      */
-    public function handleUpdate()
+    public function handleUpdate(): void
     {
         if ($this->update->typeQuery === 'message') {
             if (!empty($this->update->rawData['message']['photo'])) {
@@ -43,8 +45,8 @@ class TgVkMessageService extends TgService
                 $resultQuery = $this->sendMessage();
             }
 
-            if (!empty($resultQuery->error)) {
-                throw new \Exception("Ошибка отправки запроса!");
+            if (empty($resultQuery) || !empty($resultQuery->error)) {
+                throw new \Exception('Ошибка отправки запроса!');
             }
 
             $this->saveMessage($resultQuery);
@@ -61,44 +63,13 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * @param string $fileId
-     * @param string $typeFile
-     * @param string $typeMethod
-     * @return TelegramAnswerDto|VkAnswerDto|null
-     * @throws \Exception
-     */
-    protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod)
-    {
-        // get telegram file data
-        $fileData = GetFile::execute($fileId);
-        if (empty($fileData->rawData['result']['file_path'])) {
-            throw new \Exception("Ошибка получения данных файла!");
-        }
-        $fullFilePath = TelegramHelper::getFilePath($fileData->rawData['result']['file_path']);
-
-        // get upload server data
-        $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
-        if (empty($resultData->response['upload_url'])) {
-            throw new \Exception("Ошибка получения ссылки для загрузки файла!");
-        }
-
-        // upload file in VK
-        $urlQuery = $resultData->response['upload_url'];
-        $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
-
-        // save file in VK
-        return SaveFileVk::execute($typeMethod, $responseData);
-    }
-
-    /**
-     * Send photo
      * @return VkAnswerDto
      */
     protected function sendPhoto(): VkAnswerDto
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'photo', 'photos');
         if (empty($fileData->response)) {
-            throw new \Exception("Ошибка загрузки файла!");
+            throw new \Exception('Ошибка загрузки файла!');
         }
         $attachment = "photo{$fileData->response[0]['owner_id']}_{$fileData->response[0]['id']}";
 
@@ -111,14 +82,13 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send document
      * @return VkAnswerDto
      */
     protected function sendDocument(): VkAnswerDto
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'doc', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception("Ошибка загрузки файла!");
+            throw new \Exception('Ошибка загрузки файла!');
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -131,7 +101,6 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send location
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -143,14 +112,13 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send voice
      * @return VkAnswerDto
      */
     protected function sendVoice(): VkAnswerDto
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'audio_message', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception("Ошибка загрузки файла!");
+            throw new \Exception('Ошибка загрузки файла!');
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -163,7 +131,6 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send sticker
      * @return VkAnswerDto
      */
     protected function sendSticker(): VkAnswerDto
@@ -177,7 +144,6 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send video note
      * @return TelegramAnswerDto
      */
     protected function sendVideoNote(): TelegramAnswerDto
@@ -188,7 +154,6 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send contact info
      * @return VkAnswerDto
      */
     protected function sendContact(): VkAnswerDto
@@ -210,7 +175,6 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Send text message
      * @return null|VkAnswerDto
      */
     protected function sendMessage(): ?VkAnswerDto
@@ -224,21 +188,50 @@ class TgVkMessageService extends TgService
     }
 
     /**
-     * Save message in DB
-     * @param VkAnswerDto $resultQuery
+     * @param mixed $resultQuery
+     *
      * @return void
      */
-    protected function saveMessage(VkAnswerDto $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): void
     {
-        Message::create(
-            [
-                'bot_user_id' => $this->botUser->id,
-                'platform' => $this->source,
-                'message_type' => $this->typeMessage,
-                'from_id' => $this->update->messageId,
-                'to_id' => $resultQuery->response,
-            ]
-        );
+        Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->source,
+            'message_type' => $this->typeMessage,
+            'from_id' => $this->update->messageId,
+            'to_id' => $resultQuery->response,
+        ]);
     }
 
+    /**
+     * @param string $fileId
+     * @param string $typeFile
+     * @param string $typeMethod
+     *
+     * @return TelegramAnswerDto|VkAnswerDto|null
+     *
+     * @throws \Exception
+     */
+    protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod)
+    {
+        // get telegram file data
+        $fileData = GetFile::execute($fileId);
+        if (empty($fileData->rawData['result']['file_path'])) {
+            throw new \Exception('Ошибка получения данных файла!');
+        }
+        $fullFilePath = TelegramHelper::getFilePublicPath($this->update->fileId);
+
+        // get upload server data
+        $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
+        if (empty($resultData->response['upload_url'])) {
+            throw new \Exception('Ошибка получения ссылки для загрузки файла!');
+        }
+
+        // upload file in VK
+        $urlQuery = $resultData->response['upload_url'];
+        $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
+
+        // save file in VK
+        return SaveFileVk::execute($typeMethod, $responseData);
+    }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
 use App\Actions\Telegram\SendMessage;
@@ -8,15 +8,18 @@ use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\Message;
+use App\Services\ActionService\Send\FromTgMessageService;
 
-class TgMessageService extends MessageService
+class TgMessageService extends FromTgMessageService
 {
-    public function __construct(TelegramUpdateDto $update) {
+    public function __construct(TelegramUpdateDto $update)
+    {
         parent::__construct($update);
     }
 
     /**
      * @return void
+     *
      * @throws \Exception
      */
     public function handleUpdate(): void
@@ -41,7 +44,7 @@ class TgMessageService extends MessageService
             }
 
             if (empty($resultQuery->ok)) {
-                throw new \Exception("Ошибка отправки запроса!");
+                throw new \Exception('Ошибка отправки запроса!');
             }
 
             $this->saveMessage($resultQuery);
@@ -60,14 +63,12 @@ class TgMessageService extends MessageService
                     ]));
                     break;
             }
-
         } else {
             throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
         }
     }
 
     /**
-     * Send photo
      * @return TelegramAnswerDto
      */
     protected function sendPhoto(): TelegramAnswerDto
@@ -84,7 +85,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send document
      * @return TelegramAnswerDto
      */
     protected function sendDocument(): TelegramAnswerDto
@@ -101,7 +101,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send location
      * @return TelegramAnswerDto
      */
     protected function sendLocation(): TelegramAnswerDto
@@ -113,7 +112,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send voice
      * @return TelegramAnswerDto
      */
     protected function sendVoice(): TelegramAnswerDto
@@ -124,7 +122,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send sticker
      * @return TelegramAnswerDto
      */
     protected function sendSticker(): TelegramAnswerDto
@@ -135,7 +132,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send video note
      * @return TelegramAnswerDto
      */
     protected function sendVideoNote(): TelegramAnswerDto
@@ -146,7 +142,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send contact info
      * @return TelegramAnswerDto
      */
     protected function sendContact(): TelegramAnswerDto
@@ -165,7 +160,6 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Send text message
      * @return TelegramAnswerDto
      */
     protected function sendMessage(): TelegramAnswerDto
@@ -179,11 +173,11 @@ class TgMessageService extends MessageService
     }
 
     /**
-     * Save message in DB
      * @param TelegramAnswerDto $resultQuery
+     *
      * @return void
      */
-    protected function saveMessage(TelegramAnswerDto $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): void
     {
         Message::create(
             [
@@ -195,5 +189,4 @@ class TgMessageService extends MessageService
             ]
         );
     }
-
 }
