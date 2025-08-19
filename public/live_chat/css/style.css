@@ -1,0 +1,234 @@
+
+.ptw-butWidget {
+    position: fixed;
+    top: auto;
+    bottom: 30px;
+    right: 30px;
+    cursor: pointer;
+}
+
+#prog-time-widget {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: auto;
+    right: 20px;
+    top: auto;
+    bottom: 20px;
+    width: 360px;
+    max-height: 600px;
+    border-radius: 16px;
+    box-shadow: 14px 13px 43px #181D2729;
+    overflow: hidden;
+    font-size: 15px;
+    font-family: "Inter", sans-serif;
+    z-index: 9999;
+    background: #fff;
+}
+
+#prog-time-widget header.ptw_header {
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+    background: #0BA5EC;
+    padding: 20px 24px;
+}
+
+#prog-time-widget .ptw_block_logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+#prog-time-widget .ptw_text {
+    color: #fff;
+}
+
+#prog-time-widget .ptw_dop_heading {
+    font-size: 12px;
+    font-weight: 300;
+}
+
+#prog-time-widget .ptw_name_manager {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 31px;
+}
+
+#prog-time-widget button.ptw_close_but {
+    display: flex;
+    padding: 0;
+    background: transparent;
+    border: none;
+    margin: 0 0 0 auto;
+    cursor: pointer;
+}
+
+#prog-time-widget main.ptw_content_block {
+    height: 586px;
+    display: flex;
+    flex-direction: column;
+    row-gap: 24px;
+    padding: 24px 10px 10px 24px;
+    box-sizing: border-box;
+    overflow-y: scroll;
+}
+
+#prog-time-widget .ptw_message_block {
+    width: fit-content;
+    max-width: 288px;
+    margin: 0 auto 0 0;
+    padding: 12px 16px;
+    border-radius: 8px 8px 8px 0;
+    color: #414651;
+    background: #F5F5F5;
+    box-sizing: border-box;
+    font-weight: 400;
+}
+
+#prog-time-widget .ptw_message_block.ptw_client_message_block {
+    border-radius: 8px 8px 0 8px;
+    color: #0086C9;
+    background: #E0F2FE;
+    margin: 0 0 0 auto;
+}
+
+#prog-time-widget .ptw_message_block .ptw_message_date {
+    font-size: 12px;
+    margin-top: 5px;
+    color: #999EA1;
+}
+
+#prog-time-widget .ptw_message_block.ptw_manager_message_block .ptw_message_date {
+    float: right;
+    color: #36BFFA;
+}
+
+#prog-time-widget footer.ptw_footer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-top: 1px solid #D5D7DA;
+    padding: 14px 24px;
+}
+
+#prog-time-widget footer.ptw_footer {
+    display: grid;
+    grid-template-columns: 1fr 40px;
+    grid-gap: 12px;
+    border-top: 1px solid #D5D7DA;
+    padding: 16px 24px;
+}
+
+#prog-time-widget .ptw_form_block {
+    display: flex;
+    position: relative;
+}
+
+#prog-time-widget input#ptw_text_field {
+    display: flex;
+    width: 100%;
+    border: 1px solid #D5D7DA;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 15px;
+
+}
+
+#prog-time-widget input#ptw_text_field::placeholder {
+    color: #D5D7DA;
+}
+
+#prog-time-widget input#ptw_file_field {
+    display: none;
+}
+
+#prog-time-widget .ptw_file_field_block {
+    display: flex;
+    position: absolute;
+    top: 10px;
+    left: auto;
+    right: 6px;
+    cursor: pointer;
+}
+
+#prog-time-widget button.ptw_send_but {
+    width: 44px;
+    padding: 0;
+    display: flex;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+#prog-time-widget .ptw_send_but:disabled {
+    cursor: default;
+}
+
+#prog-time-widget .ptw_send_but:disabled > svg rect {
+    fill: #E0F2FE;
+}
+
+#prog-time-widget img.imageMessage {
+    display: block;
+    width: 100%;
+    max-width: 256px;
+    height: 192px;
+}
+
+/* Стили для всей страницы */
+#prog-time-widget ::-webkit-scrollbar {
+    width: 12px; /* Ширина полосы прокрутки */
+    height: 12px; /* Высота для горизонтальной прокрутки */
+}
+
+#prog-time-widget ::-webkit-scrollbar-track {
+    background: #fff; /* Цвет фона трека */
+    border-radius: 6px; /* Скругление углов */
+}
+
+#prog-time-widget ::-webkit-scrollbar-thumb {
+    background: #D5D7DA; /* Цвет ползунка */
+    border-radius: 6px; /* Скругление углов ползунка */
+    border: 2px solid #fff; /* Обводка для отступа */
+}
+
+#prog-time-widget ::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1; /* Цвет ползунка при наведении */
+}
+
+#prog-time-widget .date-line {
+    position: relative;
+    height: 15px;
+}
+
+#prog-time-widget .date-line hr.line {
+    background: #D5D7DA;
+    border: none;
+    height: 1px;
+}
+
+#prog-time-widget .date-text {
+    position: relative;
+    top: -16px;
+    line-height: 1;
+    background: #fff;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 0 10px;
+    color: #999EA1;
+    font-size: 14px;
+}
+
+@media (max-width: 500px) {
+    #prog-time-widget {
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
