@@ -33,6 +33,11 @@ class ApiQuery
                 throw new Exception('Bearer Token указан неверно!');
             }
 
+            $request->merge([
+                'source' => $itemAccessToken->name,
+                'external_id' => $request->route('external_id') ?? null,
+            ]);
+
             $this->sendRequestInLoki($request);
             return $next($request);
         } catch (\Exception $e) {
