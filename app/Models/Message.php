@@ -24,6 +24,11 @@ class Message extends Model
         'to_id',
     ];
 
+    public function externalMessage()
+    {
+        return $this->hasOne(ExternalMessage::class);
+    }
+
     /**
      * @param string $typeMessage
      * @param int    $from_id

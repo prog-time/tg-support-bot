@@ -7,6 +7,7 @@ use App\DTOs\External\ExternalListMessageAnswerDto;
 use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\External\ExternalMessageResponseDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
@@ -39,7 +40,7 @@ class ExternalTrafficService
 
             $botUser = BotUser::where([
                 'chat_id' => $externalUser->id,
-                'platform' => 'external_source',
+                'platform' => $externalUser->source,
             ])->first();
             if (empty($botUser)) {
                 throw new Exception('Чат не найден!', 1);
@@ -47,7 +48,7 @@ class ExternalTrafficService
 
             $query = Message::where([
                 'bot_user_id' => $botUser->id,
-                'platform' => 'external_source',
+                'platform' => $botUser->externalUser->source,
             ]);
 
             if (!empty($filterParams->date_start)) {
@@ -58,11 +59,15 @@ class ExternalTrafficService
                 $query->where('created_at', '<=', $filterParams->date_end);
             }
 
-            $sortDirection = strtolower($filterParams->type_sort ?? 'desc');
+            if (!empty($filterParams->after_id)) {
+                $query->where('id', '>', $filterParams->after_id);
+            }
+
+            $sortDirection = strtolower($filterParams->type_sort ?? 'asc');
             if (!in_array($sortDirection, ['asc', 'desc'])) {
                 $sortDirection = 'desc';
             }
-            $query->orderBy('created_at', $sortDirection);
+            $query->orderBy('id', $sortDirection);
 
             if (!empty($filterParams->limit)) {
                 $query->limit($filterParams->limit);
@@ -75,24 +80,27 @@ class ExternalTrafficService
             $totalCount = $query->count();
             $listMessagesData = $query->get();
 
-            if ($listMessagesData->isEmpty()) {
-                throw new Exception('Сообщения не найдены!', 1);
-            }
-
             $resultMessages = [
+                'status' => true,
                 'source' => $filterParams->source,
                 'external_id' => $filterParams->external_id,
                 'total_count' => $totalCount,
                 'messages' => [],
             ];
 
-            foreach ($listMessagesData as $message) {
-                $resultMessages['messages'][] = [
-                    'message_id' => $message->from_id,
-                    'message_type' => $message->message_type,
-                    'text' => $message->text ?? null,
-                    'date' => $message->created_at->format('d.m.Y H:i:s'),
-                ];
+            if (!$listMessagesData->isEmpty()) {
+                foreach ($listMessagesData as $message) {
+                    $messageParams = [
+                        'date' => $message->created_at->format('d.m.Y H:i:s'),
+                        'message_id' => $message->id,
+                        'message_type' => $message->message_type,
+                        'text' => $message->externalMessage->text ?? null,
+                        'file_id' => $message->externalMessage->file_id,
+                        'file_url' => null,
+                    ];
+
+                    $resultMessages['messages'][] = ExternalMessageResponseDto::fromArray($messageParams)->toArray();
+                }
             }
 
             return ExternalListMessageAnswerDto::from($resultMessages)->toArray();
@@ -117,7 +125,7 @@ class ExternalTrafficService
     }
 
     /**
-     * Создать новое сообщение
+     * Создать новое текстовое сообщение
      *
      * @param ExternalMessageDto $dto
      *
@@ -126,6 +134,18 @@ class ExternalTrafficService
     public function store(ExternalMessageDto $dto): ExternalMessageAnswerDto
     {
         return (new ExternalMessageService($dto))->handleUpdate();
+    }
+
+    /**
+     * Отправить файл
+     *
+     * @param ExternalMessageDto $dto
+     *
+     * @return ExternalMessageAnswerDto
+     */
+    public function sendFile(ExternalMessageDto $dto): ExternalMessageAnswerDto
+    {
+        return (new ExternalFileService($dto))->handleUpdate();
     }
 
     /**

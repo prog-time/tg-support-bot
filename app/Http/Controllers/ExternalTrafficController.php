@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageDto;
-use App\Http\Requests\External\ExternalTrafficStoreRequest;
 use App\Services\External\ExternalTrafficService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,11 +36,9 @@ class ExternalTrafficController
     /**
      * Получить список сообщений
      *
-     * @param Request $request
-     *
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
         return response()->json($this->externalTrafficService->list($this->dataHook));
     }
@@ -59,16 +56,23 @@ class ExternalTrafficController
     }
 
     /**
-     * Создать сообщение
-     *
-     * @param ExternalTrafficStoreRequest $request
+     * Создать текстового сообщение
      *
      * @return JsonResponse
      */
-    public function store(ExternalTrafficStoreRequest $request): JsonResponse
+    public function store(): JsonResponse
     {
-        $dataDto = $this->dataHook;
-        return response()->json($this->externalTrafficService->store($dataDto)->toArray());
+        return response()->json($this->externalTrafficService->store($this->dataHook)->toArray());
+    }
+
+    /**
+     * Отправка файла
+     *
+     * @return JsonResponse
+     */
+    public function sendFile(): JsonResponse
+    {
+        return response()->json($this->externalTrafficService->sendFile($this->dataHook)->toArray());
     }
 
     /**

@@ -22,7 +22,11 @@ class TelegramMethods
             $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
 
-            $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
+            if (!empty($dataQuery['uploaded_file'])) {
+                $resultQuery = ParserMethods::attachQuery($urlQuery, $dataQuery);
+            } else {
+                $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
+            }
             return TelegramAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([

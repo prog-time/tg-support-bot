@@ -55,7 +55,7 @@ abstract class ExternalService
 
             return BotUser::firstOrCreate([
                 'chat_id' => $this->externalUser->id,
-                'platform' => 'external_source',
+                'platform' => $this->externalUser->source,
             ]);
         } catch (\Exception $e) {
             return null;

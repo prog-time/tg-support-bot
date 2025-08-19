@@ -2,6 +2,7 @@
 
 namespace App\DTOs;
 
+use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Data;
 
 /**
@@ -69,6 +70,7 @@ class TGTextMessageDto extends Data
         public ?string  $file_id,
         public ?string  $photo,
         public ?string  $document,
+        public ?UploadedFile $uploaded_file,
         public ?string  $voice,
         public ?string  $sticker,
         public ?string  $video_note,

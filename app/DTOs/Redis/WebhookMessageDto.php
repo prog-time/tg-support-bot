@@ -13,6 +13,7 @@ class WebhookMessageDto
         public string $date,
         public ?string $text = null,
         public ?string $attachmentPath = null,
+        public ?string $fileId = null,
         public ?array $dopParams = [],
     ) {
     }
@@ -32,6 +33,7 @@ class WebhookMessageDto
 
             'text' => $this->text,
             'file_path' => $this->attachmentPath,
+            'file_id' => $this->fileId,
 
             'dop_params' => $this->dopParams,
 
@@ -54,7 +56,8 @@ class WebhookMessageDto
             fromId: $data['from_id'],
             date: $data['date'],
             text: $data['text'],
-            attachmentPath: $data['file_path'],
+            attachmentPath: $data['file_path'] ?? null,
+            fileId: $data['file_id'] ?? null,
             dopParams: $data['dop_params'] ?? [],
         );
     }

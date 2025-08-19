@@ -2,6 +2,8 @@
 
 namespace App\DTOs;
 
+use App\Helpers\TelegramHelper;
+
 /**
  * TelegramAnswerDto
  *
@@ -34,6 +36,8 @@ readonly class TelegramAnswerDto
         public ?int $date,
         public ?string $message,
         public ?string $type_error,
+        public ?string $text,
+        public ?string $fileId,
         public ?array $rawData = null
     ) {
     }
@@ -41,24 +45,36 @@ readonly class TelegramAnswerDto
     /**
      * @param array $dataAnswer
      *
-     * @return self
+     * @return null|self
      */
-    public static function fromData(array $dataAnswer): self
+    public static function fromData(array $dataAnswer): ?self
     {
-        if (!empty($dataAnswer['ok'])) {
-            $result = $dataAnswer['result'];
-        }
+        try {
+            if (empty($dataAnswer)) {
+                throw new \Exception('Пустой массив с ответом!');
+            }
 
-        return new self(
-            ok: $dataAnswer['ok'] ?? false,
-            message_id: $result['message_id'] ?? null,
-            error_code: $dataAnswer['error_code'] ?? 200,
-            message_thread_id: $result['message_thread_id'] ?? null,
-            date: $result['date'] ?? null,
-            message: $result['message'] ?? null,
-            type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
-            rawData: $dataAnswer,
-        );
+            $result = $dataAnswer['result'] ?? [];
+
+            $dataMessage = empty($result) ? [] : [
+                'message' => $result,
+            ];
+
+            return new self(
+                ok: $dataAnswer['ok'] ?? false,
+                message_id: $result['message_id'] ?? null,
+                error_code: $dataAnswer['error_code'] ?? 200,
+                message_thread_id: $result['message_thread_id'] ?? null,
+                date: $result['date'] ?? null,
+                message: $result['message'] ?? null,
+                type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
+                text: $result['text'] ?? null,
+                fileId: TelegramHelper::extractFileId($dataMessage),
+                rawData: $dataAnswer,
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -79,6 +95,8 @@ readonly class TelegramAnswerDto
             $typeError = 'message is not modified';
         } elseif (preg_match('/( message to edit not found)/', $textError)) {
             $typeError = 'message is not modified';
+        } elseif (preg_match('/( message thread not found)/', $textError)) {
+            $typeError = 'message thread not found';
         }
         return $typeError;
     }

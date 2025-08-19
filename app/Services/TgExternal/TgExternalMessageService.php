@@ -39,6 +39,7 @@ class TgExternalMessageService extends FromTgMessageService
 
                     'text' => $this->update->text,
                     'file_path' => null,
+                    'file_id' => null,
                     'date' => date('d.m.Y H:i'),
                 ];
 
@@ -134,6 +135,7 @@ class TgExternalMessageService extends FromTgMessageService
     {
         try {
             return [
+                'file_id' => $this->update->fileId,
                 'file_path' => TelegramHelper::getFilePublicPath($this->update->fileId),
             ];
         } catch (\Exception $e) {
@@ -164,12 +166,17 @@ class TgExternalMessageService extends FromTgMessageService
      */
     protected function saveMessage(mixed $resultQuery): void
     {
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->externalUser->source,
             'message_type' => 'outgoing',
             'from_id' => $resultQuery->fromId,
             'to_id' => $resultQuery->toId,
+        ]);
+
+        $message->externalMessage()->create([
+            'text' => $resultQuery->text ?? null,
+            'file_id' => $resultQuery->fileId ?? null,
         ]);
     }
 }

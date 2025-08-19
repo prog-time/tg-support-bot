@@ -13,7 +13,7 @@ use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
 
-class ExternalMessageService extends ExternalService
+class ExternalFileService extends ExternalService
 {
     public function __construct(ExternalMessageDto $update)
     {
@@ -75,11 +75,11 @@ class ExternalMessageService extends ExternalService
     public function handleUpdate(): ExternalMessageAnswerDto
     {
         try {
-            if (empty($this->update->text)) {
-                throw new \Exception('Текст сообщения не найден!', 1);
+            if (empty($this->update->uploaded_file)) {
+                throw new \Exception('Файл не найден!', 1);
             }
 
-            $resultQuery = $this->sendMessage();
+            $resultQuery = $this->sendDocument();
             if (empty($resultQuery->ok)) {
                 throw new \Exception('Ошибка отправки запроса!', 1);
             }
@@ -101,16 +101,16 @@ class ExternalMessageService extends ExternalService
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return null|TelegramAnswerDto
      */
-    protected function sendMessage(): TelegramAnswerDto
+    protected function sendDocument(): ?TelegramAnswerDto
     {
         return SendMessage::execute($this->botUser, TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
+            'methodQuery' => 'sendDocument',
             'typeSource' => 'private',
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
-            'text' => $this->update->text
+            'uploaded_file' => $this->update->uploaded_file
         ]));
     }
 
