@@ -44,10 +44,11 @@ readonly class TelegramAnswerDto
 
     /**
      * @param array $dataAnswer
+     * @param string|null $methodQuery
      *
      * @return null|self
      */
-    public static function fromData(array $dataAnswer): ?self
+    public static function fromData(array $dataAnswer, string $methodQuery = null): ?self
     {
         try {
             if (empty($dataAnswer)) {
@@ -69,7 +70,7 @@ readonly class TelegramAnswerDto
                 message: $result['message'] ?? null,
                 type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
                 text: $result['text'] ?? null,
-                fileId: TelegramHelper::extractFileId($dataMessage),
+                fileId: $methodQuery === 'getChat' ? null : TelegramHelper::extractFileId($dataMessage),
                 rawData: $dataAnswer,
             );
         } catch (\Throwable $e) {
