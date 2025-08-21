@@ -2,7 +2,7 @@
 
 namespace App\DTOs\External;
 
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
 /**
@@ -32,6 +32,7 @@ class ExternalListMessageDto extends Data
         public ?string $type_sort,
         public ?int $limit,
         public ?int $offset,
+        public ?int $after_id,
         public ?string $date_start,
         public ?string $date_end,
     ) {
@@ -52,6 +53,7 @@ class ExternalListMessageDto extends Data
                 type_sort: $data['type_sort'] ?? null,
                 limit: $data['limit'] ?? null,
                 offset: $data['offset'] ?? null,
+                after_id: $data['after_id'] ?? null,
                 date_start: $data['date_start'] ?? null,
                 date_end: $data['date_end'] ?? null
             );

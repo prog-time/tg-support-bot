@@ -15,13 +15,13 @@ class ExternalMessageAnswerDto extends Data
 {
     /**
      * @param bool $status
-     * @param int|null $message_id
      * @param string|null $error
+     * @param ExternalMessageResponseDto|null $result
      */
     public function __construct(
         public bool $status,
-        public ?int $message_id,
         public ?string $error,
+        public ?ExternalMessageResponseDto $result,
     ) {
     }
 

@@ -27,7 +27,7 @@ class SendMessage
         try {
             $countRepeat++;
             if ($countRepeat > 3) {
-                throw new Exception('Получено максимальное количество сообщений', 1);
+                throw new Exception('Максимальное количество попыток отправить сообщение!', 1);
             }
 
             $typeSource = $queryParams->typeSource;

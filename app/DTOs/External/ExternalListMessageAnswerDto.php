@@ -19,6 +19,7 @@ class ExternalListMessageAnswerDto extends Data
      * @param array $messages
      */
     public function __construct(
+        public bool $status,
         public string $source,
         public string $external_id,
         public array $messages,

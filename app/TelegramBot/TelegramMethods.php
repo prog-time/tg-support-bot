@@ -3,11 +3,12 @@
 namespace App\TelegramBot;
 
 use App\DTOs\TelegramAnswerDto;
+use App\Services\Telegram\TelegramRateLimitService;
 
 class TelegramMethods
 {
     /**
-     * Отправка запроса в Telegram
+     * Отправка запроса в Telegram с проверкой лимитов
      *
      * @param string $methodQuery
      * @param ?array $dataQuery
@@ -17,12 +18,34 @@ class TelegramMethods
     public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null): TelegramAnswerDto
     {
         try {
+            // Извлекаем chat_id из данных запроса для проверки локальных лимитов
+            $chatId = $dataQuery['chat_id'] ?? null;
+
+            // Проверяем лимиты запросов
+            if (!TelegramRateLimitService::checkRateLimit($methodQuery, $chatId)) {
+                // Если превышен лимит, ждем необходимое время
+                TelegramRateLimitService::waitForRateLimit($methodQuery);
+
+                // Повторно проверяем лимит
+                if (!TelegramRateLimitService::checkRateLimit($methodQuery, $chatId)) {
+                    return TelegramAnswerDto::fromData([
+                        'ok' => false,
+                        'error_code' => 429,
+                        'result' => 'Rate limit exceeded',
+                    ], $methodQuery);
+                }
+            }
+
             $token = config('traffic_source.settings.telegram.token');
 
             $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
 
-            $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
+            if (!empty($dataQuery['uploaded_file'])) {
+                $resultQuery = ParserMethods::attachQuery($urlQuery, $dataQuery);
+            } else {
+                $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
+            }
             return TelegramAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([

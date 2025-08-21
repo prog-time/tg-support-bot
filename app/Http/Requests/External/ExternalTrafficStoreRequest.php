@@ -23,7 +23,7 @@ class ExternalTrafficStoreRequest extends FormRequest
             'source' => 'required|string',
             'external_id' => 'required|string',
             'text' => 'nullable|string',
-            'attachment' => 'nullable|array',        
+            'attachment' => 'nullable|array',
         ];
     }
 

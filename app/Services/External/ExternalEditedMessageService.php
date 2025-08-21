@@ -91,7 +91,7 @@ class ExternalEditedMessageService extends ExternalService
 
             $messageData = Message::where([
                 'message_type' => 'incoming',
-                'platform' => 'external_source',
+                'platform' => $externalUser->source,
                 'from_id' => $this->update->message_id,
             ])->first();
 

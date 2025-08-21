@@ -34,7 +34,7 @@ class DeleteMessage
 
             $botUser = BotUser::where([
                 'chat_id' => $externalUser->id,
-                'platform' => 'external_source',
+                'platform' => $externalUser->source,
             ])->first();
             if (empty($botUser)) {
                 throw new Exception('Чат не найден!', 1);
@@ -42,7 +42,7 @@ class DeleteMessage
 
             $whereParamsMessage = [
                 'message_type' => 'incoming',
-                'platform' => 'external_source',
+                'platform' => $externalUser->source,
                 'from_id' => $updateData->message_id,
             ];
 
