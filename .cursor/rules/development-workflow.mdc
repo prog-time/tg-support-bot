@@ -1,0 +1,36 @@
+---
+description: Development workflow and best practices
+---
+
+# Development Workflow
+
+## Code Quality Tools
+- Use [phpstan.neon](mdc:phpstan.neon) for static analysis
+- Use [pint.json](mdc:pint.json) for code formatting
+- Run quality checks using [scripts/pre-commit-check.sh](mdc:scripts/pre-commit-check.sh)
+
+## Pre-commit Hooks
+- [scripts/pre-commit-check.sh](mdc:scripts/pre-commit-check.sh) - Runs before each commit
+- [scripts/pre-push-check.sh](mdc:scripts/pre-push-check.sh) - Runs before pushing to remote
+- Individual check scripts in [scripts/check_scripts/](mdc:scripts/check_scripts/)
+
+## Docker Development
+- Use [docker-compose.yml](mdc:docker-compose.yml) for local development
+- [Dockerfile](mdc:Dockerfile) for containerization
+- [docker/](mdc:docker/) directory contains service configurations
+
+## Database Management
+- Use [artisan](mdc:artisan) commands for database operations
+- Run migrations: `php artisan migrate`
+- Seed database: `php artisan db:seed`
+- Generate API tokens: `php artisan generate:api-token`
+
+## Swagger Documentation
+- Use [app/Console/Commands/GenerateSwagger.php](mdc:app/Console/Commands/GenerateSwagger.php) to generate API docs
+- Swagger files stored in [resources/swagger/](mdc:resources/swagger/)
+- Access Swagger UI through [resources/views/swagger-ui.blade.php](mdc:resources/views/swagger-ui.blade.php)
+
+## Logging and Monitoring
+- Use [app/Logging/LokiLogger.php](mdc:app/Logging/LokiLogger.php) for centralized logging
+- Monitor application through [config/logging.php](mdc:config/logging.php)
+- Use [config/sentry.php](mdc:config/sentry.php) for error tracking
