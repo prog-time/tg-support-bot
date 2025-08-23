@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SimplePage;
 use App\Http\Controllers\SwaggerController;
 use App\Http\Controllers\PreviewController;
 use Illuminate\Support\Facades\Route;
@@ -13,3 +14,5 @@ Route::group([
 });
 
 Route::get('/preview/chat', [PreviewController::class, 'chat']);
+
+Route::get('/', [SimplePage::class, 'index']);
