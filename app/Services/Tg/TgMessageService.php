@@ -7,6 +7,7 @@ use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\Models\AiCondition;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
 
@@ -61,6 +62,10 @@ class TgMessageService extends FromTgMessageService
                         'message_thread_id' => $this->botUser->topic_id,
                         'icon_custom_emoji_id' => __('icons.outgoing'),
                     ]));
+
+                    AiCondition::where('bot_user_id', $this->botUser->chat_id)->update([
+                        'active' => false,
+                    ]);
                     break;
             }
         } else {
@@ -179,14 +184,12 @@ class TgMessageService extends FromTgMessageService
      */
     protected function saveMessage(mixed $resultQuery): void
     {
-        Message::create(
-            [
-                'bot_user_id' => $this->botUser->id,
-                'platform' => $this->source,
-                'message_type' => $this->typeMessage,
-                'from_id' => $this->update->messageId,
-                'to_id' => $resultQuery->message_id,
-            ]
-        );
+        Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->source,
+            'message_type' => $this->typeMessage,
+            'from_id' => $this->update->messageId,
+            'to_id' => $resultQuery->message_id,
+        ]);
     }
 }

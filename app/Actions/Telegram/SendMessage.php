@@ -33,7 +33,7 @@ class SendMessage
             $typeSource = $queryParams->typeSource;
             $dataQuery = $queryParams->toArray();
 
-            $resultQuery = TelegramMethods::sendQueryTelegram($queryParams->methodQuery, $dataQuery);
+            $resultQuery = TelegramMethods::sendQueryTelegram($queryParams->methodQuery, $dataQuery, $queryParams->token);
             if ($resultQuery->ok === false) {
                 if ($resultQuery->error_code === 400 && $resultQuery->type_error === 'markdown') {
                     $queryParams->parse_mode = 'html';
