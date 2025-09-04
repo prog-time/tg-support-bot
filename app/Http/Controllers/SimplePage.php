@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
+
 class SimplePage
 {
-    public function index()
+    /**
+     * @return View
+     */
+    public function index(): View
     {
         if (config('app.url') === 'https://tg-support-bot.ru/') {
             return view('site.home');
