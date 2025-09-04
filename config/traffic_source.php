@@ -9,6 +9,10 @@ return [
 
             'template_topic_name' => env('TELEGRAM_TOPIC_NAME', ''),
         ],
+        'telegram_ai' => [
+            'token' => env('TELEGRAM_AI_BOT_TOKEN', ''),
+        ],
+
         'vk' => [
             'token' => env('VK_TOKEN', ''),
             'secret_key' => env('VK_SECRET_CODE', ''),
