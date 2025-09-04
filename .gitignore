@@ -31,3 +31,5 @@ yarn-error.log
 .valetphprc
 .tool-versions
 .DS_Store
+
+/resources/views/site/hide/*
