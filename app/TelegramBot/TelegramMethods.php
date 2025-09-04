@@ -15,7 +15,7 @@ class TelegramMethods
      *
      * @return TelegramAnswerDto
      */
-    public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null): TelegramAnswerDto
+    public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null, ?string $token = null): TelegramAnswerDto
     {
         try {
             // Извлекаем chat_id из данных запроса для проверки локальных лимитов
@@ -36,7 +36,7 @@ class TelegramMethods
                 }
             }
 
-            $token = config('traffic_source.settings.telegram.token');
+            $token = $token ?? config('traffic_source.settings.telegram.token');
 
             $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
