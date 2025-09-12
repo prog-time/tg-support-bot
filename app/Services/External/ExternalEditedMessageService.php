@@ -55,7 +55,7 @@ class ExternalEditedMessageService extends ExternalService
             }
 
             if (empty($resultQuery->ok)) {
-                throw new \Exception('Ошибка отправки запроса!');
+                throw new \Exception($resultQuery->rawData['result'], 1);
             }
 
             $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
@@ -86,7 +86,7 @@ class ExternalEditedMessageService extends ExternalService
             ])->first();
 
             if (empty($externalUser)) {
-                throw new Exception('External user not found!');
+                throw new Exception('Пользователь не найден!', 1);
             }
 
             $messageData = Message::where([
@@ -97,7 +97,7 @@ class ExternalEditedMessageService extends ExternalService
 
             $toIdMessage = $messageData->to_id ?? null;
             if (empty($toIdMessage)) {
-                throw new \Exception('Сообщение не найдено!');
+                throw new \Exception('Сообщение не найдено!', 1);
             }
 
             $this->messageParamsDTO->methodQuery = 'editMessageText';
@@ -106,7 +106,11 @@ class ExternalEditedMessageService extends ExternalService
 
             return SendMessage::execute($this->botUser, $this->messageParamsDTO);
         } catch (\Exception $e) {
-            return null;
+            return TelegramAnswerDto::fromData([
+                'ok' => false,
+                'error_code' => 404,
+                'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+            ]);
         }
     }
 }
