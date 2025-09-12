@@ -60,7 +60,7 @@ readonly class TelegramAnswerDto
                 date: $result['date'] ?? null,
                 message: $result['message'] ?? null,
                 type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
-                text: $result['text'] ?? null,
+                text: $result['text'] ?? $result['caption'] ?? null,
                 fileId: $methodQuery === 'getChat' ? null : TelegramHelper::extractFileId($dataMessage),
                 rawData: $dataAnswer,
             );
