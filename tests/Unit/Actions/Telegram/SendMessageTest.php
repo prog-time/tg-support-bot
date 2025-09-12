@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class SendMessageTest extends TestCase
 {
-    public int $userChatId = 1424646511;
+    public int $chatId = 0;
 
     public string $photoFileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
 
@@ -19,14 +19,15 @@ class SendMessageTest extends TestCase
 
     public function botTestUser(): BotUser
     {
-        return BotUser::where('chat_id', $this->userChatId)->first();
+        $this->chatId = config('testing.tg_private.chat_id');
+        return BotUser::where('chat_id', $this->chatId)->first();
     }
 
     private function getQueryParams(): array
     {
         return [
             'methodQuery' => 'sendMessage',
-            'chat_id' => $this->botTestUser()->chat_id,
+            'chat_id' => $this->chatId,
         ];
     }
 
