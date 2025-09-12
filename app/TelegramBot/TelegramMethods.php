@@ -26,14 +26,11 @@ class TelegramMethods
                 // Если превышен лимит, ждем необходимое время
                 TelegramRateLimitService::waitForRateLimit($methodQuery);
 
-                // Повторно проверяем лимит
-                if (!TelegramRateLimitService::checkRateLimit($methodQuery, $chatId)) {
-                    return TelegramAnswerDto::fromData([
-                        'ok' => false,
-                        'error_code' => 429,
-                        'result' => 'Rate limit exceeded',
-                    ], $methodQuery);
-                }
+                return TelegramAnswerDto::fromData([
+                    'ok' => false,
+                    'error_code' => 429,
+                    'result' => 'Rate limit exceeded',
+                ]);
             }
 
             $token = $token ?? config('traffic_source.settings.telegram.token');
@@ -46,6 +43,7 @@ class TelegramMethods
             } else {
                 $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
             }
+
             return TelegramAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
