@@ -2,7 +2,7 @@
 
 namespace App\Actions\Telegram;
 
-use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TelegramAnswerDto;
 use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 
@@ -16,41 +16,39 @@ class SendContactMessage
      *
      * @param BotUser $botUser
      *
-     * @return void
+     * @return TelegramAnswerDto
      */
-    private function execute(BotUser $botUser): void
+    private function execute(BotUser $botUser): TelegramAnswerDto
     {
-        $textMessage = $this->createContactMessage($botUser);
-        $dataQuery = [
+        return TelegramMethods::sendQueryTelegram('sendMessage', [
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
-            'text' => $textMessage,
+            'text' => $this->createContactMessage($botUser),
             'parse_mode' => 'html',
-        ];
-        TelegramMethods::sendQueryTelegram('sendMessage', $dataQuery);
+        ]);
     }
 
     /**
      * Подготовка сообщения для отправки
      *
-     * @param TelegramUpdateDto $update
+     * @param int $chatId
      *
-     * @return void
+     * @return TelegramAnswerDto
      */
-    public function executeByTgUpdate(TelegramUpdateDto $update): void
+    public function executeByChatId(int $chatId): TelegramAnswerDto
     {
-        $botUser = BotUser::getTelegramUserData($update);
-        $this->execute($botUser);
+        $botUser = BotUser::where('chat_id', $chatId)->first();
+        return $this->execute($botUser);
     }
 
     /**
      * @param BotUser $botUser
      *
-     * @return void
+     * @return TelegramAnswerDto
      */
-    public function executeByBotUser(BotUser $botUser): void
+    public function executeByBotUser(BotUser $botUser): TelegramAnswerDto
     {
-        $this->execute($botUser);
+        return $this->execute($botUser);
     }
 
     /**
@@ -60,7 +58,7 @@ class SendContactMessage
      *
      * @return string
      */
-    private function createContactMessage(BotUser $botUser): string
+    public function createContactMessage(BotUser $botUser): string
     {
         try {
             $textMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
