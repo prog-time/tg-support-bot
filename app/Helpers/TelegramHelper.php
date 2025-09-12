@@ -38,7 +38,7 @@ class TelegramHelper
     public static function extractFileId(array $data): ?string
     {
         if (!empty($data['message']['photo'])) {
-            $fileId = end($data['message']['photo'])['file_id'];
+            $fileId = end($data['message']['photo'])['file_id'] ?? null;
         } elseif (!empty($data['message']['document'])) {
             $fileId = $data['message']['document']['file_id'];
         } elseif (!empty($data['message']['voice'])) {
