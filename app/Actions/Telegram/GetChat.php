@@ -14,13 +14,13 @@ class GetChat
      * Получение telegram чата
      *
      * @param int $chatId
+     *
      * @return TelegramAnswerDto
      */
     public static function execute(int $chatId): TelegramAnswerDto
     {
-        $dataQuery = [
+        return TelegramMethods::sendQueryTelegram('getChat', [
             'chat_id' => $chatId,
-        ];
-        return TelegramMethods::sendQueryTelegram('getChat', $dataQuery);
+        ]);
     }
 }
