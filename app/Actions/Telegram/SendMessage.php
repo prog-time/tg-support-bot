@@ -30,42 +30,29 @@ class SendMessage
                 throw new Exception('Максимальное количество попыток отправить сообщение!', 1);
             }
 
-            $typeSource = $queryParams->typeSource;
             $dataQuery = $queryParams->toArray();
 
             $resultQuery = TelegramMethods::sendQueryTelegram($queryParams->methodQuery, $dataQuery, $queryParams->token);
             if ($resultQuery->ok === false) {
-                if ($resultQuery->error_code === 400 && $resultQuery->type_error === 'markdown') {
-                    $queryParams->parse_mode = 'html';
-                }
+                if ($resultQuery->error_code === 400) {
+                    switch ($resultQuery->type_error) {
+                        case 'MARKDOWN_ERROR':
+                            $queryParams->parse_mode = 'html';
+                            $resultQuery = self::execute($botUser, $queryParams, $countRepeat);
+                            break;
 
-                if ($resultQuery->error_code === 400 && $resultQuery->type_error === 'message is not modified') {
-                    throw new Exception('Сообщение не изменено', 1);
-                }
-
-                if ($resultQuery->error_code === 400 && $resultQuery->type_error === 'message to edit not found') {
-                    throw new Exception('Сообщение не найдено', 1);
-                }
-
-                if ($resultQuery->error_code === 400 && $resultQuery->type_error === 'error media') {
-                    return $resultQuery;
-                }
-
-                if ($typeSource === 'private') {
-                    if ($resultQuery->error_code == 400 && $resultQuery->rawData['description'] == 'Bad Request: wrong type of the web page content') {
-                        throw new Exception($resultQuery->rawData['description'], 1);
-                    } elseif ($resultQuery->error_code == 400 && $resultQuery->type_error !== 'markdown') {
-                        $messageThreadId = $botUser->saveNewTopic();
-                        $queryParams->message_thread_id = $messageThreadId;
+                        case 'TOPIC_NOT_FOUND':
+                            $messageThreadId = $botUser->saveNewTopic();
+                            $queryParams->message_thread_id = $messageThreadId;
+                            $resultQuery = self::execute($botUser, $queryParams, $countRepeat);
+                            break;
                     }
-                } else {
-                    if ($resultQuery->error_code == 403) {
-                        BanMessage::execute($botUser->topic_id);
-                        die();
-                    }
+                } elseif ($resultQuery->error_code === 403) {
+                    BanMessage::execute($botUser->topic_id);
+                    die();
                 }
-                $resultQuery = self::execute($botUser, $queryParams, $countRepeat);
             }
+
             return $resultQuery;
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
