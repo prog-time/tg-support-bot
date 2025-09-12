@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class ExternalUser extends Model
 {
+    use HasFactory;
+
     protected $table = 'external_users';
 
     protected $fillable = [
