@@ -2,6 +2,7 @@
 
 namespace App\Actions\Telegram;
 
+use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\TelegramBot\TelegramMethods;
 
@@ -15,23 +16,23 @@ class SendStartMessage
      *
      * @param TelegramUpdateDto $update
      *
-     * @return void
+     * @return TelegramAnswerDto|null
      */
-    public function execute(TelegramUpdateDto $update): void
+    public function execute(TelegramUpdateDto $update): ?TelegramAnswerDto
     {
-        $dataQuery = [
+        TelegramMethods::sendQueryTelegram('deleteMessage', [
             'chat_id' => $update->chatId,
             'message_id' => $update->messageId,
-        ];
-        TelegramMethods::sendQueryTelegram('deleteMessage', $dataQuery);
+        ]);
 
-        if ($update->typeSource === 'private') {
-            $dataQuery = [
-                'chat_id' => $update->chatId,
-                'text' => __('messages.start'),
-                'parse_mode' => 'html',
-            ];
-            TelegramMethods::sendQueryTelegram('sendMessage', $dataQuery);
+        if ($update->typeSource !== 'private') {
+            return null;
         }
+
+        return TelegramMethods::sendQueryTelegram('sendMessage', [
+            'chat_id' => $update->chatId,
+            'text' => __('messages.start'),
+            'parse_mode' => 'html',
+        ]);
     }
 }
