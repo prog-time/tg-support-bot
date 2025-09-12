@@ -14,13 +14,13 @@ class GetFile
      * Получение файла по fileId
      *
      * @param string $fileId
+     *
      * @return TelegramAnswerDto
      */
     public static function execute(string $fileId): TelegramAnswerDto
     {
-        $dataQuery = [
+        return TelegramMethods::sendQueryTelegram('getFile', [
             'file_id' => $fileId,
-        ];
-        return TelegramMethods::sendQueryTelegram('getFile', $dataQuery);
+        ]);
     }
 }
