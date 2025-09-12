@@ -2,6 +2,7 @@
 
 namespace App\DTOs;
 
+use App\Enums\TelegramError;
 use App\Helpers\TelegramHelper;
 
 /**
@@ -18,16 +19,6 @@ use App\Helpers\TelegramHelper;
  */
 readonly class TelegramAnswerDto
 {
-    /**
-     * @param bool        $ok
-     * @param int|null    $message_id
-     * @param int|null    $error_code
-     * @param int|null    $message_thread_id
-     * @param int|null    $date
-     * @param string|null $message
-     * @param string|null $type_error
-     * @param array|null  $rawData
-     */
     public function __construct(
         public bool $ok,
         public ?int $message_id,
@@ -43,7 +34,7 @@ readonly class TelegramAnswerDto
     }
 
     /**
-     * @param array $dataAnswer
+     * @param array       $dataAnswer
      * @param string|null $methodQuery
      *
      * @return null|self
@@ -87,18 +78,11 @@ readonly class TelegramAnswerDto
      */
     private static function exactTypeError(string $textError): ?string
     {
-        $typeError = null;
-        if (preg_match('/(can\'t parse entities)/', $textError)) {
-            $typeError = 'markdown';
-        } elseif (preg_match('/(InputMedia)/', $textError)) {
-            $typeError = 'error media';
-        } elseif (preg_match('/( message is not modified)/', $textError)) {
-            $typeError = 'message is not modified';
-        } elseif (preg_match('/( message to edit not found)/', $textError)) {
-            $typeError = 'message is not modified';
-        } elseif (preg_match('/( message thread not found)/', $textError)) {
-            $typeError = 'message thread not found';
+        try {
+            $error = TelegramError::fromResponse($textError);
+            return $error->name;
+        } catch (\Throwable $e) {
+            return null;
         }
-        return $typeError;
     }
 }

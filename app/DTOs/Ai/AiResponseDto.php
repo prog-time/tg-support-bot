@@ -8,15 +8,15 @@ class AiResponseDto
 {
     /**
      * Конструктор DTO для AI-ответа
-     * 
-     * @param string $response Текст ответа AI
-     * @param float $confidenceScore Показатель уверенности (0.0 - 1.0)
-     * @param bool $shouldEscalate Нужно ли эскалировать к оператору
-     * @param string $provider Использованный AI-провайдер
-     * @param string $modelUsed Использованная модель
-     * @param int $tokensUsed Количество использованных токенов
-     * @param float $responseTime Время ответа в секундах
-     * @param array $metadata Дополнительные метаданные
+     *
+     * @param string $response        Текст ответа AI
+     * @param float  $confidenceScore Показатель уверенности (0.0 - 1.0)
+     * @param bool   $shouldEscalate  Нужно ли эскалировать к оператору
+     * @param string $provider        Использованный AI-провайдер
+     * @param string $modelUsed       Использованная модель
+     * @param int    $tokensUsed      Количество использованных токенов
+     * @param float  $responseTime    Время ответа в секундах
+     * @param array  $metadata        Дополнительные метаданные
      */
     public function __construct(
         public readonly string $response,
@@ -32,8 +32,9 @@ class AiResponseDto
 
     /**
      * Создать DTO из массива данных
-     * 
+     *
      * @param array $data Массив данных
+     *
      * @return self
      */
     public static function fromArray(array $data): self
@@ -52,7 +53,7 @@ class AiResponseDto
 
     /**
      * Преобразовать DTO в массив
-     * 
+     *
      * @return array
      */
     public function toArray(): array
@@ -62,7 +63,7 @@ class AiResponseDto
             'confidence_score' => $this->confidenceScore,
             'should_escalate' => $this->shouldEscalate,
             'provider' => $this->provider,
-            'modelUsed' => $this->modelUsed,
+            'model_used' => $this->modelUsed,
             'tokens_used' => $this->tokensUsed,
             'response_time' => $this->responseTime,
             'metadata' => $this->metadata,
@@ -71,7 +72,7 @@ class AiResponseDto
 
     /**
      * Проверить, достаточно ли уверенности для автоответа
-     * 
+     *
      * @return bool
      */
     public function isConfident(): bool
