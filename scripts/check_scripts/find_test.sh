@@ -65,7 +65,7 @@ should_be_tested() {
     local classname="$1"
 
     # Исключения
-    local exclude_patterns=("*Controller*" "*DTO*" "*Test" "*ValueObject*" "*Enum*" "*Exception*" "*Migration*" "*Seeder*")
+    local exclude_patterns=("*Controller*" "*DTO*" "*Model*" "*Test" "*ValueObject*" "*Enum*" "*Exception*" "*Migration*" "*Seeder*")
 
     for pattern in "${exclude_patterns[@]}"; do
         if [[ "$classname" == $pattern ]]; then
