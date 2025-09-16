@@ -10,4 +10,9 @@ return [
     'vk_private' => [
         'chat_id' => env('TEST_VK_USER_CHAT_ID', ''),
     ],
+    'tg_file' => [
+        'document' => env('TEST_PHOTO', ''),
+        'photo' => env('TEST_DOCUMENT', ''),
+        'sticker' => env('TEST_STICKER', ''),
+    ],
 ];

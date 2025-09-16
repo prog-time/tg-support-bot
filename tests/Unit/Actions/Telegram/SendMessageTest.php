@@ -9,18 +9,37 @@ use Tests\TestCase;
 
 class SendMessageTest extends TestCase
 {
-    public int $chatId = 0;
+    public BotUser $botUser;
 
-    public string $photoFileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
+    public int $chatId;
 
-    public string $documentFileId = 'BQACAgIAAxkBAAIHOmi-0ihwIBW1gZH2kie-2qZ39FKUAAJWhAACLrvxSdnwd0Zd4TtpNgQ';
+    public string $photoFileId;
 
-    public string $stickerFileId = 'CAACAgIAAxkBAAIHVWi_MH_hQ-8lleOscD7H45RueIwuAAKUFQAC6knQSbL78Ag0M2AyNgQ';
+    public string $documentFileId;
 
-    public function botTestUser(): BotUser
+    public string $stickerFileId;
+
+    public function setUp(): void
     {
+        parent::setUp();
+
         $this->chatId = config('testing.tg_private.chat_id');
-        return BotUser::where('chat_id', $this->chatId)->first();
+
+        $this->photoFileId = config('testing.tg_file.photo');
+        $this->documentFileId = config('testing.tg_file.document');
+        $this->stickerFileId = config('testing.tg_file.sticker');
+
+        if (BotUser::where('chat_id', $this->chatId)->exists()) {
+            $this->botUser = BotUser::where('chat_id', $this->chatId)->first();
+        } else {
+            $this->botUser = BotUser::create([
+                'chat_id' => $this->chatId,
+                'topic_id' => 0,
+                'platform' => 'telegram',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
     }
 
     private function getQueryParams(): array
@@ -39,7 +58,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -57,7 +76,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -75,7 +94,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -93,7 +112,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -112,7 +131,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -131,7 +150,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -144,7 +163,7 @@ class SendMessageTest extends TestCase
         $dtoQueryParams = TGTextMessageDto::from($this->getQueryParams());
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertFalse($result->ok);
@@ -165,7 +184,7 @@ class SendMessageTest extends TestCase
         ]));
 
         // Act
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParams);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParams);
 
         // Assert
         $this->assertTrue($result->ok);
@@ -176,21 +195,20 @@ class SendMessageTest extends TestCase
     public function test_message_not_modified(): void
     {
         // Arrange
-        $botUser = $this->botTestUser();
         $queryParams = $this->getQueryParams();
         $testTextMessage = 'Тестовое сообщение!';
 
         $dtoQueryParamsCreate = TGTextMessageDto::from(array_merge($queryParams, [
             'text' => $testTextMessage,
         ]));
-        $resultCreate = SendMessage::execute($botUser, $dtoQueryParamsCreate);
+        $resultCreate = SendMessage::execute($this->botUser, $dtoQueryParamsCreate);
 
         $dtoQueryParamsEdit = TGTextMessageDto::from(array_merge($queryParams, [
             'methodQuery' => 'editMessageText',
             'text' => $testTextMessage,
             'message_id' => $resultCreate->message_id,
         ]));
-        $resultEdit = SendMessage::execute($botUser, $dtoQueryParamsEdit);
+        $resultEdit = SendMessage::execute($this->botUser, $dtoQueryParamsEdit);
 
         // Assert
         $this->assertFalse($resultEdit->ok);
@@ -205,7 +223,7 @@ class SendMessageTest extends TestCase
             'chat_id' => 0,
             'text' => 'Тестовое сообщение!',
         ]));
-        $result = SendMessage::execute($this->botTestUser(), $dtoQueryParamsCreate);
+        $result = SendMessage::execute($this->botUser, $dtoQueryParamsCreate);
 
         // Assert
         $this->assertFalse($result->ok);
