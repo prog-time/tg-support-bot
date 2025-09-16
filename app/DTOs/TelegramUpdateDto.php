@@ -4,6 +4,7 @@ namespace App\DTOs;
 
 use App\Helpers\TelegramHelper;
 use Illuminate\Http\Request;
+use Spatie\LaravelData\Data;
 
 /**
  * DTO для запроса из Telegram
@@ -28,7 +29,7 @@ use Illuminate\Http\Request;
  * @property array|null  $location
  * @property array|null  $rawData
 */
-readonly class TelegramUpdateDto
+class TelegramUpdateDto extends Data
 {
     public function __construct(
         public int     $updateId,
