@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\VK;
+namespace App\Actions\Vk;
 
 use Illuminate\Support\Facades\Http;
 
