@@ -22,7 +22,7 @@ class UploadFileVk
     {
         try {
             $urlQuery = $upload_url;
-            $stream = fopen($fullFilePath, 'r');
+            $stream = file_get_contents($fullFilePath);
 
             $filename = basename(parse_url($fullFilePath, PHP_URL_PATH));
 
