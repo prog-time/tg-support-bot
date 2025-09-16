@@ -96,7 +96,7 @@ class FileService
      *
      * @return array
      */
-    protected function getTelegramFile(string $fileId): array
+    public function getTelegramFile(string $fileId): array
     {
         return Http::get("https://api.telegram.org/bot{$this->botToken}/getFile", [
             'file_id' => $fileId,

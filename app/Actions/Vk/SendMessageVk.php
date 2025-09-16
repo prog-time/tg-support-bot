@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\VK;
+namespace App\Actions\Vk;
 
 use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
