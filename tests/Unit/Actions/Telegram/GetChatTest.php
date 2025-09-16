@@ -3,23 +3,22 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\GetChat;
-use App\Models\BotUser;
 use Tests\TestCase;
 
 class GetChatTest extends TestCase
 {
-    public int $userChatId = 1424646511;
+    public int $chatId;
 
-    public function botTestUser(): BotUser
+    public function setUp(): void
     {
-        return BotUser::where('chat_id', $this->userChatId)->first();
+        parent::setUp();
+
+        $this->chatId = config('testing.tg_private.chat_id');
     }
 
     public function test_get_chat(): void
     {
-        $botUser = $this->botTestUser();
-
-        $result = GetChat::execute($botUser->chat_id);
+        $result = GetChat::execute($this->chatId);
 
         $this->assertNotEmpty($result->rawData);
         $this->assertTrue($result->ok);
