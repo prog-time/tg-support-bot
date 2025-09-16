@@ -15,6 +15,7 @@ parameters:
     ignoreErrors:
         - identifier: missingType.iterableValue
         - identifier: missingType.generics
+        - '#referenced with incorrect case#'
 
 includes:
     - vendor/phpstan/phpstan/conf/bleedingEdge.neon
