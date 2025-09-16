@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Actions\VK;
 
-use App\Actions\VK\GetMessagesUploadServerVk;
+use App\Actions\Vk\GetMessagesUploadServerVk;
 use Tests\TestCase;
 
 class GetMessagesUploadServerVkTest extends TestCase
