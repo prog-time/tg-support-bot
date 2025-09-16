@@ -16,9 +16,9 @@ class GetMessagesUploadServerVk
      * @param int    $chat_id
      * @param string $typeMethod
      *
-     * @return VkAnswerDto|null
+     * @return VkAnswerDto
      */
-    public static function execute(int $chat_id, string $typeMethod = 'doc'): ?VkAnswerDto
+    public static function execute(int $chat_id, string $typeMethod = 'doc'): VkAnswerDto
     {
         try {
             $methodQuery = $typeMethod . '.getMessagesUploadServer';
@@ -27,7 +27,11 @@ class GetMessagesUploadServerVk
             ];
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
         } catch (\Exception $e) {
-            return null;
+            return VkAnswerDto::fromData([
+                'response_code' => 500,
+                'error_message' => 'System error',
+                'response' => 0,
+            ]);
         }
     }
 }
