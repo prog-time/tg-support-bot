@@ -3,8 +3,8 @@
 namespace Tests\Unit\Actions\VK;
 
 use App\Actions\Telegram\GetFile;
-use App\Actions\VK\GetMessagesUploadServerVk;
-use App\Actions\VK\UploadFileVk;
+use App\Actions\Vk\GetMessagesUploadServerVk;
+use App\Actions\Vk\UploadFileVk;
 use App\Helpers\TelegramHelper;
 use Tests\TestCase;
 
