@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Actions\VK;
 
-use App\Actions\VK\SaveFileVk;
+use App\Actions\Vk\SaveFileVk;
 use Tests\TestCase;
 
 class SaveFileVkTest extends TestCase
