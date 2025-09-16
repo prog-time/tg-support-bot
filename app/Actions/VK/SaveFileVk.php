@@ -16,9 +16,9 @@ class SaveFileVk
      * @param string $typeFile
      * @param array  $dataQuery
      *
-     * @return VkAnswerDto|null
+     * @return VkAnswerDto
      */
-    public static function execute(string $typeFile, array $dataQuery): ?VkAnswerDto
+    public static function execute(string $typeFile, array $dataQuery): VkAnswerDto
     {
         try {
             switch ($typeFile) {
@@ -32,12 +32,16 @@ class SaveFileVk
             }
 
             if (empty($methodQuery)) {
-                throw new \Exception('Метод для сохранения файла не найден!');
+                throw new \Exception('Метод для сохранения файла не найден!', 1);
             }
 
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
         } catch (\Exception $e) {
-            return null;
+            return VkAnswerDto::fromData([
+                'response_code' => 500,
+                'response' => 0,
+                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+            ]);
         }
     }
 }
