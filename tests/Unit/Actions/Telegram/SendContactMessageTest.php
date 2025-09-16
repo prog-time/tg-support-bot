@@ -8,58 +8,53 @@ use Tests\TestCase;
 
 class SendContactMessageTest extends TestCase
 {
+    private BotUser $botUser;
+
     private SendContactMessage $sendContactMessage;
 
-    public int $userChatId = 1424646511;
-
-    public function botTestUser(): BotUser
-    {
-        return BotUser::where('chat_id', $this->userChatId)->first();
-    }
+    public int $chatId;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->chatId = config('testing.tg_private.chat_id');
         $this->sendContactMessage = new SendContactMessage();
+
+        if (BotUser::where('chat_id', $this->chatId)->exists()) {
+            $this->botUser = BotUser::where('chat_id', $this->chatId)->first();
+        } else {
+            $this->botUser = BotUser::create([
+                'chat_id' => $this->chatId,
+                'topic_id' => 0,
+                'platform' => 'telegram',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
     }
 
     public function test_execute_by_bot_user(): void
     {
-        // Arrange
-        $botUser = $this->botTestUser();
-
-        // Act
-        $result = $this->sendContactMessage->executeByBotUser($botUser);
-
-        // Assert
+        $result = $this->sendContactMessage->executeByBotUser($this->botUser);
         $this->assertTrue($result->ok);
     }
 
     public function test_create_contact_message(): void
     {
-        // Arrange
-        $botUser = $this->botTestUser();
         $currentTextMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
-        $currentTextMessage .= "Источник: {$botUser->platform} \n";
-        $currentTextMessage .= "ID: {$botUser->chat_id} \n";
+        $currentTextMessage .= "Источник: {$this->botUser->platform} \n";
+        $currentTextMessage .= "ID: {$this->botUser->chat_id} \n";
         $currentTextMessage .= "Ссылка: https://telegram.me/iliyalyachuk \n";
 
-        // Act
-        $textMessage = $this->sendContactMessage->createContactMessage($botUser);
+        $textMessage = $this->sendContactMessage->createContactMessage($this->botUser);
 
-        // Assert
         $this->assertEquals($currentTextMessage, $textMessage);
     }
 
     public function test__execute_by_tg_update(): void
     {
-        // Arrange
-        $chatId = $this->userChatId;
-
-        // Act
-        $result = $this->sendContactMessage->executeByChatId($chatId);
-
-        // Assert
+        $result = $this->sendContactMessage->executeByChatId($this->chatId);
         $this->assertTrue($result->ok);
     }
 }

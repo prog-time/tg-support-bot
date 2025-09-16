@@ -12,11 +12,21 @@ use Tests\TestCase;
 
 class ExternalMessageServiceTest extends TestCase
 {
-    public string $source = 'live_chat';
+    public string $source;
 
-    public string $external_id = 'wPsYu0HOXsuK';
+    public string $external_id;
 
-    public string $text = 'Тестовое сообщение';
+    public string $text;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->text = 'Тестовое сообщение';
+
+        $this->source = config('testing.external.source');
+        $this->external_id = config('testing.external.external_id');
+    }
 
     protected function getMessageParams(): array
     {

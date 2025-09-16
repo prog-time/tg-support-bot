@@ -12,15 +12,22 @@ class UploadFileVkTest extends TestCase
 {
     private int $chatId;
 
+    private string $photoFileId;
+
+    private string $documentFileId;
+
     public function setUp(): void
     {
         parent::setUp();
         $this->chatId = (int)config('testing.vk_private.chat_id');
+
+        $this->photoFileId = config('testing.tg_file.photo');
+        $this->documentFileId = config('testing.tg_file.document');
     }
 
     public function test_upload_photo(): void
     {
-        $photoFileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
+        $photoFileId = $this->photoFileId;
 
         $fileData = GetFile::execute($photoFileId);
         $this->assertNotEmpty($fileData->rawData['result']['file_path']);
@@ -41,12 +48,12 @@ class UploadFileVkTest extends TestCase
 
     public function test_upload_docs(): void
     {
-        $photoFileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
+        $docFileId = $this->documentFileId;
 
-        $fileData = GetFile::execute($photoFileId);
+        $fileData = GetFile::execute($docFileId);
         $this->assertNotEmpty($fileData->rawData['result']['file_path']);
 
-        $fullFilePath = TelegramHelper::getFileTelegramPath($photoFileId);
+        $fullFilePath = TelegramHelper::getFileTelegramPath($docFileId);
         $this->assertNotEmpty($fullFilePath);
 
         // get upload server data

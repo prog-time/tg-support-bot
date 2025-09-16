@@ -9,10 +9,13 @@ use Tests\TestCase;
 
 class SendStartMessageTest extends TestCase
 {
-    public function test_send_start_message(): void
+    private array $payload;
+
+    protected function setUp(): void
     {
-        // Arrange
-        $payload = [
+        parent::setUp();
+
+        $this->payload = [
             'update_id' => 518622265,
             'message' => [
                 'message_id' => 1901,
@@ -42,9 +45,12 @@ class SendStartMessageTest extends TestCase
                 ],
             ],
         ];
+    }
 
+    public function test_send_start_message(): void
+    {
         // Оборачиваем в Request
-        $request = Request::create('api/telegram/bot', 'POST', $payload);
+        $request = Request::create('api/telegram/bot', 'POST', $this->payload);
 
         // Вызываем фабрику DTO
         $dto = TelegramUpdateDto::fromRequest($request);

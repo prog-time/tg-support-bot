@@ -23,7 +23,7 @@ class TelegramHelperTest extends TestCase
     public function test_get_file_public_path(): void
     {
         $appUrl = trim(config('app.url'), '/');
-        $fileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
+        $fileId = config('testing.tg_file.photo');
         $successValue = "{$appUrl}/api/files/{$fileId}";
 
         $filePath = TelegramHelper::getFilePublicPath($fileId);

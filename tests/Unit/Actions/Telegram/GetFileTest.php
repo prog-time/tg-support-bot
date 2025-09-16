@@ -7,11 +7,18 @@ use Tests\TestCase;
 
 class GetFileTest extends TestCase
 {
+    private string $photoFileId;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->photoFileId = config('testing.tg_file.photo');
+    }
+
     public function test_get_file(): void
     {
-        $fileId = 'AQADAgADsbQxG5utIUkACAMAA29h6lQABGVsNy9gzekINgQ';
-
-        $result = GetFile::execute($fileId);
+        $result = GetFile::execute($this->photoFileId);
 
         $this->assertTrue($result->ok);
         $this->assertNotEmpty($result->rawData);
