@@ -15,6 +15,9 @@ services:
             - .:/var/www
         networks:
             - pet
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
 
     pgdb:
         container_name: pgdb
@@ -120,6 +123,9 @@ services:
         command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
         networks:
             - pet
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
 
     loki:
         image: grafana/loki:latest
