@@ -3,6 +3,7 @@
 namespace Tests\Unit\Helpers;
 
 use App\Helpers\TelegramHelper;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TelegramHelperTest extends TestCase
@@ -21,7 +22,7 @@ class TelegramHelperTest extends TestCase
 
     public function test_get_file_public_path(): void
     {
-        $appUrl = config('app.url');
+        $appUrl = trim(config('app.url'), '/');
         $fileId = 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ';
         $successValue = "{$appUrl}/api/files/{$fileId}";
 
@@ -29,6 +30,10 @@ class TelegramHelperTest extends TestCase
 
         $this->assertNotEmpty($filePath);
         $this->assertEquals($successValue, $filePath);
+
+        $response = Http::get($filePath);
+
+        $this->assertTrue($response->successful());
     }
 
     /**
