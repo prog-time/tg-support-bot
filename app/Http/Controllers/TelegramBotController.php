@@ -96,7 +96,7 @@ class TelegramBotController
         switch ($this->dataHook->typeQuery) {
             case 'message':
                 if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                    (new SendContactMessage())->executeByTgUpdate($this->dataHook);
+                    (new SendContactMessage())->executeByChatId($this->dataHook->chatId);
                 } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
                     (new SendStartMessage())->execute($this->dataHook);
                 } else {
@@ -104,7 +104,6 @@ class TelegramBotController
 
                     if ($this->shouldUseAiAssistant()) {
                         if ($this->dataHook->chatId == 1424646511) {
-//                            (new SendAiMessage(app(AiAssistantService::class)))->execute($this->dataHook);
                             AiQuery::dispatch($this->dataHook);
                         }
                     }
