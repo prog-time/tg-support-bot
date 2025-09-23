@@ -5,6 +5,11 @@ return [
         'source' => env('TEST_EXTERNAL_SOURCE', ''),
         'external_id' => env('TEST_EXTERNAL_ID', ''),
     ],
+    'tg_bot_ai' => [
+        'username' => env('TEST_USER_USERNAME', ''),
+        'first_name' => env('TEST_USER_FIRST_NAME', ''),
+        'last_name' => env('TEST_USER_LAST_NAME', ''),
+    ],
     'tg_private' => [
         'chat_id' => env('TEST_USER_CHAT_ID', ''),
         'username' => env('TEST_USER_USERNAME', ''),
