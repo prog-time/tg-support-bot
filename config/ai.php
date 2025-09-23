@@ -15,6 +15,10 @@ return [
 
     'enabled' => env('AI_ENABLED', 'false'),
 
+    'auto_reply' => env('AI_AUTO_REPLY', 'false'),
+
+    'disable_timeout' => env('AI_DISABLE_TIMEOUT', 'false'),
+
     'providers' => [
         'openai' => [
             'api_key' => env('OPENAI_API_KEY'),

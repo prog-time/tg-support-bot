@@ -10,6 +10,7 @@ return [
             'template_topic_name' => env('TELEGRAM_TOPIC_NAME', ''),
         ],
         'telegram_ai' => [
+            'username' => env('TELEGRAM_AI_BOT_USERNAME', ''),
             'token' => env('TELEGRAM_AI_BOT_TOKEN', ''),
         ],
 
