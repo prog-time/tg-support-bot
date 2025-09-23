@@ -34,6 +34,7 @@ class TelegramUpdateDto extends Data
     public function __construct(
         public int     $updateId,
         public string  $typeQuery,
+        public bool    $aiTechMessage,
         public string  $typeSource,
         public bool    $isBot = false,
         public bool    $editedTopicStatus = false,
@@ -69,25 +70,31 @@ class TelegramUpdateDto extends Data
                 throw new \Exception('Данный тип запроса не поддерживается!');
             }
 
-            $editedTopicStatus = !empty($data['message']['forum_topic_edited']);
-            $pinnedMessageStatus = !empty($data['message']['pinned_message']);
+            $textMessage = $data[$type]['text'] ?? '';
+            if (!empty($textMessage) && !empty(config('traffic_source.settings.telegram_ai.username'))) {
+                $aiTechMessage = str_contains($data[$type]['text'], config('traffic_source.settings.telegram_ai.username'));
+            } else {
+                $aiTechMessage = false;
+            }
+
             return new self(
                 updateId: $data['update_id'] ?? 0,
                 typeQuery: $type,
-                typeSource: $data[$type]['chat']['type'],
+                aiTechMessage: $aiTechMessage,
+                typeSource: self::extractTypeSource($data, $type),
                 isBot: $data[$type]['from']['is_bot'],
-                editedTopicStatus: $editedTopicStatus,
-                pinnedMessageStatus: $pinnedMessageStatus,
+                editedTopicStatus: !empty($data['message']['forum_topic_edited']),
+                pinnedMessageStatus: !empty($data['message']['pinned_message']),
                 chatId: self::extractChatId($data, $type),
                 replyToMessage: self::extractReplayToMessage($data),
                 messageThreadId: self::extractMessageThreadId($data, $type),
-                messageId: $data[$type]['message_id'] ?? null,
+                messageId: self::extractMessageId($data, $type),
                 callbackId: $data['callback_query']['id'] ?? null,
-                text: $data[$type]['text'] ?? null,
+                text: self::extractText($data, $type),
                 entities: $data[$type]['entities'] ?? $data[$type]['caption_entities'] ?? null,
                 caption: $data[$type]['caption'] ?? null,
                 fileId: TelegramHelper::extractFileId($data),
-                username: $data[$type]['from']['username'] ?? null,
+                username: self::extractUsername($data, $type),
                 callbackData: $data['callback_query']['data'] ?? null,
                 location: $data['message']['location'] ?? null,
                 rawData: $data // Сохраняем весь запрос, если вдруг понадобится
@@ -151,5 +158,49 @@ class TelegramUpdateDto extends Data
     private static function extractMessageThreadId(array $data, string $type): ?int
     {
         return $data[$type]['message_thread_id'] ?? $data['callback_query']['message']['message_thread_id'] ?? null;
+    }
+
+    /**
+     * @param array  $data
+     * @param string $type
+     *
+     * @return int|null
+     */
+    private static function extractMessageId(array $data, string $type): ?int
+    {
+        return $data[$type]['message_id'] ?? $data['callback_query']['message']['message_id'] ?? null;
+    }
+
+    /**
+     * @param array  $data
+     * @param string $type
+     *
+     * @return string|null
+     */
+    private static function extractText(array $data, string $type): ?string
+    {
+        return $data[$type]['text'] ?? $data['callback_query']['message']['text'] ?? null;
+    }
+
+    /**
+     * @param array  $data
+     * @param string $type
+     *
+     * @return string|null
+     */
+    private static function extractUsername(array $data, string $type): ?string
+    {
+        return $data[$type]['username'] ?? $data['callback_query']['message']['from']['username'] ?? null;
+    }
+
+    /**
+     * @param array  $data
+     * @param string $type
+     *
+     * @return string|null
+     */
+    private static function extractTypeSource(array $data, string $type): ?string
+    {
+        return $data[$type]['chat']['type'] ?? $data[$type]['message']['chat']['type'] ?? null;
     }
 }
