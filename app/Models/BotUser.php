@@ -8,6 +8,7 @@ use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -34,6 +35,40 @@ class BotUser extends Model
     public function externalUser(): HasOne
     {
         return $this->hasOne(ExternalUser::class, 'id', 'chat_id');
+    }
+
+    /**
+     * @return HasOne
+     */
+    public function aiCondition(): HasOne
+    {
+        return $this->hasOne(AiCondition::class);
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'id', 'bot_user_id');
+    }
+
+    /**
+     * @return HasOne
+     */
+    public function lastMessage(): HasOne
+    {
+        return $this->hasOne(Message::class)->latestOfMany();
+    }
+
+    /**
+     * @return HasOne
+     */
+    public function lastMessageManager(): HasOne
+    {
+        return $this->hasOne(Message::class)->ofMany(['created_at' => 'max'], function ($q) {
+            $q->where('message_type', 'outgoing');
+        });
     }
 
     /**
