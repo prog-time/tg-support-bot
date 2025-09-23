@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Ai\EditAiMessage;
+use App\Actions\Telegram\SendAiAnswerMessage;
 use App\Actions\Telegram\SendContactMessage;
 use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
-use App\Jobs\AiQuery;
-use App\Models\AiCondition;
 use App\Models\BotUser;
 use App\Services\Tg\TgEditMessageService;
 use App\Services\Tg\TgMessageService;
@@ -93,64 +93,31 @@ class TelegramBotController
      */
     private function controllerPlatformTg(): void
     {
-        switch ($this->dataHook->typeQuery) {
-            case 'message':
-                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                    (new SendContactMessage())->executeByChatId($this->dataHook->chatId);
-                } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
-                    (new SendStartMessage())->execute($this->dataHook);
-                } else {
-                    (new TgMessageService($this->dataHook))->handleUpdate();
-
-                    if ($this->shouldUseAiAssistant()) {
-                        if ($this->dataHook->chatId == 1424646511) {
-                            AiQuery::dispatch($this->dataHook);
-                        }
-                    }
-                }
-                break;
-
-            case 'edited_message':
-                (new TgEditMessageService($this->dataHook))->handleUpdate();
-                break;
-
-            default:
-                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
-        }
-    }
-
-    /**
-     * Проверить, должен ли AI-помощник обрабатывать сообщение.
-     *
-     * @return bool
-     */
-    private function shouldUseAiAssistant(): bool
-    {
-        try {
-            $shouldUseAi = false;
-            if (!$this->isSupergroup() && !empty($this->dataHook->text) && config('ai.enabled') == true) {
-                $aiCondition = AiCondition::where('bot_user_id', $this->dataHook->chatId)->first();
-
-                if ($aiCondition) {
-                    $shouldUseAi = now()->gt($aiCondition->created_at->addDay()) ? true : $aiCondition->active;
-                } else {
-                    $shouldUseAi = true;
-                    AiCondition::create([
-                        'bot_user_id' => $this->dataHook->chatId,
-                        'active' => true,
-                    ]);
-                }
-
-                if ($shouldUseAi) {
-                    AiCondition::where('bot_user_id', $this->dataHook->chatId)->update([
-                        'active' => true,
-                    ]);
-                }
+        if ($this->dataHook->aiTechMessage) {
+            if (str_contains($this->dataHook->text, 'ai_message_edit_')) {
+                (new EditAiMessage())->execute($this->dataHook);
             }
+        } else {
+            switch ($this->dataHook->typeQuery) {
+                case 'message':
+                    if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
+                        (new SendContactMessage())->executeByChatId($this->dataHook->chatId);
+                    } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
+                        (new SendStartMessage())->execute($this->dataHook);
+                    } elseif (str_contains($this->dataHook->text, '/ai_generate') && $this->isSupergroup()) {
+                        (new SendAiAnswerMessage())->execute($this->dataHook);
+                    } else {
+                        (new TgMessageService($this->dataHook))->handleUpdate();
+                    }
+                    break;
 
-            return $shouldUseAi;
-        } catch (\Exception $e) {
-            return false;
+                case 'edited_message':
+                    (new TgEditMessageService($this->dataHook))->handleUpdate();
+                    break;
+
+                default:
+                    throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+            }
         }
     }
 
