@@ -43,7 +43,7 @@ class AiCancelMessage extends AiAction
 
             dump($result);
 
-            if ($result->error_code !== 200) {
+            if ($result->response_code !== 200) {
                 throw new Exception('Не удалось удалить сообщение!', 1);
             }
 

@@ -108,7 +108,7 @@ class ExternalEditedMessageService extends ExternalService
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
-                'error_code' => 404,
+                'response_code' => 404,
                 'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
             ]);
         }

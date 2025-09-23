@@ -62,7 +62,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertNotEmpty($result->rawData);
     }
@@ -80,7 +80,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertNotEmpty($result->rawData);
     }
@@ -98,7 +98,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertNotEmpty($result->rawData);
     }
@@ -116,7 +116,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertNotEmpty($result->rawData);
     }
@@ -135,7 +135,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertNotEmpty($result->rawData);
     }
@@ -154,7 +154,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
     }
 
     public function test_message_text_empty(): void
@@ -167,7 +167,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertFalse($result->ok);
-        $this->assertEquals($result->error_code, 400);
+        $this->assertEquals($result->response_code, 400);
 
         $this->assertEquals($result->type_error, 'MESSAGE_TEXT_IS_EMPTY');
     }
@@ -188,7 +188,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
         $this->assertEquals($testTextMessage, $dtoQueryParams->text);
     }
 
@@ -212,7 +212,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertFalse($resultEdit->ok);
-        $this->assertEquals($resultEdit->error_code, 400);
+        $this->assertEquals($resultEdit->response_code, 400);
         $this->assertEquals($resultEdit->type_error, 'MESSAGE_NOT_MODIFIED');
     }
 
@@ -227,7 +227,7 @@ class SendMessageTest extends TestCase
 
         // Assert
         $this->assertFalse($result->ok);
-        $this->assertEquals($result->error_code, 400);
+        $this->assertEquals($result->response_code, 400);
         $this->assertEquals($result->type_error, 'CHAT_NOT_FOUND');
     }
 }

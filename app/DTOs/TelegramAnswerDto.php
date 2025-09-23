@@ -10,7 +10,7 @@ use App\Helpers\TelegramHelper;
  *
  * @property bool    $ok,
  * @property ?int    $message_id,
- * @property ?int    $error_code,
+ * @property ?int    $response_code,
  * @property ?int    $message_thread_id,
  * @property ?int    $date,
  * @property ?string $message,
@@ -22,7 +22,7 @@ readonly class TelegramAnswerDto
     public function __construct(
         public bool $ok,
         public ?int $message_id,
-        public ?int $error_code,
+        public ?int $response_code,
         public ?int $message_thread_id,
         public ?int $date,
         public ?string $message,
@@ -55,7 +55,7 @@ readonly class TelegramAnswerDto
             return new self(
                 ok: $dataAnswer['ok'] ?? false,
                 message_id: $result['message_id'] ?? null,
-                error_code: $dataAnswer['error_code'] ?? 200,
+                response_code: $dataAnswer['response_code'] ?? 200,
                 message_thread_id: $result['message_thread_id'] ?? null,
                 date: $result['date'] ?? null,
                 message: $result['message'] ?? null,
