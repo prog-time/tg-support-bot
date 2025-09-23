@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiTelegramBotController;
 use App\Http\Controllers\ExternalTrafficController;
 use App\Http\Controllers\FilesController;
 use App\Http\Controllers\TelegramBotController;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::group([
     'prefix' => 'telegram',
 ], function () {
+    Route::post('ai/bot', [AiTelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
+
     Route::post('bot', [TelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
 
     Route::get('set_webhook', function () {
