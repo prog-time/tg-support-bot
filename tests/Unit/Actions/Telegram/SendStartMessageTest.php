@@ -60,7 +60,7 @@ class SendStartMessageTest extends TestCase
 
         // Assert
         $this->assertTrue($result->ok);
-        $this->assertEquals($result->error_code, 200);
+        $this->assertEquals($result->response_code, 200);
 
         $this->assertEquals(__('messages.start'), $result->text);
 

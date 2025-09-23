@@ -34,7 +34,7 @@ class SendMessage
 
             $resultQuery = TelegramMethods::sendQueryTelegram($queryParams->methodQuery, $dataQuery, $queryParams->token);
             if ($resultQuery->ok === false) {
-                if ($resultQuery->error_code === 400) {
+                if ($resultQuery->response_code === 400) {
                     switch ($resultQuery->type_error) {
                         case 'MARKDOWN_ERROR':
                             $queryParams->parse_mode = 'html';
@@ -47,7 +47,7 @@ class SendMessage
                             $resultQuery = self::execute($botUser, $queryParams, $countRepeat);
                             break;
                     }
-                } elseif ($resultQuery->error_code === 403) {
+                } elseif ($resultQuery->response_code === 403) {
                     BanMessage::execute($botUser->topic_id);
                     die();
                 }
@@ -57,7 +57,7 @@ class SendMessage
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
-                'error_code' => 500,
+                'response_code' => 500,
                 'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
             ]);
         }

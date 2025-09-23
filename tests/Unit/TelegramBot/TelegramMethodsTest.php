@@ -34,7 +34,7 @@ class TelegramMethodsTest extends TestCase
 
         $this->assertTrue($resultQuery->ok);
 
-        $this->assertNotEmpty($resultQuery->error_code);
+        $this->assertNotEmpty($resultQuery->response_code);
         $this->assertEquals($testMessage, $resultQuery->text);
     }
 
@@ -51,7 +51,7 @@ class TelegramMethodsTest extends TestCase
 
         $this->assertTrue($resultQuery->ok);
 
-        $this->assertEquals($resultQuery->error_code, 200);
+        $this->assertEquals($resultQuery->response_code, 200);
         $this->assertEquals($testMessage, $resultQuery->text);
     }
 
@@ -68,7 +68,7 @@ class TelegramMethodsTest extends TestCase
 
         $this->assertTrue($resultQuery->ok);
 
-        $this->assertEquals($resultQuery->error_code, 200);
+        $this->assertEquals($resultQuery->response_code, 200);
         $this->assertEquals($testMessage, $resultQuery->text);
     }
 }

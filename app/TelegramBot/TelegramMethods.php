@@ -28,7 +28,7 @@ class TelegramMethods
 
                 return TelegramAnswerDto::fromData([
                     'ok' => false,
-                    'error_code' => 429,
+                    'response_code' => 429,
                     'result' => 'Rate limit exceeded',
                 ]);
             }
@@ -48,7 +48,7 @@ class TelegramMethods
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
-                'error_code' => 500,
+                'response_code' => 500,
                 'result' => $e->getMessage(),
             ]);
         }
