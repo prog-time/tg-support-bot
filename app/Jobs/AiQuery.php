@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Actions\Telegram\SendAiMessage;
+use App\Actions\Telegram\SendAiAutoMessage;
 use App\DTOs\TelegramUpdateDto;
 use App\Logging\LokiLogger;
 use App\Services\Ai\AiAssistantService;
@@ -36,7 +36,7 @@ class AiQuery implements ShouldQueue
     public function handle(): void
     {
         try {
-            (new SendAiMessage(app(AiAssistantService::class)))->execute($this->dataHook);
+            (new SendAiAutoMessage(app(AiAssistantService::class)))->execute($this->dataHook);
         } catch (\Throwable $e) {
             (new LokiLogger())->log('error', $e->getMessage());
 
