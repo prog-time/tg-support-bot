@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Actions\Telegram;
 
 use App\DTOs\Ai\AiResponseDto;
@@ -12,7 +10,7 @@ use App\DTOs\TGTextMessageDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Services\Ai\AiAssistantService;
 
-class SendAiMessage
+class SendAiAutoMessage
 {
     public function __construct(
         private readonly AiAssistantService $aiService
