@@ -23,13 +23,13 @@ class AiActionTest extends TestCase
     }
 
     /**
-     * @param int    $messageId
-     * @param string $textMessage
-     * @param string $messageData
+     * @param int         $messageId
+     * @param string      $textMessage
+     * @param string|null $messageData
      *
      * @return array
      */
-    public function generateMessage(int $messageId, string $textMessage, string $messageData): array
+    public function generateMessage(int $messageId, string $textMessage, ?string $messageData = null): array
     {
         return [
             'update_id' => time(),
@@ -104,24 +104,20 @@ class AiActionTest extends TestCase
     }
 
     /**
-     * @param int    $messageId
-     * @param string $callbackData
-     * @param string $textMessage
+     * @param int         $messageId
+     * @param string|null $callbackData
+     * @param string|null $textMessage
      *
      * @return TelegramUpdateDto
      */
-    public function createDto(int $messageId, string $callbackData, string $textMessage = 'Hello'): TelegramUpdateDto
+    public function createDto(int $messageId, ?string $callbackData = null, ?string $textMessage = null): TelegramUpdateDto
     {
-        $generateAiMessage = "/ai_generate {$textMessage}";
+        $generateAiMessage = $textMessage ?? '/ai_generate Напиши приветствие';
 
         $request = Request::create(
             'api/telegram/ai/bot',
             'POST',
-            $this->generateMessage(
-                $messageId,
-                $generateAiMessage,
-                $callbackData
-            )
+            $this->generateMessage($messageId, $generateAiMessage, $callbackData)
         );
 
         return TelegramUpdateDto::fromRequest($request);
