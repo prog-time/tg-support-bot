@@ -19,12 +19,12 @@ class AiHelper
     }
 
     /**
-     * @param string $messageId
+     * @param int    $messageId
      * @param string $aiText
      *
-     * @return array[]
+     * @return array
      */
-    public static function preparedAiReplyMarkup(string $messageId, string $aiText): array
+    public static function preparedAiReplyMarkup(int $messageId, string $aiText): array
     {
         return [
             'inline_keyboard' => [
