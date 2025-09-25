@@ -52,11 +52,11 @@ abstract class FromTgMessageService extends TemplateMessageService
     }
 
     /**
-     * @return void
+     * @return mixed
      *
      * @throws \Exception
      */
-    abstract public function handleUpdate(): void;
+    abstract public function handleUpdate(): mixed;
 
     /**
      * Отправка изображения

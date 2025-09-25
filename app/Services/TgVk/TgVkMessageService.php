@@ -26,13 +26,15 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * @return void
-     *
-     * @throws \Exception
+     * @return VkAnswerDto|null
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): ?VkAnswerDto
     {
-        if ($this->update->typeQuery === 'message') {
+        try {
+            if ($this->update->typeQuery !== 'message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            }
+
             if (!empty($this->update->rawData['message']['photo'])) {
                 $resultQuery = $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
@@ -57,8 +59,10 @@ class TgVkMessageService extends FromTgMessageService
             ]));
 
             echo 'ok';
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+
+            return $resultQuery;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
