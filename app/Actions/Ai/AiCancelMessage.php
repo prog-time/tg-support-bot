@@ -41,8 +41,6 @@ class AiCancelMessage extends AiAction
                 'message_id' => $messageData->message_id,
             ], config('traffic_source.settings.telegram_ai.token'));
 
-            dump($result);
-
             if ($result->response_code !== 200) {
                 throw new Exception('Не удалось удалить сообщение!', 1);
             }
@@ -51,8 +49,6 @@ class AiCancelMessage extends AiAction
 
             return true;
         } catch (\Exception $e) {
-            dump($e->getMessage());
-
             (new LokiLogger())->log('ai_error', json_encode($e->getMessage()));
             return false;
         }

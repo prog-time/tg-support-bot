@@ -71,9 +71,6 @@ class TgExternalMessageService extends FromTgMessageService
         } catch (\Exception $exception) {
             Log::info('Webhook sent', ['exception' => $exception]);
 
-            dump($exception->getMessage());
-            dump($exception->getMessage());
-
             return null;
         }
     }
