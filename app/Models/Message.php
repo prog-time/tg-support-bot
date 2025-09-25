@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int    $bot_user_id
@@ -24,9 +26,20 @@ class Message extends Model
         'to_id',
     ];
 
-    public function externalMessage()
+    /**
+     * @return HasOne
+     */
+    public function externalMessage(): HasOne
     {
         return $this->hasOne(ExternalMessage::class);
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function botUser(): BelongsTo
+    {
+        return $this->belongsTo(BotUser::class);
     }
 
     /**

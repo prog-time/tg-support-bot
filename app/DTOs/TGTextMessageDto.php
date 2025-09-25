@@ -55,6 +55,7 @@ class TGTextMessageDto extends Data
      */
     public function __construct(
         public string   $methodQuery,
+        public ?string  $token,
         public ?string  $typeSource,
         public int      $chat_id,
         public ?int     $message_id,
@@ -91,6 +92,10 @@ class TGTextMessageDto extends Data
 
         if (!empty($dataMessage['typeSource'])) {
             unset($dataMessage['typeSource']);
+        }
+
+        if (!empty($dataMessage['token'])) {
+            unset($dataMessage['token']);
         }
 
         if (!empty($dataMessage['media'])) {

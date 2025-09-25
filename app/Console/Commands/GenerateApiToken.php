@@ -70,7 +70,7 @@ class GenerateApiToken extends Command
                     ->first();
 
                 if (!$accessToken) {
-                    throw new Exception('Токен не создан!');
+                    throw new Exception('Токен не создан!', 1);
                 }
 
                 $this->info("Токен успешно сгенерирован! {$sourceItem->name} : {$accessToken->token}");
@@ -78,7 +78,9 @@ class GenerateApiToken extends Command
 
             return 0;
         } catch (\Exception $exception) {
-            $this->error("Не удалось добавить ресурс: {$exception->getMessage()}");
+            if ($exception->getCode() === 1) {
+                $this->error("Не удалось добавить ресурс: {$exception->getMessage()}");
+            }
             return 1;
         }
     }

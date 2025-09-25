@@ -15,7 +15,7 @@ class TelegramMethods
      *
      * @return TelegramAnswerDto
      */
-    public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null): TelegramAnswerDto
+    public static function sendQueryTelegram(string $methodQuery, ?array $dataQuery = null, ?string $token = null): TelegramAnswerDto
     {
         try {
             // Извлекаем chat_id из данных запроса для проверки локальных лимитов
@@ -26,17 +26,14 @@ class TelegramMethods
                 // Если превышен лимит, ждем необходимое время
                 TelegramRateLimitService::waitForRateLimit($methodQuery);
 
-                // Повторно проверяем лимит
-                if (!TelegramRateLimitService::checkRateLimit($methodQuery, $chatId)) {
-                    return TelegramAnswerDto::fromData([
-                        'ok' => false,
-                        'error_code' => 429,
-                        'result' => 'Rate limit exceeded',
-                    ], $methodQuery);
-                }
+                return TelegramAnswerDto::fromData([
+                    'ok' => false,
+                    'response_code' => 429,
+                    'result' => 'Rate limit exceeded',
+                ]);
             }
 
-            $token = config('traffic_source.settings.telegram.token');
+            $token = $token ?? config('traffic_source.settings.telegram.token');
 
             $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
@@ -46,11 +43,12 @@ class TelegramMethods
             } else {
                 $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
             }
+
             return TelegramAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
-                'error_code' => 500,
+                'response_code' => 500,
                 'result' => $e->getMessage(),
             ]);
         }

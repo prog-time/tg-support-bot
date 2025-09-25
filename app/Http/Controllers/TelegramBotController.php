@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Ai\EditAiMessage;
+use App\Actions\Telegram\SendAiAnswerMessage;
 use App\Actions\Telegram\SendContactMessage;
 use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
@@ -91,23 +93,31 @@ class TelegramBotController
      */
     private function controllerPlatformTg(): void
     {
-        switch ($this->dataHook->typeQuery) {
-            case 'message':
-                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                    (new SendContactMessage())->executeByTgUpdate($this->dataHook);
-                } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
-                    (new SendStartMessage())->execute($this->dataHook);
-                } else {
-                    (new TgMessageService($this->dataHook))->handleUpdate();
-                }
-                break;
+        if ($this->dataHook->aiTechMessage) {
+            if (str_contains($this->dataHook->text, 'ai_message_edit_')) {
+                (new EditAiMessage())->execute($this->dataHook);
+            }
+        } else {
+            switch ($this->dataHook->typeQuery) {
+                case 'message':
+                    if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
+                        (new SendContactMessage())->executeByChatId($this->dataHook->chatId);
+                    } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
+                        (new SendStartMessage())->execute($this->dataHook);
+                    } elseif (str_contains($this->dataHook->text, '/ai_generate') && $this->isSupergroup()) {
+                        (new SendAiAnswerMessage())->execute($this->dataHook);
+                    } else {
+                        (new TgMessageService($this->dataHook))->handleUpdate();
+                    }
+                    break;
 
-            case 'edited_message':
-                (new TgEditMessageService($this->dataHook))->handleUpdate();
-                break;
+                case 'edited_message':
+                    (new TgEditMessageService($this->dataHook))->handleUpdate();
+                    break;
 
-            default:
-                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+                default:
+                    throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+            }
         }
     }
 

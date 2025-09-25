@@ -4,11 +4,11 @@ namespace App\Services\TgVk;
 
 use App\Actions\Telegram\GetFile;
 use App\Actions\Telegram\SendMessage;
-use App\Actions\VK\GetMessagesUploadServerVk;
-use App\Actions\VK\SaveFileVk;
-use App\Actions\VK\SendMessageVk;
-use App\Actions\VK\SendQueryVk;
-use App\Actions\VK\UploadFileVk;
+use App\Actions\Vk\GetMessagesUploadServerVk;
+use App\Actions\Vk\SaveFileVk;
+use App\Actions\Vk\SendMessageVk;
+use App\Actions\Vk\SendQueryVk;
+use App\Actions\Vk\UploadFileVk;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
@@ -26,13 +26,15 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * @return void
-     *
-     * @throws \Exception
+     * @return VkAnswerDto|null
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): ?VkAnswerDto
     {
-        if ($this->update->typeQuery === 'message') {
+        try {
+            if ($this->update->typeQuery !== 'message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            }
+
             if (!empty($this->update->rawData['message']['photo'])) {
                 $resultQuery = $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
@@ -57,8 +59,10 @@ class TgVkMessageService extends FromTgMessageService
             ]));
 
             echo 'ok';
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+
+            return $resultQuery;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
@@ -208,30 +212,39 @@ class TgVkMessageService extends FromTgMessageService
      * @param string $typeFile
      * @param string $typeMethod
      *
-     * @return TelegramAnswerDto|VkAnswerDto|null
-     *
-     * @throws \Exception
+     * @return VkAnswerDto
      */
-    protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod)
+    protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod): VkAnswerDto
     {
-        // get telegram file data
-        $fileData = GetFile::execute($fileId);
-        if (empty($fileData->rawData['result']['file_path'])) {
-            throw new \Exception('Ошибка получения данных файла!');
+        try {
+            // get telegram file data
+            $fileData = GetFile::execute($fileId);
+            if (empty($fileData->rawData['result']['file_path'])) {
+                throw new \Exception('Ошибка получения данных файла!', 1);
+            }
+            $fullFilePath = TelegramHelper::getFileTelegramPath($this->update->fileId);
+
+            // get upload server data
+            $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
+            if (empty($resultData->response['upload_url'])) {
+                throw new \Exception('Ошибка получения ссылки для загрузки файла!', 1);
+            }
+
+            // upload file in VK
+            $urlQuery = $resultData->response['upload_url'];
+            $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
+            if (empty($responseData)) {
+                throw new \Exception('Ошибка загрузки файла!', 1);
+            }
+
+            // save file in VK
+            return SaveFileVk::execute($typeMethod, $responseData);
+        } catch (\Exception $e) {
+            return VkAnswerDto::fromData([
+                'response_code' => 500,
+                'response' => 0,
+                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+            ]);
         }
-        $fullFilePath = TelegramHelper::getFilePublicPath($this->update->fileId);
-
-        // get upload server data
-        $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
-        if (empty($resultData->response['upload_url'])) {
-            throw new \Exception('Ошибка получения ссылки для загрузки файла!');
-        }
-
-        // upload file in VK
-        $urlQuery = $resultData->response['upload_url'];
-        $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
-
-        // save file in VK
-        return SaveFileVk::execute($typeMethod, $responseData);
     }
 }

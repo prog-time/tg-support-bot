@@ -15,6 +15,9 @@ services:
             - .:/var/www
         networks:
             - pet
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
 
     pgdb:
         container_name: pgdb
@@ -103,6 +106,26 @@ services:
             - loki
         networks:
             - pet
+
+    queue:
+        build: .
+        image: docker_template:latest
+        container_name: laravel_queue
+        restart: always
+        depends_on:
+            - app
+            - redis
+        env_file:
+            - .env
+        working_dir: /var/www
+        volumes:
+            - .:/var/www
+        command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
+        networks:
+            - pet
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
 
     loki:
         image: grafana/loki:latest

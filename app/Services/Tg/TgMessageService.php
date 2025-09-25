@@ -18,13 +18,15 @@ class TgMessageService extends FromTgMessageService
     }
 
     /**
-     * @return void
-     *
-     * @throws \Exception
+     * @return TelegramAnswerDto|null
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): ?TelegramAnswerDto
     {
-        if ($this->update->typeQuery === 'message') {
+        try {
+            if ($this->update->typeQuery !== 'message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            }
+
             if (!empty($this->update->rawData['message']['photo'])) {
                 $resultQuery = $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
@@ -63,8 +65,10 @@ class TgMessageService extends FromTgMessageService
                     ]));
                     break;
             }
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+
+            return $resultQuery;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
@@ -179,14 +183,12 @@ class TgMessageService extends FromTgMessageService
      */
     protected function saveMessage(mixed $resultQuery): void
     {
-        Message::create(
-            [
-                'bot_user_id' => $this->botUser->id,
-                'platform' => $this->source,
-                'message_type' => $this->typeMessage,
-                'from_id' => $this->update->messageId,
-                'to_id' => $resultQuery->message_id,
-            ]
-        );
+        Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->source,
+            'message_type' => $this->typeMessage,
+            'from_id' => $this->update->messageId,
+            'to_id' => $resultQuery->message_id,
+        ]);
     }
 }

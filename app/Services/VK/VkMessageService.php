@@ -100,7 +100,7 @@ class VkMessageService extends ToTgMessageService
     {
         return TelegramAnswerDto::fromData([
             'ok' => false,
-            'error_code' => 500,
+            'response_code' => 500,
             'result' => 'Метод sendPhoto не поддерживается!',
         ]);
     }
@@ -112,7 +112,7 @@ class VkMessageService extends ToTgMessageService
     {
         return TelegramAnswerDto::fromData([
             'ok' => false,
-            'error_code' => 500,
+            'response_code' => 500,
             'result' => 'Метод sendSticker не поддерживается!',
         ]);
     }
@@ -124,7 +124,7 @@ class VkMessageService extends ToTgMessageService
     {
         return TelegramAnswerDto::fromData([
             'ok' => false,
-            'error_code' => 500,
+            'response_code' => 500,
             'result' => 'Метод sendContact не поддерживается!',
         ]);
     }
@@ -136,7 +136,7 @@ class VkMessageService extends ToTgMessageService
     {
         return TelegramAnswerDto::fromData([
             'ok' => false,
-            'error_code' => 500,
+            'response_code' => 500,
             'result' => 'Метод sendVideoNote не поддерживается!',
         ]);
     }
@@ -148,7 +148,7 @@ class VkMessageService extends ToTgMessageService
     {
         return TelegramAnswerDto::fromData([
             'ok' => false,
-            'error_code' => 500,
+            'response_code' => 500,
             'result' => 'Метод sendVoice не поддерживается!',
         ]);
     }

@@ -28,18 +28,16 @@ class VkMethods
             $url = 'https://api.vk.com/method/' . $methodQuery;
             $resultQuery = self::makeRequest($url, $queryParams);
 
-            if (empty($resultQuery)) {
-                throw new \RuntimeException('VK API Error: Запрос без результата!');
-            }
-
-            if (isset($resultQuery['error'])) {
-                throw new \RuntimeException('VK API Error: ' . json_encode($resultQuery['error']));
+            if (!empty($resultQuery['error']['error_msg'])) {
+                throw new \RuntimeException($resultQuery['error']['error_msg'], 1);
             }
 
             return VkAnswerDto::fromData($resultQuery);
         } catch (\Exception $e) {
             return VkAnswerDto::fromData([
+                'response_code' => 500,
                 'response' => 0,
+                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Ошибка отправки запроса',
             ]);
         }
     }

@@ -14,7 +14,7 @@
     <meta name="keywords" content="telegram bot, техподдержка, telegram support, бот поддержки, open source, бесплатный бот, техническая поддержка, vkontakte bot, чат-бот, customer support, tg support bot, поддержка клиентов">
     <meta name="author" content="Prog-Time (Илья Лящук)">
     <meta name="robots" content="index, follow">
-    
+
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="TG Support Bot - Telegram бот для технической поддержки">
     <meta property="og:description" content="Бесплатное Open Source решение для организации службы поддержки в Telegram и ВКонтакте. Быстрая установка, автоматизация, командная работа.">
@@ -22,16 +22,16 @@
     <meta property="og:url" content="{{ env('AUTHOR_GITHUB_PROJECT', 'https://t.me/pt_tg_support') }}">
     <meta property="og:image" content="https://github.com/prog-time/tg-support-bot/blob/main/storage/app/public/support_bot.png?raw=true">
     <meta property="og:locale" content="ru_RU">
-    
+
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="TG Support Bot - Telegram бот для технической поддержки">
     <meta name="twitter:description" content="Бесплатное Open Source решение для организации службы поддержки в Telegram и ВКонтакте.">
     <meta name="twitter:image" content="https://github.com/prog-time/tg-support-bot/blob/main/storage/app/public/support_bot.png?raw=true">
-    
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://tg-support-bot.ru/">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -772,7 +772,7 @@
                     </div>
                     <div class="logo-text" itemprop="name">TG Support Bot</div>
                 </a>
-                <a href="{{ env('AUTHOR_TG_GROUP', 'https://github.com/prog-time') }}" target="_blank" class="github-btn" itemprop="sameAs">
+                <a href="{{ env('AUTHOR_GITHUB_PROJECT', 'https://github.com/prog-time') }}" target="_blank" class="github-btn" itemprop="sameAs">
                     <i class="fab fa-github"></i>
                     GitHub
                 </a>
@@ -789,7 +789,7 @@
             </div>
             <h1 itemprop="name"><span class="hero-title-telegram">Telegram бот</span> для технической поддержки</h1>
             <p itemprop="description">Бесплатный инструмент для организации тех. поддержки в Telegram.</p>
-            
+
             <div class="hero-buttons">
                 <a href="{{ env('AUTHOR_GITHUB_PROJECT', 'https://github.com/prog-time') }}" target="_blank" class="btn btn-primary" itemprop="downloadUrl">
                     <i class="fab fa-github"></i>
@@ -838,7 +838,7 @@
             <div class="about-content">
                 <h2 itemprop="name">О проекте</h2>
                 <p itemprop="description">TG Support Bot — это open-source решение для быстрой и удобной организации поддержки в Telegram и ВКонтакте. Начните прямо сейчас — установите бота и подарите вашим клиентам сервис, который они заслуживают.</p>
-                
+
                 <div class="vision">
                     <p>Наше видение простое: каждая команда, независимо от размера, должна иметь доступ к современным инструментам поддержки без сложных интеграций и дорогих лицензий.</p>
                 </div>
@@ -846,10 +846,10 @@
                 <!-- Video Section -->
                 <div class="video-section">
                     <div class="video-wrapper">
-                        <iframe src="{{ asset('storage/presentation_video.mp4') }}" 
-                            title="TG Support Bot Presentation" 
-                            frameborder="0" 
-                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        <iframe src="{{ asset('storage/presentation_video.mp4') }}"
+                            title="TG Support Bot Presentation"
+                            frameborder="0"
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen
                         ></iframe>
                     </div>
@@ -1041,7 +1041,7 @@
                     </div>
                     <div class="logo-text" itemprop="name">TG Support Bot</div>
                 </a>
-                
+
                 <div class="footer-links">
                     <a href="{{ env('AUTHOR_GITHUB_PROJECT', 'https://github.com/prog-time') }}" target="_blank" class="footer-link" itemprop="sameAs">
                         <i class="fab fa-github"></i>
@@ -1051,7 +1051,7 @@
                     </a>
                 </div>
             </div>
-            
+
             <div class="copyright">
                 Open Source проект • Лицензия MIT • Сделано с ❤️ сообществом
             </div>
@@ -1087,7 +1087,7 @@
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-10px)';
             });
-            
+
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0)';
             });

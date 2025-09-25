@@ -2,7 +2,7 @@
 
 namespace App\Services\TgVk;
 
-use App\Actions\VK\SendMessageVk;
+use App\Actions\Vk\SendMessageVk;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
