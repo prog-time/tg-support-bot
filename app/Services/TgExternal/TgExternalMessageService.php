@@ -19,57 +19,62 @@ class TgExternalMessageService extends FromTgMessageService
     }
 
     /**
-     * @return void
-     *
-     * @throws \Exception
+     * @return WebhookMessageDto|null
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): ?WebhookMessageDto
     {
         try {
-            if ($this->update->typeQuery === 'message') {
-                $resultData = [
-                    'source' => $this->botUser->externalUser->source,
-                    'external_id' => $this->botUser->externalUser->external_id,
-                    'message_type' => 'outgoing',
-
-                    'to_id' => time(),
-                    'from_id' => $this->update->messageId,
-
-                    'dop_params' => null,
-
-                    'text' => $this->update->text,
-                    'file_path' => null,
-                    'file_id' => null,
-                    'date' => date('d.m.Y H:i'),
-                ];
-
-                if (!empty($this->update->fileId)) {
-                    $resultData = array_merge($resultData, $this->sendDocument());
-                }
-
-                if (!empty($this->update->rawData['message']['location'])) {
-                    $resultData = array_merge($resultData, $this->sendLocation());
-                }
-
-                if (!empty($this->update->rawData['message']['contact'])) {
-                    $resultData = array_merge($resultData, $this->sendContact());
-                }
-
-                $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
-                $messageData = WebhookMessageDto::fromArray($resultData);
-                WebhookService::sendWebhookMessage($webhookUrl, $messageData);
-
-                $this->saveMessage($messageData);
-
-                $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                    'message_thread_id' => $this->botUser->topic_id,
-                    'icon_custom_emoji_id' => __('icons.outgoing'),
-                ]));
-            } else {
+            if ($this->update->typeQuery !== 'message') {
                 throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
             }
+
+            $resultData = [
+                'source' => $this->botUser->externalUser->source,
+                'external_id' => $this->botUser->externalUser->external_id,
+                'message_type' => 'outgoing',
+
+                'to_id' => time(),
+                'from_id' => $this->update->messageId,
+
+                'dop_params' => null,
+
+                'text' => $this->update->text,
+                'file_path' => null,
+                'file_id' => null,
+                'date' => date('d.m.Y H:i'),
+            ];
+
+            if (!empty($this->update->fileId)) {
+                $resultData = array_merge($resultData, $this->sendDocument());
+            }
+
+            if (!empty($this->update->rawData['message']['location'])) {
+                $resultData = array_merge($resultData, $this->sendLocation());
+            }
+
+            if (!empty($this->update->rawData['message']['contact'])) {
+                $resultData = array_merge($resultData, $this->sendContact());
+            }
+
+            $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
+            $messageData = WebhookMessageDto::fromArray($resultData);
+            WebhookService::sendWebhookMessage($webhookUrl, $messageData);
+
+            $this->saveMessage($messageData);
+
+            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+                'message_thread_id' => $this->botUser->topic_id,
+                'icon_custom_emoji_id' => __('icons.outgoing'),
+            ]));
+
+            return $messageData;
         } catch (\Exception $exception) {
             Log::info('Webhook sent', ['exception' => $exception]);
+
+            dump($exception->getMessage());
+            dump($exception->getMessage());
+
+            return null;
         }
     }
 
