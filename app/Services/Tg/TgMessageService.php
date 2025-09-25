@@ -7,7 +7,6 @@ use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
-use App\Models\AiCondition;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
 
@@ -19,13 +18,15 @@ class TgMessageService extends FromTgMessageService
     }
 
     /**
-     * @return void
-     *
-     * @throws \Exception
+     * @return TelegramAnswerDto|null
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): ?TelegramAnswerDto
     {
-        if ($this->update->typeQuery === 'message') {
+        try {
+            if ($this->update->typeQuery !== 'message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            }
+
             if (!empty($this->update->rawData['message']['photo'])) {
                 $resultQuery = $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
@@ -62,14 +63,12 @@ class TgMessageService extends FromTgMessageService
                         'message_thread_id' => $this->botUser->topic_id,
                         'icon_custom_emoji_id' => __('icons.outgoing'),
                     ]));
-
-                    AiCondition::where('bot_user_id', $this->botUser->chat_id)->update([
-                        'active' => false,
-                    ]);
                     break;
             }
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+
+            return $resultQuery;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
