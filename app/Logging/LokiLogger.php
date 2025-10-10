@@ -35,7 +35,7 @@ class LokiLogger
      * Log a message to the given channel.
      *
      * @param string $level
-     * @param string $message
+     * @param mixed  $message
      *
      * @return void
      */

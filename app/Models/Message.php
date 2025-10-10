@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * @property int    $bot_user_id
- * @property string $platform
- * @property string $message_type
- * @property int    $from_id
- * @property int    $to_id
+ * @property int             $bot_user_id
+ * @property string          $platform
+ * @property string          $message_type
+ * @property int             $from_id
+ * @property int             $to_id
+ * @property ExternalMessage $externalMessage
  */
 class Message extends Model
 {

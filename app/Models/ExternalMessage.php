@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * @property int    $id
- * @property int    $external_id
- * @property string $source
- * @property string $updated_at
- * @property string $created_at
- * @property-read ExternalSource $externalSource
+ * @property int            $id
+ * @property int            $external_id
+ * @property string         $source
+ * @property string         $file_id
+ * @property string         $file_url
+ * @property string         $updated_at
+ * @property string         $created_at
+ * @property ExternalSource $externalSource
  */
 class ExternalMessage extends Model
 {
@@ -20,7 +22,7 @@ class ExternalMessage extends Model
     protected $fillable = [
         'message_id',
         'text',
-        'file_id'
+        'file_id',
     ];
 
     /**
@@ -30,5 +32,4 @@ class ExternalMessage extends Model
     {
         return $this->hasOne(ExternalSource::class);
     }
-
 }

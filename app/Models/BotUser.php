@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int    $topic_id
  * @property int    $chat_id
  * @property string $platform
+ * @property mixed  $aiCondition
+ * @property mixed  $lastMessageManager
  * @property-read ExternalUser $externalUser
  */
 class BotUser extends Model
