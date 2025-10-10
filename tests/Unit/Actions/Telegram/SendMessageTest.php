@@ -144,7 +144,7 @@ class SendMessageTest extends TestCase
     {
         // Arrange
         $dtoQueryParams = TGTextMessageDto::from(array_merge($this->getQueryParams(), [
-            'chat_id' => -1002635013459,
+            'chat_id' => (int)config('traffic_source.settings.telegram.group_id'),
             'text' => 'Тестовое сообщение!',
             'message_thread_id' => 111,
         ]));
@@ -178,7 +178,7 @@ class SendMessageTest extends TestCase
         $testTextMessage = '*Это жирный текст без закрывающей звездочки';
 
         $dtoQueryParams = TGTextMessageDto::from(array_merge($this->getQueryParams(), [
-            'chat_id' => -1002635013459,
+            'chat_id' => (int)config('traffic_source.settings.telegram.group_id'),
             'text' => $testTextMessage,
             'message_thread_id' => 111,
         ]));

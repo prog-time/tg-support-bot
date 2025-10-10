@@ -2,25 +2,38 @@
 
 namespace App\Services\Webhook;
 
-use App\DTOs\Redis\WebhookMessageDto;
-use App\Jobs\SendWebhookMessage;
+use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Http;
 
 class WebhookService
 {
     /**
-     * @param string            $webhookUrl
-     * @param WebhookMessageDto $webhookMessageDto
+     * @param string $url
+     * @param array  $dataMessage
      *
-     * @return void
+     * @return string|null
      */
-    public static function sendWebhookMessage(string $webhookUrl, WebhookMessageDto $webhookMessageDto): void
+    public function sendMessage(string $url, array $dataMessage): ?string
     {
-        if (!empty($webhookUrl)) {
-            $webhookData = [
-                'action' => 'send_message',
-                'data' => $webhookMessageDto->toArray(),
-            ];
-            SendWebhookMessage::dispatch($webhookUrl, $webhookData);
+        try {
+            (new LokiLogger())->log('debug', [
+                'url' => $url,
+                'message' => $dataMessage,
+            ]);
+
+            $response = Http::timeout(10)->asJson()->post($url, $dataMessage);
+            if ($response->failed()) {
+                throw new \RuntimeException('Ошибка! Статус: ' . $response->status() . ', body: ' . $response->body());
+            }
+
+            return $response->body();
+        } catch (\Throwable $e) {
+            (new LokiLogger())->log('error_webhook', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
         }
     }
 }

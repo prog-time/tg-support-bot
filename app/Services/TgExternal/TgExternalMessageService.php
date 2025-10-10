@@ -2,14 +2,16 @@
 
 namespace App\Services\TgExternal;
 
+use App\DTOs\External\ExternalMessageAnswerDto;
+use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\Redis\WebhookMessageDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Helpers\TelegramHelper;
+use App\Jobs\SendWebhookMessage;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
-use App\Services\Webhook\WebhookService;
-use Illuminate\Support\Facades\Log;
+use phpDocumentor\Reflection\Exception;
 
 class TgExternalMessageService extends FromTgMessageService
 {
@@ -19,9 +21,9 @@ class TgExternalMessageService extends FromTgMessageService
     }
 
     /**
-     * @return WebhookMessageDto|null
+     * @return ExternalMessageAnswerDto
      */
-    public function handleUpdate(): ?WebhookMessageDto
+    public function handleUpdate(): ExternalMessageAnswerDto
     {
         try {
             if ($this->update->typeQuery !== 'message') {
@@ -31,47 +33,50 @@ class TgExternalMessageService extends FromTgMessageService
             $resultData = [
                 'source' => $this->botUser->externalUser->source,
                 'external_id' => $this->botUser->externalUser->external_id,
-                'message_type' => 'outgoing',
-
-                'to_id' => time(),
-                'from_id' => $this->update->messageId,
-
-                'dop_params' => null,
-
-                'text' => $this->update->text,
-                'file_path' => null,
-                'file_id' => null,
-                'date' => date('d.m.Y H:i'),
+                'message' => [
+                    'content_type' => 'text',
+                    'message_type' => 'outgoing',
+                    'to_id' => time(),
+                    'from_id' => $this->update->messageId,
+                    'text' => $this->update->text ?? $this->update->caption,
+                    'date' => date('d.m.Y H:i'),
+                    'file_url' => null,
+                    'file_id' => null,
+                    'file_type' => null,
+                ],
             ];
 
             if (!empty($this->update->fileId)) {
-                $resultData = array_merge($resultData, $this->sendDocument());
-            }
-
-            if (!empty($this->update->rawData['message']['location'])) {
-                $resultData = array_merge($resultData, $this->sendLocation());
-            }
-
-            if (!empty($this->update->rawData['message']['contact'])) {
-                $resultData = array_merge($resultData, $this->sendContact());
+                $resultData['message'] = array_merge($resultData['message'], $this->sendDocument());
+            } elseif (!empty($this->update->rawData['message']['location'])) {
+                $resultData['message'] = array_merge($resultData['message'], $this->sendLocation());
+            } elseif (!empty($this->update->rawData['message']['contact'])) {
+                $resultData['message'] = array_merge($resultData['message'], $this->sendContact());
             }
 
             $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
             $messageData = WebhookMessageDto::fromArray($resultData);
-            WebhookService::sendWebhookMessage($webhookUrl, $messageData);
-
-            $this->saveMessage($messageData);
+            $saveMessageData = $this->saveMessage($messageData);
+            if (!empty($webhookUrl)) {
+                SendWebhookMessage::dispatch($webhookUrl, [
+                    'type_query' => 'send_message',
+                    'externalId' => $messageData->externalId,
+                    'message' => $saveMessageData->result->toArray(),
+                ]);
+            }
 
             $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
 
-            return $messageData;
-        } catch (\Exception $exception) {
-            Log::info('Webhook sent', ['exception' => $exception]);
-
-            return null;
+            return $saveMessageData;
+        } catch (\Exception $e) {
+            dump($e->getMessage());
+            return ExternalMessageAnswerDto::from([
+                'status' => false,
+                'error' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка обработки запроса!',
+            ]);
         }
     }
 
@@ -136,9 +141,21 @@ class TgExternalMessageService extends FromTgMessageService
     protected function sendDocument(): mixed
     {
         try {
+            if (empty($this->update->fileId)) {
+                throw new Exception('Параметр fileId не найден!');
+            }
+
+            if (!empty($this->update->rawData['message']['photo'])) {
+                $fileType = 'photo';
+            } else {
+                $fileType = 'document';
+            }
+
             return [
+                'content_type' => 'file',
                 'file_id' => $this->update->fileId,
-                'file_path' => TelegramHelper::getFilePublicPath($this->update->fileId),
+                'file_url' => TelegramHelper::getFilePublicPath($this->update->fileId),
+                'file_type' => $fileType,
             ];
         } catch (\Exception $e) {
             return [];
@@ -164,21 +181,37 @@ class TgExternalMessageService extends FromTgMessageService
     /**
      * @param mixed $resultQuery
      *
-     * @return void
+     * @return ExternalMessageAnswerDto
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): ExternalMessageAnswerDto
     {
         $message = Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->externalUser->source,
             'message_type' => 'outgoing',
-            'from_id' => $resultQuery->fromId,
-            'to_id' => $resultQuery->toId,
+            'from_id' => $resultQuery->message->from_id,
+            'to_id' => $resultQuery->message->to_id,
         ]);
 
         $message->externalMessage()->create([
-            'text' => $resultQuery->text ?? null,
-            'file_id' => $resultQuery->fileId ?? null,
+            'text' => $resultQuery->message->text ?? null,
+            'file_id' => $resultQuery->message->file_id ?? null,
+            'file_type' => $resultQuery->message->file_type ?? null,
+        ]);
+
+        return ExternalMessageAnswerDto::from([
+            'status' => true,
+            'result' => ExternalMessageResponseDto::from([
+                'message_type' => 'outgoing',
+                'to_id' => $message->to_id,
+                'from_id' => $message->from_id,
+                'text' => $message->externalMessage->text,
+                'date' => $message->created_at->format('d.m.Y H:i:s'),
+                'content_type' => $message->file_type ?? 'text' ,
+                'file_id' => $message->externalMessage->file_id,
+                'file_url' => $message->externalMessage->file_url,
+                'file_type' => $message->externalMessage->file_type,
+            ]),
         ]);
     }
 }

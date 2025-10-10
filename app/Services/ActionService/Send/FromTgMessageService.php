@@ -119,7 +119,7 @@ abstract class FromTgMessageService extends TemplateMessageService
      *
      * @param $resultQuery
      *
-     * @return void
+     * @return mixed
      */
-    abstract protected function saveMessage($resultQuery): void;
+    abstract protected function saveMessage($resultQuery): mixed;
 }

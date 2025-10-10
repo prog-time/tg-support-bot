@@ -5,10 +5,10 @@ namespace Tests\Unit\Services\ActionService\Send;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
 use Illuminate\Support\Facades\Request;
-use Tests\Stubs\Services\ActionService\Send\FromTgMessageServiceStub;
+use Tests\Stubs\Services\ActionService\Send\ToTgMessageServiceStub;
 use Tests\TestCase;
 
-class FromTgMessageServiceTest extends TestCase
+class ToTgMessageServiceTest extends TestCase
 {
     private array $basicPayload;
 
@@ -47,7 +47,7 @@ class FromTgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDto::fromRequest($request);
         $botUser = BotUser::where('chat_id', config('testing.tg_private.chat_id'))->first();
 
-        $service = new FromTgMessageServiceStub($dto);
+        $service = new ToTgMessageServiceStub($dto);
 
         $this->assertEquals('telegram', $service->getSource());
         $this->assertEquals('incoming', $service->getTypeMessage());

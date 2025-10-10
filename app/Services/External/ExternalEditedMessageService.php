@@ -5,6 +5,7 @@ namespace App\Services\External;
 use App\Actions\Telegram\SendMessage;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
@@ -63,10 +64,7 @@ class ExternalEditedMessageService extends ExternalService
                 'icon_custom_emoji_id' => __('icons.incoming'),
             ]));
 
-            return ExternalMessageAnswerDto::from([
-                'status' => true,
-                'message_id' => time(),
-            ]);
+            return $this->saveMessage($resultQuery);
         } catch (\Exception $e) {
             return ExternalMessageAnswerDto::from([
                 'status' => false,
@@ -76,9 +74,9 @@ class ExternalEditedMessageService extends ExternalService
     }
 
     /**
-     * @return ?TelegramAnswerDto
+     * @return TelegramAnswerDto
      */
-    private function editMessageText(): ?TelegramAnswerDto
+    private function editMessageText(): TelegramAnswerDto
     {
         try {
             $externalUser = ExternalUser::where([
@@ -104,7 +102,11 @@ class ExternalEditedMessageService extends ExternalService
             $this->messageParamsDTO->text = $this->update->text;
             $this->messageParamsDTO->message_id = $toIdMessage;
 
-            return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+            $resultQuery = SendMessage::execute($this->botUser, $this->messageParamsDTO);
+
+            $this->saveMessage($resultQuery);
+
+            return $resultQuery;
         } catch (\Exception $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
@@ -112,5 +114,42 @@ class ExternalEditedMessageService extends ExternalService
                 'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
             ]);
         }
+    }
+
+    /**
+     * @param TelegramAnswerDto $resultQuery
+     *
+     * @return ExternalMessageAnswerDto
+     */
+    protected function saveMessage(TelegramAnswerDto $resultQuery): ExternalMessageAnswerDto
+    {
+        $message = Message::where([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->botUser->externalUser->source,
+            'message_type' => 'incoming',
+            'to_id' => $resultQuery->message_id,
+        ])->first();
+
+        $message->externalMessage()->update([
+            'text' => $resultQuery->text,
+            'file_id' => $resultQuery->fileId,
+        ]);
+
+        $message->save();
+
+        return ExternalMessageAnswerDto::from([
+            'status' => true,
+            'result' => ExternalMessageResponseDto::from([
+                'message_type' => 'incoming',
+                'to_id' => $message->to_id,
+                'from_id' => $message->from_id,
+                'text' => $message->externalMessage->text,
+                'date' => $message->created_at->format('d.m.Y H:i:s'),
+                'content_type' => $message->file_type ?? 'text',
+                'file_id' => $message->externalMessage->file_id,
+                'file_url' => $message->externalMessage->file_url,
+                'file_type' => $message->externalMessage->file_type,
+            ]),
+        ]);
     }
 }

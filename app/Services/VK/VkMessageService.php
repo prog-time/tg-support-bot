@@ -156,11 +156,11 @@ class VkMessageService extends ToTgMessageService
     /**
      * @param TelegramAnswerDto $resultQuery
      *
-     * @return void
+     * @return Message
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): Message
     {
-        Message::create([
+        return Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->source,
             'message_type' => $this->typeMessage,

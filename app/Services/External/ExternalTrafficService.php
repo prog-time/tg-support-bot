@@ -8,6 +8,7 @@ use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\External\ExternalMessageResponseDto;
+use App\Helpers\TelegramHelper;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
@@ -90,16 +91,17 @@ class ExternalTrafficService
 
             if (!$listMessagesData->isEmpty()) {
                 foreach ($listMessagesData as $message) {
-                    $messageParams = [
-                        'date' => $message->created_at->format('d.m.Y H:i:s'),
-                        'message_id' => $message->id,
+                    $resultMessages['messages'][] = ExternalMessageResponseDto::fromArray([
                         'message_type' => $message->message_type,
-                        'text' => $message->externalMessage->text ?? null,
+                        'to_id' => $message->to_id,
+                        'from_id' => $message->from_id,
+                        'text' => $message->externalMessage->text,
+                        'date' => $message->created_at->format('d.m.Y H:i:s'),
+                        'content_type' => $message->externalMessage->file_type ?? 'text',
                         'file_id' => $message->externalMessage->file_id,
-                        'file_url' => null,
-                    ];
-
-                    $resultMessages['messages'][] = ExternalMessageResponseDto::fromArray($messageParams)->toArray();
+                        'file_url' => !empty($message->externalMessage->file_id) ? TelegramHelper::getFilePublicPath($message->externalMessage->file_id) : null,
+                        'file_type' => $message->externalMessage->file_type,
+                    ])->toArray();
                 }
             }
 

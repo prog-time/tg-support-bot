@@ -92,7 +92,7 @@ abstract class TemplateMessageService
      *
      * @param TelegramAnswerDto $resultQuery
      *
-     * @return void
+     * @return mixed
      */
-    abstract protected function saveMessage(mixed $resultQuery): void;
+    abstract protected function saveMessage(mixed $resultQuery): mixed;
 }

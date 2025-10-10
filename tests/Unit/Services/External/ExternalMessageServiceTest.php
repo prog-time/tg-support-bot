@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Unit\External;
+namespace Tests\Unit\Services\External;
 
 use App\Actions\External\DeleteMessage;
 use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\External\ExternalMessageResponseDto;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
 use Tests\TestCase;
@@ -47,8 +48,8 @@ class ExternalMessageServiceTest extends TestCase
         $dataMessage = $this->getMessageParams();
         $response = $this->sendNewMessage($dataMessage);
 
-        $this->assertNotEmpty($response->result->message_id);
-        $this->assertIsInt($response->result->message_id);
+        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $response);
+        $this->assertInstanceOf(ExternalMessageResponseDto::class, $response->result);
     }
 
     public function test_delete_external_message(): void
@@ -57,7 +58,7 @@ class ExternalMessageServiceTest extends TestCase
         $responseSend = $this->sendNewMessage($dataMessage);
 
         $messageData = Message::where([
-            'to_id' => $responseSend->result->message_id,
+            'to_id' => $responseSend->result->to_id,
         ])->first();
 
         $this->assertNotEmpty($messageData->from_id);
@@ -101,7 +102,7 @@ class ExternalMessageServiceTest extends TestCase
         $responseSend = $this->sendNewMessage($dataMessage);
 
         $messageData = Message::where([
-            'to_id' => $responseSend->result->message_id,
+            'to_id' => $responseSend->result->to_id,
         ])->first();
 
         $this->assertNotEmpty($messageData->from_id);

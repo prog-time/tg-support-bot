@@ -54,7 +54,8 @@ class FromTgMessageServiceStub extends FromTgMessageService
         return null;
     }
 
-    protected function saveMessage($resultQuery): void
+    protected function saveMessage($resultQuery): mixed
     {
+        return null;
     }
 }
