@@ -93,6 +93,12 @@
     margin: 0 0 0 auto;
 }
 
+#prog-time-widget .ptw_message_block .contentBlock {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
 #prog-time-widget .ptw_message_block .ptw_message_date {
     font-size: 12px;
     margin-top: 5px;

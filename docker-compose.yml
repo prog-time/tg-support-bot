@@ -31,7 +31,7 @@ services:
         ports:
             - ${PGDB_PORT}
         volumes:
-            - ./docker/postgres:/var/lib/postgresql/data
+            - pgdata:/var/lib/postgresql/data
         networks:
             - pet
 
@@ -126,6 +126,22 @@ services:
         dns:
             - 8.8.8.8
             - 1.1.1.1
+
+    node:
+        build: ./docker/node
+        container_name: node_server
+        restart: always
+        volumes:
+            - ./docker/node/server.js:/usr/src/app/server.js
+        depends_on:
+            - redis
+        env_file:
+            - .env
+        ports:
+            - "3001:3000"
+        networks:
+            - pet
+
 
     loki:
         image: grafana/loki:latest
