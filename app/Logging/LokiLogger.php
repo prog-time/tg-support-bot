@@ -52,7 +52,7 @@ class LokiLogger
                     'values' => [
                         [
                             (string) (int) (microtime(true) * 1e9),
-                            $message,
+                            json_encode($message),
                         ],
                     ],
                 ],
