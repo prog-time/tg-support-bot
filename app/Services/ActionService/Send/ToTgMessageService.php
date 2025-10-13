@@ -53,11 +53,11 @@ abstract class ToTgMessageService extends TemplateMessageService
     }
 
     /**
-     * @return void
+     * @return mixed
      *
      * @throws \Exception
      */
-    abstract public function handleUpdate(): void;
+    abstract public function handleUpdate(): mixed;
 
     /**
      * Отправка изображения
@@ -120,7 +120,7 @@ abstract class ToTgMessageService extends TemplateMessageService
      *
      * @param TelegramAnswerDto $resultQuery
      *
-     * @return void
+     * @return mixed
      */
-    abstract protected function saveMessage(mixed $resultQuery): void;
+    abstract protected function saveMessage(mixed $resultQuery): mixed;
 }

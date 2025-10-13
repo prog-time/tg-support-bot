@@ -55,7 +55,7 @@ readonly class TelegramAnswerDto
             return new self(
                 ok: $dataAnswer['ok'] ?? false,
                 message_id: $result['message_id'] ?? null,
-                response_code: $dataAnswer['response_code'] ?? 200,
+                response_code: $dataAnswer['response_code'] ?? $dataAnswer['error_code'] ?? 200,
                 message_thread_id: $result['message_thread_id'] ?? null,
                 date: $result['date'] ?? null,
                 message: $result['message'] ?? null,

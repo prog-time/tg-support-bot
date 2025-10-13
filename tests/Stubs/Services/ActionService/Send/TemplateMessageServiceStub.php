@@ -54,7 +54,8 @@ class TemplateMessageServiceStub extends TemplateMessageService
         return null;
     }
 
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(mixed $resultQuery): mixed
     {
+        return null;
     }
 }

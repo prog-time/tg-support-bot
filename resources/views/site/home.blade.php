@@ -807,7 +807,7 @@
                         <i class="fas fa-star"></i>
                     </div>
                     <div class="stat-value" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
-                        <span itemprop="ratingValue">90</span>+
+                        <span itemprop="ratingValue">100</span>+
                         <meta itemprop="ratingCount" content="90">
                     </div>
                     <div class="stat-label">Звезд</div>
@@ -817,7 +817,7 @@
                         <i class="fas fa-code-branch"></i>
                     </div>
                     <div class="stat-value">
-                        15+
+                        19+
                     </div>
                     <div class="stat-label">Форков</div>
                 </div>
@@ -825,7 +825,7 @@
                     <div class="stat-icon">
                         <i class="fas fa-download"></i>
                     </div>
-                    <div class="stat-value">500+</div>
+                    <div class="stat-value">1000+</div>
                     <div class="stat-label">Клонирований</div>
                 </div>
             </div>

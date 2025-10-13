@@ -35,7 +35,7 @@ class LokiLogger
      * Log a message to the given channel.
      *
      * @param string $level
-     * @param string $message
+     * @param mixed  $message
      *
      * @return void
      */
@@ -52,7 +52,7 @@ class LokiLogger
                     'values' => [
                         [
                             (string) (int) (microtime(true) * 1e9),
-                            $message,
+                            json_encode($message),
                         ],
                     ],
                 ],

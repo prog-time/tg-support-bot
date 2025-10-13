@@ -110,7 +110,7 @@ class ExternalMessageService extends ExternalService
             'typeSource' => 'private',
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
-            'text' => $this->update->text
+            'text' => $this->update->text,
         ]));
     }
 
@@ -121,15 +121,13 @@ class ExternalMessageService extends ExternalService
      */
     protected function saveMessage(TelegramAnswerDto $resultQuery): ExternalMessageAnswerDto
     {
-        $messageData = [
+        $message = Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->externalUser->source,
             'message_type' => 'incoming',
             'from_id' => time(),
             'to_id' => $resultQuery->message_id,
-        ];
-
-        $message = Message::create($messageData);
+        ]);
         $message->externalMessage()->create([
             'text' => $resultQuery->text,
             'file_id' => $resultQuery->fileId,
@@ -138,13 +136,16 @@ class ExternalMessageService extends ExternalService
         return ExternalMessageAnswerDto::from([
             'status' => true,
             'result' => ExternalMessageResponseDto::from([
-                'date' => $message->created_at->format('d.m.Y H:i:s'),
-                'message_id' => $message->to_id,
                 'message_type' => 'incoming',
-                'text' => $message->externalMessage->text ?? null,
-                'file_id' => $message->externalMessage->file_id ?? null,
+                'to_id' => $message->to_id,
+                'from_id' => $message->from_id,
+                'text' => $message->externalMessage->text,
+                'date' => $message->created_at->format('d.m.Y H:i:s'),
+                'content_type' => $message->file_type ?? 'text',
+                'file_id' => $message->externalMessage->file_id,
+                'file_url' => $message->externalMessage->file_url,
+                'file_type' => $message->externalMessage->file_type,
             ]),
         ]);
     }
-
 }

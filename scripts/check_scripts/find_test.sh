@@ -67,6 +67,7 @@ should_be_tested() {
     # Исключения
     local exclude_patterns=(
         "*Controller*"
+        "*views*"
         "*Traits*"
         "*Stub*"
         "*routes*"

@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Services\External;
 
+use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\DTOs\External\ExternalMessageResponseDto;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
 use Tests\TestCase;
@@ -28,7 +30,7 @@ class ExternalEditedMessageServiceTest extends TestCase
         ]));
 
         $messageData = Message::where([
-            'to_id' => $responseSend->result->message_id,
+            'to_id' => $responseSend->result->to_id,
         ])->first();
         $this->messageId = $messageData->from_id;
     }
@@ -50,7 +52,11 @@ class ExternalEditedMessageServiceTest extends TestCase
             'text' => 'Изменил сообщение!',
         ])));
 
+        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $responseUpdate);
+
         $this->assertNotEmpty($responseUpdate->status);
         $this->assertIsBool($responseUpdate->status);
+
+        $this->assertInstanceOf(ExternalMessageResponseDto::class, $responseUpdate->result);
     }
 }

@@ -2,8 +2,6 @@ FROM php:8.3-fpm
 
 USER root
 
-## НАСТРОЙКА СЕРВЕРА И УСТАНОВКА МОДУЛЕЙ
-## ----------------------------
 RUN apt-get update && apt-get install -y \
     git \
     nodejs npm \
@@ -35,6 +33,15 @@ RUN mkdir -p /var/www/storage/logs \
     chown -R www-data:www-data /var/www/storage && \
     find /var/www/storage -type d -exec chmod 775 {} + && \
     find /var/www/storage -type f -exec chmod 664 {} +
+
+# Установка Node.js зависимости и сборка виджета
+RUN npm install --prefix .
+RUN npm run build
+
+# ---------------------------
+# Установка composer зависимостей и настройка проекта
+# ---------------------------
+RUN composer update
 
 USER www-data
 

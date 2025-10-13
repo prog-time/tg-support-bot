@@ -26,6 +26,8 @@ yarn-error.log
 /docker/postgres
 /storage/api-docs
 
+/public/live_chat/dist
+/resources/views/preview
 
 .phpstan-error-count.json
 .valetphprc

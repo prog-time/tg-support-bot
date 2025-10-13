@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use phpDocumentor\Reflection\Exception;
 
+/**
+ * Пример запроса
+ * php artisan app:generate-token live_chat http://{домен бота}:3001/push-message
+ */
 class GenerateApiToken extends Command
 {
     protected $signature = 'app:generate-token {source} {hook_url}';

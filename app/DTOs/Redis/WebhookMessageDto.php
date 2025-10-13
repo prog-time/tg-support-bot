@@ -2,19 +2,14 @@
 
 namespace App\DTOs\Redis;
 
+use App\DTOs\External\ExternalMessageResponseDto;
+
 class WebhookMessageDto
 {
     public function __construct(
         public string $source,
         public string $externalId,
-        public string $messageType,
-        public int $toId,
-        public int $fromId,
-        public string $date,
-        public ?string $text = null,
-        public ?string $attachmentPath = null,
-        public ?string $fileId = null,
-        public ?array $dopParams = [],
+        public ExternalMessageResponseDto $message,
     ) {
     }
 
@@ -26,18 +21,7 @@ class WebhookMessageDto
         return [
             'source' => $this->source,
             'external_id' => $this->externalId,
-            'message_type' => $this->messageType,
-
-            'to_id' => $this->toId,
-            'from_id' => $this->fromId,
-
-            'text' => $this->text,
-            'file_path' => $this->attachmentPath,
-            'file_id' => $this->fileId,
-
-            'dop_params' => $this->dopParams,
-
-            'date' => $this->date,
+            'message' => $this->message->toArray(),
         ];
     }
 
@@ -51,14 +35,7 @@ class WebhookMessageDto
         return new self(
             source: $data['source'],
             externalId: $data['external_id'],
-            messageType: $data['message_type'],
-            toId: $data['to_id'],
-            fromId: $data['from_id'],
-            date: $data['date'],
-            text: $data['text'],
-            attachmentPath: $data['file_path'] ?? null,
-            fileId: $data['file_id'] ?? null,
-            dopParams: $data['dop_params'] ?? [],
+            message: ExternalMessageResponseDto::fromArray($data['message']),
         );
     }
 }
