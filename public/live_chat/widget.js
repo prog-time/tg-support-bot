@@ -1,42 +1,6 @@
 (function () {
     const socketUrl = import.meta.env.VITE_APP_URL;
 
-    // Получаем токен из query string
-    function getTokenFromWidgetScript() {
-        const scripts = document.getElementsByTagName('script');
-        let myScript = null;
-
-        // Ищем скрипт, который содержит 'widget.js' в src
-        for (let i = 0; i < scripts.length; i++) {
-            if (scripts[i].src && /widget\.js/.test(scripts[i].src)) {
-                myScript = scripts[i];
-                break;
-            }
-        }
-
-        if (!myScript) {
-            console.error("Widget script не найден!");
-            return null;
-        }
-
-        let src = myScript.src;
-
-        // Если src относительный, добавляем origin
-        if (!/^https?:\/\//.test(src)) {
-            src = window.location.origin + src;
-        }
-
-        const url = new URL(src);
-        return url.searchParams.get('token');
-    }
-
-    const chatToken = getTokenFromWidgetScript();
-
-    if (!chatToken) {
-        console.error("Токен не указан. Виджет не будет работать.");
-        return; // прерываем выполнение скрипта
-    }
-
     // Генерация уникального ключа пользователя
     function generateUniqueKey() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -46,6 +10,16 @@
             result += chars[bytes[i] % chars.length];
         }
         return result;
+    }
+
+    function scrollBottom() {
+        setTimeout(() => {
+            const messagesContainer = container.querySelector('#ptw_messages');
+            messagesContainer.scrollTo({
+                top: messagesContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
     }
 
     const widgetId = 'prog-time-widget';
@@ -97,7 +71,7 @@
 
         <footer class="ptw_footer">
             <div class="ptw_form_block">
-                <input id="ptw_text_field" class="ptw_text_field" placeholder="Введите сообщение" type="text" aria-label="Поле ввода сообщения">
+                <textarea id="ptw_text_field" class="ptw_text_field" rows="1" placeholder="Введите сообщение" type="text" aria-label="Поле ввода сообщения"></textarea>
 <!--                <div class="ptw_file_field_block">-->
 <!--                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">-->
 <!--                        <path d="M13.3643 8.53806L7.14889 14.7535C6.56765 15.3347 6.56765 16.2771 7.14889 16.8584V16.8584C7.73014 17.4396 8.67252 17.4396 9.25376 16.8584L18.0481 8.06397C19.1894 6.92272 19.1899 5.07254 18.0493 3.93065V3.93065C16.9078 2.78785 15.0558 2.78732 13.9137 3.92949L4.93981 12.9033C3.23957 14.6036 3.23957 17.3602 4.93981 19.0604V19.0604C6.64004 20.7607 9.39668 20.7607 11.0969 19.0604L17.7556 12.4018" stroke="#999EA1" stroke-width="1.5" stroke-linecap="round"/>-->
@@ -120,8 +94,15 @@
 
     // Подключаем Socket.IO
     const socket = io(socketUrl, {
-        query: { externalId, token: chatToken }
+        query: { externalId }
     });
+
+    function parseDateString(dateStr) {
+        const [datePart, timePart] = dateStr.split(' ');
+        const [day, month, year] = datePart.split('.');
+        const [hour, minute, second] = timePart.split(':');
+        return new Date(year, month - 1, day, hour, minute, second);
+    }
 
     // Функция создания сообщения в DOM
     function createMessageBlock(messageData) {
@@ -147,10 +128,20 @@
 
         content += `</div>`
 
-        const timeSend = new Date(messageData.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateObj = parseDateString(messageData.date);
+        const timeSend = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
         content += `<div class="ptw_message_date">${timeSend}</div>`;
         messageEl.innerHTML = content;
 
+        messagesContainer.appendChild(messageEl);
+    }
+
+    function createLineBlock(date) {
+        const messagesContainer = container.querySelector('#ptw_messages');
+        const messageEl = document.createElement('section');
+
+        messageEl.innerHTML = `<div class="date-line"><hr class="line"><div class="date-text">${formatDate(date)}</div></div>`;
         messagesContainer.appendChild(messageEl);
     }
 
@@ -175,6 +166,40 @@
         container.querySelector('.ptw_send_but').disabled = true;
     }
 
+    function isDifferentDay(date1, date2) {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+
+        d1.setHours(0, 0, 0, 0);
+        d2.setHours(0, 0, 0, 0);
+
+        return d1.getTime() !== d2.getTime();
+    }
+
+    function formatDate(inputDate) {
+        const date = new Date(inputDate);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+
+        // Обнуляем время для корректного сравнения только по дню
+        const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+        if (dateOnly.getTime() === todayOnly.getTime()) {
+            return "Сегодня";
+        } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+            return "Вчера";
+        } else {
+            // Форматируем день.месяц.год с ведущими нулями
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы с 0
+            const year = date.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+    }
+
     socket.on("connect", () => {
         // Запрос истории сообщений
         socket.emit("get_history");
@@ -182,14 +207,26 @@
 
     // Получение сообщений от сервера
     socket.on("history_messages", (messagesList) => {
+        let statusChangeDate = false
+        let prevDate = null
         for (let item in messagesList) {
+            let currentDate = parseDateString(messagesList[item].date)
+
+            statusChangeDate = isDifferentDay(prevDate, currentDate)
+            if (statusChangeDate) {
+                createLineBlock(currentDate)
+            }
+
             createMessageBlock(messagesList[item]);
+
+            prevDate = parseDateString(messagesList[item].date)
         }
     });
 
     // Получение ответа от Laravel API
     socket.on("receive_message", (messageData) => {
         createMessageBlock(messageData);
+        scrollBottom()
     });
 
     // Получение ответа от Laravel API
@@ -202,13 +239,7 @@
         butWidget.style.display = 'none';
         container.style.display = 'flex';
 
-        setTimeout(() => {
-            const messagesContainer = container.querySelector('#ptw_messages');
-            messagesContainer.scrollTo({
-                top: messagesContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        }, 50);
+        scrollBottom()
     });
 
     container.querySelector('.ptw_close_but').addEventListener('click', () => {
@@ -218,7 +249,10 @@
 
     container.querySelector('.ptw_send_but').addEventListener('click', sendTextMessage);
     container.querySelector('#ptw_text_field').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendTextMessage();
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendTextMessage();
+        }
     });
 
     container.querySelector('.ptw_text_field').addEventListener('input', (e) => {

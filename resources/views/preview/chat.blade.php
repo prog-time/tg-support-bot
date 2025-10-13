@@ -13,7 +13,7 @@
         }
     </style>
 
-    <link rel="stylesheet" href="{}/live_chat/css/style.css">
+    <link rel="stylesheet" href="https://tg-support-bot.ru/live_chat/css/style.css">
 </head>
 <body>
 

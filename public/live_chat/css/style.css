@@ -7,6 +7,23 @@
     cursor: pointer;
 }
 
+.ptw-butWidget svg rect {
+    transition: fill 0.3s ease;
+}
+
+.ptw-butWidget:hover svg rect {
+    fill: #0086C9;
+}
+
+.fade-in {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.fade-in.show {
+    opacity: 1;
+}
+
 #prog-time-widget {
     display: flex;
     flex-direction: column;
@@ -24,6 +41,7 @@
     font-family: "Inter", sans-serif;
     z-index: 9999;
     background: #fff;
+    transition: fill 0.3s ease;
 }
 
 #prog-time-widget header.ptw_header {
@@ -84,6 +102,7 @@
     background: #F5F5F5;
     box-sizing: border-box;
     font-weight: 400;
+    white-space: pre-line;
 }
 
 #prog-time-widget .ptw_message_block.ptw_client_message_block {
@@ -102,12 +121,15 @@
 #prog-time-widget .ptw_message_block .ptw_message_date {
     font-size: 12px;
     margin-top: 5px;
-    color: #999EA1;
+    color: #36BFFA;
+    text-align: right;
 }
 
 #prog-time-widget .ptw_message_block.ptw_manager_message_block .ptw_message_date {
-    float: right;
-    color: #36BFFA;
+    float: left;
+    color: #999EA1;
+    text-align: left;
+    font-weight: 100;
 }
 
 #prog-time-widget footer.ptw_footer {
@@ -131,21 +153,27 @@
     position: relative;
 }
 
-#prog-time-widget input#ptw_text_field {
+#prog-time-widget textarea#ptw_text_field {
     display: flex;
     width: 100%;
     border: 1px solid #D5D7DA;
     border-radius: 8px;
     padding: 12px 14px;
     font-size: 15px;
-
+    resize: none;
+    font-family: "Inter", sans-serif;
 }
 
-#prog-time-widget input#ptw_text_field::placeholder {
+#prog-time-widget textarea#ptw_text_field:focus {
+    outline: none;
+}
+
+#prog-time-widget textarea#ptw_text_field::placeholder {
     color: #D5D7DA;
+    font-weight: 400;
 }
 
-#prog-time-widget input#ptw_file_field {
+#prog-time-widget textarea#ptw_file_field {
     display: none;
 }
 
@@ -224,6 +252,7 @@
     padding: 0 10px;
     color: #999EA1;
     font-size: 14px;
+    font-weight: 100;
 }
 
 @media (max-width: 500px) {
