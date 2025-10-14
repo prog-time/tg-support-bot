@@ -79,6 +79,7 @@ should_be_tested() {
         "*ValueObject*"
         "*Enum*"
         "*Exception*"
+        "*bootstrap*"
         "*Migration*"
         "*Seeder*"
     )
