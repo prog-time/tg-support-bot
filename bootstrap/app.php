@@ -1,6 +1,5 @@
 <?php
 
-use App\Exceptions\TgBotException;
 use App\Logging\LokiLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,17 +36,4 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response('ok', 200);
             }
         });
-
-        /**
-         * For this code to work, you need to install the prog-time/tg-logger module.
-         * https://github.com/prog-time/tg-logger
-         */
-        if (!empty(env('TG_LOGGER_TOKEN'))) {
-            $exceptions->render(function (Throwable $e, Request $request) {
-                (new TgBotException())->render($request, $e);
-                if (env('APP_DEBUG') === false) {
-                    return response('ok', 200);
-                }
-            });
-        }
     })->create();
