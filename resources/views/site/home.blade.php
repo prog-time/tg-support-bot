@@ -1,3 +1,31 @@
+<?php
+
+$schemaData = [
+    '@context' => 'https://schema.org',
+    '@type' => 'SoftwareApplication',
+    'name' => 'TG Support Bot',
+    'description' => 'Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте.',
+    'applicationCategory' => 'CommunicationSoftware',
+    'operatingSystem' => 'Any',
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => '0',
+        'priceCurrency' => 'RUB',
+    ],
+    'softwareVersion' => '1.0',
+    'softwareHelp' => 'https://github.com/prog-time/tg-support-bot/wiki',
+    'featureList' => [
+        'Интеграция с Telegram',
+        'Интеграция с ВКонтакте',
+        'Безопасность',
+        'Мгновенные ответы',
+        'Командная работа',
+        'Умная автоматизация',
+    ],
+];
+
+?>
+
 <!DOCTYPE html>
 <html lang="ru" itemscope itemtype="https://schema.org/WebPage">
 <head>
@@ -7,7 +35,7 @@
 
     <link rel="icon" type="image/svg" sizes="32x32" href="{{ asset('storage/favicon.svg') }}">
 
-{{--    @include('site.hide.metrika')--}}
+    @include('site.hide.metrika')
 
     <!-- SEO Meta Tags -->
     <meta name="description" content="Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте. Быстрая установка, автоматизация, командная работа.">
@@ -736,31 +764,7 @@
 </head>
 <body itemscope itemtype="https://schema.org/WebPage">
     <!-- JSON-LD Schema.org markup -->
-    <script type="application/ld+json">
-{{--        {--}}
-{{--            "@context": "https://schema.org",--}}
-{{--            "@type": "SoftwareApplication",--}}
-{{--            "name": "TG Support Bot",--}}
-{{--            "description": "Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте.",--}}
-{{--            "applicationCategory": "CommunicationSoftware",--}}
-{{--            "operatingSystem": "Any",--}}
-{{--            "offers": {--}}
-{{--                "@type": "Offer",--}}
-{{--                "price": "0",--}}
-{{--                "priceCurrency": "RUB"--}}
-{{--            },--}}
-{{--            "softwareVersion": "1.0",--}}
-{{--            "softwareHelp": "https://github.com/prog-time/tg-support-bot/wiki",--}}
-{{--            "featureList": [--}}
-{{--                "Интеграция с Telegram",--}}
-{{--                "Интеграция с ВКонтакте",--}}
-{{--                "Безопасность",--}}
-{{--                "Мгновенные ответы",--}}
-{{--                "Командная работа",--}}
-{{--                "Умная автоматизация"--}}
-{{--            ]--}}
-{{--        }--}}
-    </script>
+    <script type="application/ld+json"><?= json_encode($schemaData) ?></script>
 
     <!-- Header -->
     <header itemscope itemtype="https://schema.org/WPHeader">
@@ -807,7 +811,7 @@
                         <i class="fas fa-star"></i>
                     </div>
                     <div class="stat-value" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
-                        <span itemprop="ratingValue">100</span>+
+                        <span itemprop="ratingValue">120</span>+
                         <meta itemprop="ratingCount" content="90">
                     </div>
                     <div class="stat-label">Звезд</div>
