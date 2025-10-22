@@ -7,7 +7,7 @@
 
     <link rel="icon" type="image/svg" sizes="32x32" href="{{ asset('storage/favicon.svg') }}">
 
-    @include('site.hide.metrika')
+{{--    @include('site.hide.metrika')--}}
 
     <!-- SEO Meta Tags -->
     <meta name="description" content="Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте. Быстрая установка, автоматизация, командная работа.">
@@ -737,29 +737,29 @@
 <body itemscope itemtype="https://schema.org/WebPage">
     <!-- JSON-LD Schema.org markup -->
     <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "TG Support Bot",
-        "description": "Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте.",
-        "applicationCategory": "CommunicationSoftware",
-        "operatingSystem": "Any",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "RUB"
-        },
-        "softwareVersion": "1.0",
-        "softwareHelp": "https://github.com/prog-time/tg-support-bot/wiki",
-        "featureList": [
-            "Интеграция с Telegram",
-            "Интеграция с ВКонтакте",
-            "Безопасность",
-            "Мгновенные ответы",
-            "Командная работа",
-            "Умная автоматизация"
-        ]
-    }
+{{--        {--}}
+{{--            "@context": "https://schema.org",--}}
+{{--            "@type": "SoftwareApplication",--}}
+{{--            "name": "TG Support Bot",--}}
+{{--            "description": "Бесплатный Telegram бот для технической поддержки. Open Source решение для организации службы поддержки в Telegram и ВКонтакте.",--}}
+{{--            "applicationCategory": "CommunicationSoftware",--}}
+{{--            "operatingSystem": "Any",--}}
+{{--            "offers": {--}}
+{{--                "@type": "Offer",--}}
+{{--                "price": "0",--}}
+{{--                "priceCurrency": "RUB"--}}
+{{--            },--}}
+{{--            "softwareVersion": "1.0",--}}
+{{--            "softwareHelp": "https://github.com/prog-time/tg-support-bot/wiki",--}}
+{{--            "featureList": [--}}
+{{--                "Интеграция с Telegram",--}}
+{{--                "Интеграция с ВКонтакте",--}}
+{{--                "Безопасность",--}}
+{{--                "Мгновенные ответы",--}}
+{{--                "Командная работа",--}}
+{{--                "Умная автоматизация"--}}
+{{--            ]--}}
+{{--        }--}}
     </script>
 
     <!-- Header -->
@@ -846,12 +846,7 @@
                 <!-- Video Section -->
                 <div class="video-section">
                     <div class="video-wrapper">
-                        <iframe src="{{ asset('storage/presentation_video.mp4') }}"
-                            title="TG Support Bot Presentation"
-                            frameborder="0"
-                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen
-                        ></iframe>
+                        <iframe src="https://vkvideo.ru/video_ext.php?oid=-141526561&id=456239134&hd=2&autoplay=1" width="853" height="480" style="background-color: #000" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock;" frameborder="0" allowfullscreen></iframe>
                     </div>
                 </div>
             </div>

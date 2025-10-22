@@ -37,30 +37,36 @@ class LokiLogger
      * @param string $level
      * @param mixed  $message
      *
-     * @return void
+     * @return bool
      */
-    public function log(string $level, mixed $message): void
+    public function log(string $level, mixed $message): bool
     {
-        $payload = [
-            'streams' => [
-                [
-                    'stream' => [
-                        'app' => config('app.name'),
-                        'env' => config('app.env'),
-                        'level' => $level,
-                    ],
-                    'values' => [
-                        [
-                            (string) (int) (microtime(true) * 1e9),
-                            json_encode($message),
+        try {
+            $payload = [
+                'streams' => [
+                    [
+                        'stream' => [
+                            'app' => config('app.name'),
+                            'env' => config('app.env'),
+                            'level' => $level,
+                        ],
+                        'values' => [
+                            [
+                                (string) (int) (microtime(true) * 1e9),
+                                json_encode($message),
+                            ],
                         ],
                     ],
                 ],
-            ],
-        ];
+            ];
 
-        $this->client->post($this->url, [
-            'json' => $payload,
-        ]);
+            $this->client->post($this->url, [
+                'json' => $payload,
+            ]);
+
+            return true;
+        } catch (Throwable $e) {
+            return false;
+        }
     }
 }
