@@ -9,9 +9,9 @@ class SimplePage
     /**
      * @return View
      */
-    public function index(): View
+    public function index()
     {
-        if (config('app.url') === 'https://tg-support-bot.ru/') {
+        if (config('app.url') === 'https://tg-support-bot.ru') {
             return view('site.home');
         } else {
             return view('site.home_client_version');
