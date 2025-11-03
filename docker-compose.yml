@@ -99,11 +99,6 @@ services:
         environment:
             GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
             GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-#            GF_SERVER_ROOT_URL: https://grafana.tg-support-bot.ru
-#            GF_SERVER_SERVE_FROM_SUB_PATH: "false"
-#            GF_SERVER_DOMAIN: grafana.tg-support-bot.ru
-#            GF_SERVER_ENFORCE_DOMAIN: "false"        # <- отключаем внутренние редиректы по домену
-#            GF_SERVER_PROTOCOL: https
         depends_on:
             - loki
         networks:
