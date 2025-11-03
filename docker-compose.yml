@@ -31,7 +31,7 @@ services:
         ports:
             - ${PGDB_PORT}
         volumes:
-            - pgdata:/var/lib/postgresql/data
+            - pgdata:/var/lib/postgresql
         networks:
             - pet
 
@@ -57,6 +57,7 @@ services:
 
     pgadmin:
         image: dpage/pgadmin4:latest
+        container_name: pgadmin
         restart: always
         depends_on:
             - pgdb
@@ -95,13 +96,9 @@ services:
         image: grafana/grafana:latest
         container_name: grafana
         user: "472"
-        ports:
-            - ${GRAFANA_PORT}
         environment:
-            - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
-            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-        volumes:
-            - ./docker/grafana:/var/lib/grafana
+            GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
         depends_on:
             - loki
         networks:
@@ -141,7 +138,6 @@ services:
             - "3001:3000"
         networks:
             - pet
-
 
     loki:
         image: grafana/loki:latest
