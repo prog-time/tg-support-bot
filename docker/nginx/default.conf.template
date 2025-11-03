@@ -1,15 +1,15 @@
 server {
     listen 80;
-    server_name tg-support-bot.ru www.tg-support-bot.ru;
+    server_name __MAIN_DOMAIN__ www.__MAIN_DOMAIN__;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl;
-    server_name tg-support-bot.ru;
+    server_name __MAIN_DOMAIN__;
 
-    ssl_certificate     /etc/letsencrypt/live/tg-support-bot.ru/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/tg-support-bot.ru/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/__MAIN_DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__MAIN_DOMAIN__/privkey.pem;
 
     client_max_body_size 60M;
 
@@ -65,17 +65,17 @@ server {
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name grafana.tg-support-bot.ru;
+    server_name grafana.__MAIN_DOMAIN__;
     return 301 https://$host$request_uri;
 }
 
 # HTTPS
 server {
     listen 443 ssl;
-    server_name grafana.tg-support-bot.ru;
+    server_name grafana.__MAIN_DOMAIN__;
 
-    ssl_certificate     /etc/letsencrypt/live/grafana.tg-support-bot.ru/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/grafana.tg-support-bot.ru/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/grafana.__MAIN_DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/grafana.__MAIN_DOMAIN__/privkey.pem;
 
     location / {
         proxy_pass http://grafana:3000;
@@ -93,17 +93,17 @@ server {
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name pgadmin.tg-support-bot.ru;
+    server_name pgadmin.__MAIN_DOMAIN__;
     return 301 https://$host$request_uri;
 }
 
 # HTTPS
 server {
     listen 443 ssl;
-    server_name pgadmin.tg-support-bot.ru;
+    server_name pgadmin.__MAIN_DOMAIN__;
 
-    ssl_certificate     /etc/letsencrypt/live/pgadmin.tg-support-bot.ru/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/pgadmin.tg-support-bot.ru/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/pgadmin.__MAIN_DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pgadmin.__MAIN_DOMAIN__/privkey.pem;
 
     location / {
         proxy_pass http://pgadmin:80;
