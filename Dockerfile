@@ -2,30 +2,27 @@ FROM php:8.3-fpm
 
 USER root
 
-RUN apt-get update && apt-get install -y \
-    git \
-    nodejs npm \
-    curl \
-    zip \
-    unzip \
-    libpq-dev && \
-    docker-php-ext-install pdo pdo_pgsql pgsql
+# Установка системных пакетов и Node.js
+RUN apt-get update && \
+    apt-get install -y git curl zip unzip libpq-dev && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    docker-php-ext-install pdo pdo_pgsql pgsql && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Копируем php.ini в контейнер
+# Настройки PHP
 COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Установка composer
+# Установка Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www
 
-# Копируем файлы проекта
+# Копируем проект
 COPY . .
 
-# Создание необходимых директорий и установка прав
+# Права доступа
 RUN mkdir -p /var/www/storage/logs \
     /var/www/storage/framework/sessions \
     /var/www/storage/framework/views \
@@ -34,14 +31,9 @@ RUN mkdir -p /var/www/storage/logs \
     find /var/www/storage -type d -exec chmod 775 {} + && \
     find /var/www/storage -type f -exec chmod 664 {} +
 
-# Установка Node.js зависимости и сборка виджета
-RUN npm install --prefix .
-RUN npm run build
-
-# ---------------------------
-# Установка composer зависимостей и настройка проекта
-# ---------------------------
-RUN composer update
+# Установка PHP и Node зависимостей
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader && \
+    npm ci && npm run build
 
 USER www-data
 
