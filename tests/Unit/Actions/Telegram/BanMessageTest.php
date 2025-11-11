@@ -3,9 +3,8 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\BanMessage;
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\TelegramBot\TelegramMethods;
 use Tests\TestCase;
 
 class BanMessageTest extends TestCase
@@ -17,17 +16,17 @@ class BanMessageTest extends TestCase
         parent::setUp();
 
         $this->botUser = $this->botTestUser();
-        SendMessage::execute($this->botUser, TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
+
+        TelegramMethods::sendQueryTelegram('sendMessage', [
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
             'text' => 'Тестовое сообщение',
-        ]));
+        ]);
     }
 
     public function botTestUser(): BotUser
     {
-        return BotUser::where('chat_id', config('testing.tg_private.chat_id'))->first();
+        return BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
     }
 
     public function test_send_ban_message_with_correct_text(): void

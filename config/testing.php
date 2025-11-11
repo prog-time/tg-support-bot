@@ -21,6 +21,8 @@ return [
     ],
     'vk_private' => [
         'chat_id' => env('TEST_VK_USER_CHAT_ID', ''),
+        'group_id' => env('TEST_VK_GROUP_ID', ''),
+        'secret' => env('TEST_VK_SECRET_CODE', ''),
     ],
     'tg_file' => [
         'document' => env('TEST_DOCUMENT', ''),

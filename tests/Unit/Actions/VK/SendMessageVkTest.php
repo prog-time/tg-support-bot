@@ -3,7 +3,7 @@
 namespace Tests\Unit\Actions\VK;
 
 use App\Actions\Vk\SendMessageVk;
-use App\DTOs\VK\VkTextMessageDto;
+use App\DTOs\Vk\VkTextMessageDto;
 use Tests\TestCase;
 
 class SendMessageVkTest extends TestCase

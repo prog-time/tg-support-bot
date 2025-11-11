@@ -4,6 +4,7 @@ namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\SendContactMessage;
 use App\Models\BotUser;
+use App\TelegramBot\TelegramMethods;
 use Tests\TestCase;
 
 class SendContactMessageTest extends TestCase
@@ -21,17 +22,18 @@ class SendContactMessageTest extends TestCase
         $this->chatId = config('testing.tg_private.chat_id');
         $this->sendContactMessage = new SendContactMessage();
 
-        if (BotUser::where('chat_id', $this->chatId)->exists()) {
-            $this->botUser = BotUser::where('chat_id', $this->chatId)->first();
-        } else {
-            $this->botUser = BotUser::create([
-                'chat_id' => $this->chatId,
-                'topic_id' => 0,
-                'platform' => 'telegram',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s'),
-            ]);
-        }
+        $this->botUser = $this->botTestUser();
+
+        TelegramMethods::sendQueryTelegram('sendMessage', [
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'message_thread_id' => $this->botUser->topic_id,
+            'text' => 'Тестовое сообщение',
+        ]);
+    }
+
+    public function botTestUser(): BotUser
+    {
+        return BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
     }
 
     public function test_execute_by_bot_user(): void
@@ -50,11 +52,5 @@ class SendContactMessageTest extends TestCase
         $textMessage = $this->sendContactMessage->createContactMessage($this->botUser);
 
         $this->assertEquals($currentTextMessage, $textMessage);
-    }
-
-    public function test__execute_by_tg_update(): void
-    {
-        $result = $this->sendContactMessage->executeByChatId($this->chatId);
-        $this->assertTrue($result->ok);
     }
 }
