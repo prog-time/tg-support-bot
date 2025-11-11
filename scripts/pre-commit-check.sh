@@ -2,17 +2,24 @@
 
 set -e
 
-# проверка наличия тестов
-echo "🔍 [1/4] Проверка наличия тестов..."
-bash scripts/check_scripts/find_test.sh commit
-echo
-
 # исправления стиля кода
-echo "🎨 [2/3] Исправление стиля кода (Pint)..."
+echo "🎨 Исправление стиля кода (Pint)..."
 bash scripts/check_scripts/check_pint.sh commit
 echo
 
+# проверка наличия тестов
+echo "🔍 Проверка наличия тестов..."
+bash scripts/check_scripts/find_test.sh commit
+echo
+
+# проверка работы тестов
+echo "🧑🏻‍💻 Проверка работы тестов..."
+bash scripts/check_scripts/ssh_start_tests.sh commit
+echo
+
 # проверка на наличие ошибок
-echo "🧪 [3/3] Проверка типизации (PHPStan)..."
+echo "🧪 Проверка типизации (PHPStan)..."
 bash scripts/check_scripts/check_phpstan.sh commit
 echo
+
+#exit 1
