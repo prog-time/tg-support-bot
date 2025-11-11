@@ -2,7 +2,6 @@
 
 namespace App\Services\ActionService\Send;
 
-use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Services\TgTopicService;
@@ -25,74 +24,63 @@ abstract class TemplateMessageService
     protected TgTopicService $tgTopicService;
 
     /**
-     * @return mixed
-     *
-     * @throws \Exception
+     * @return void
      */
-    abstract public function handleUpdate(): mixed;
+    abstract public function handleUpdate(): void;
 
     /**
      * Отправка изображения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendPhoto(): mixed;
+    abstract protected function sendPhoto(): void;
 
     /**
      * Отправка документа
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendDocument(): mixed;
+    abstract protected function sendDocument(): void;
 
     /**
      * Отправка геолокации
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendLocation(): mixed;
+    abstract protected function sendLocation(): void;
 
     /**
      * Отправка голосового сообщения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendVoice(): mixed;
+    abstract protected function sendVoice(): void;
 
     /**
      * Отправка стикеров
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendSticker(): mixed;
+    abstract protected function sendSticker(): void;
 
     /**
      * Отправка видео-сообщения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendVideoNote(): mixed;
+    abstract protected function sendVideoNote(): void;
 
     /**
      * Отправка контакта
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendContact(): mixed;
+    abstract protected function sendContact(): void;
 
     /**
      * Отправка текстового сообщения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function sendMessage(): mixed;
-
-    /**
-     * Сохранения сообщения
-     *
-     * @param TelegramAnswerDto $resultQuery
-     *
-     * @return mixed
-     */
-    abstract protected function saveMessage(mixed $resultQuery): mixed;
+    abstract protected function sendMessage(): void;
 }

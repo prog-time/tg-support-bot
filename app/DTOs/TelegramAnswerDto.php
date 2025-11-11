@@ -17,11 +17,12 @@ use App\Helpers\TelegramHelper;
  * @property ?string $type_error,
  * @property ?array  $rawData            = null
  */
-readonly class TelegramAnswerDto
+class TelegramAnswerDto
 {
     public function __construct(
         public bool $ok,
         public ?int $message_id,
+        public ?int $chat_id,
         public ?int $response_code,
         public ?int $message_thread_id,
         public ?int $date,
@@ -55,6 +56,7 @@ readonly class TelegramAnswerDto
             return new self(
                 ok: $dataAnswer['ok'] ?? false,
                 message_id: $result['message_id'] ?? null,
+                chat_id: $result['chat']['id'] ?? null,
                 response_code: $dataAnswer['response_code'] ?? $dataAnswer['error_code'] ?? 200,
                 message_thread_id: $result['message_thread_id'] ?? null,
                 date: $result['date'] ?? null,

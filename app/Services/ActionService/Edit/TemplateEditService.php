@@ -24,19 +24,17 @@ abstract class TemplateEditService
     protected TgTopicService $tgTopicService;
 
     /**
-     * @return mixed
-     *
-     * @throws \Exception
+     * @return void
      */
-    abstract public function handleUpdate(): mixed;
+    abstract public function handleUpdate(): void;
 
     /**
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageText(): mixed;
+    abstract protected function editMessageText(): void;
 
     /**
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageCaption(): mixed;
+    abstract protected function editMessageCaption(): void;
 }

@@ -25,26 +25,26 @@ class TemplateEditServiceStub extends TemplateEditService
     protected TgTopicService $tgTopicService;
 
     /**
-     * @return mixed
+     * @return void
      */
-    public function handleUpdate(): mixed
+    public function handleUpdate(): void
     {
-        return null;
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function editMessageText(): mixed
+    protected function editMessageText(): void
     {
-        return null;
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function editMessageCaption(): mixed
+    protected function editMessageCaption(): void
     {
-        return null;
+        //
     }
 }
