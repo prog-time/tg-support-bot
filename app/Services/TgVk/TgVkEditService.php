@@ -2,13 +2,12 @@
 
 namespace App\Services\TgVk;
 
-use App\Actions\Vk\SendMessageVk;
 use App\DTOs\TelegramUpdateDto;
-use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
+use App\Jobs\SendVkMessageJob;
+use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Edit\FromTgEditService;
-use phpDocumentor\Reflection\Exception;
 
 class TgVkEditService extends FromTgEditService
 {
@@ -22,35 +21,36 @@ class TgVkEditService extends FromTgEditService
      */
     public function handleUpdate(): void
     {
-        if ($this->update->typeQuery === 'edited_message') {
-            if (!empty($this->update->rawData['edited_message']['photo']) ||
-                !empty($this->update->rawData['edited_message']['document'])) {
+        try {
+            if ($this->update->typeQuery !== 'edited_message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+            }
+
+            if (!empty($this->update->rawData['edited_message']['photo']) || !empty($this->update->rawData['edited_message']['document'])) {
                 $this->editMessageCaption();
             } else {
-                $result = $this->editMessageText();
+                $this->editMessageText();
             }
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+
+            echo 'ok';
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return VkAnswerDto|null
+     * @return void
      */
-    protected function editMessageText(): ?VkAnswerDto
+    protected function editMessageText(): void
     {
-        try {
-            $dataMessage = Message::where([
-                'bot_user_id' => $this->botUser->id,
-                'platform' => $this->source,
-                'message_type' => $this->typeMessage,
-                'from_id' => $this->update->messageId,
-            ])->first();
+        $dataMessage = Message::where([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->botUser->platform,
+            'message_type' => $this->typeMessage,
+            'from_id' => $this->update->messageId,
+        ])->first();
 
-            if (!$dataMessage) {
-                throw new Exception('Сообщение не найдено!');
-            }
-
+        if (!empty($dataMessage)) {
             $queryParams = [
                 'methodQuery' => 'messages.edit',
                 'peer_id' => $this->botUser->chat_id,
@@ -58,17 +58,19 @@ class TgVkEditService extends FromTgEditService
                 'message' => $this->update->text,
             ];
 
-            return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
-        } catch (\Exception $e) {
-            return null;
+            SendVkMessageJob::dispatch(
+                $this->botUser,
+                $dataMessage->to_id,
+                VkTextMessageDto::from($queryParams),
+            );
         }
     }
 
     /**
-     * @return VkAnswerDto|null
+     * @return void
      */
-    protected function editMessageCaption(): ?VkAnswerDto
+    protected function editMessageCaption(): void
     {
-        return $this->editMessageText();
+        $this->editMessageText();
     }
 }
