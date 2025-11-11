@@ -52,14 +52,14 @@ abstract class FromTgEditService extends TemplateEditService
     /**
      * Редактирование сообщения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageText(): mixed;
+    abstract protected function editMessageText(): void;
 
     /**
      * Редактирование сообщения с фото или документом
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageCaption(): mixed;
+    abstract protected function editMessageCaption(): void;
 }
