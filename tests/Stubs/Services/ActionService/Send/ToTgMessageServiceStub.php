@@ -2,7 +2,6 @@
 
 namespace Tests\Stubs\Services\ActionService\Send;
 
-use App\DTOs\TelegramAnswerDto;
 use App\Services\ActionService\Send\ToTgMessageService;
 use Tests\Traits\HasGettersForHasTemplate;
 
@@ -11,102 +10,81 @@ class ToTgMessageServiceStub extends ToTgMessageService
     use HasGettersForHasTemplate;
 
     /**
-     * @return mixed
+     * @return void
      */
-    public function handleUpdate(): mixed
+    public function handleUpdate(): void
     {
-        return null;
     }
 
     /**
      * Отправка изображения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendPhoto(): TelegramAnswerDto
+    protected function sendPhoto(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка документа
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendDocument(): TelegramAnswerDto
+    protected function sendDocument(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка геолокации
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendLocation(): TelegramAnswerDto
+    protected function sendLocation(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка голосового сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVoice(): TelegramAnswerDto
+    protected function sendVoice(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка стикеров
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendSticker(): TelegramAnswerDto
+    protected function sendSticker(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка видео-сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVideoNote(): TelegramAnswerDto
+    protected function sendVideoNote(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка контакта
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendContact(): TelegramAnswerDto
+    protected function sendContact(): void
     {
-        return $this->getTelegramAnswerDto();
     }
 
     /**
      * Отправка текстового сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendMessage(): TelegramAnswerDto
+    protected function sendMessage(): void
     {
-        return $this->getTelegramAnswerDto();
-    }
-
-    /**
-     * Сохранения сообщения
-     *
-     * @param TelegramAnswerDto $resultQuery
-     *
-     * @return mixed
-     */
-    protected function saveMessage(mixed $resultQuery): mixed
-    {
-        return null;
     }
 }
