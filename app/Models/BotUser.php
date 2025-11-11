@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Actions\Telegram\SendContactMessage;
+use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Logging\LokiLogger;
 use App\Services\TgTopicService;
@@ -10,14 +11,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use phpDocumentor\Reflection\Exception;
 
 /**
- * @property int    $topic_id
- * @property int    $chat_id
- * @property string $platform
- * @property mixed  $aiCondition
- * @property mixed  $lastMessageManager
- * @property-read ExternalUser $externalUser
+ * @property int          $id
+ * @property int          $topic_id
+ * @property int          $chat_id
+ * @property string       $platform
+ * @property mixed        $aiCondition
+ * @property mixed        $lastMessageManager
+ * @property ExternalUser $externalUser
  */
 class BotUser extends Model
 {
@@ -188,6 +191,38 @@ class BotUser extends Model
                     'platform' => $platform,
                 ]
             );
+            if (empty($botUser->topic_id)) {
+                $botUser->saveNewTopic();
+            }
+
+            return $botUser;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param ExternalMessageDto $updateData
+     *
+     * @return BotUser|null
+     */
+    public function getExternalBotUser(ExternalMessageDto $updateData): ?BotUser
+    {
+        try {
+            $this->externalUser = ExternalUser::firstOrCreate([
+                'external_id' => $updateData->external_id,
+                'source' => $updateData->source,
+            ]);
+
+            if (empty($this->externalUser)) {
+                throw new Exception('External user not found!');
+            }
+
+            $botUser = BotUser::firstOrCreate([
+                'chat_id' => $this->externalUser->id,
+                'platform' => $this->externalUser->source,
+            ]);
+
             if (empty($botUser->topic_id)) {
                 $botUser->saveNewTopic();
             }
