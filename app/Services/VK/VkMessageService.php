@@ -5,10 +5,10 @@ namespace App\Services\VK;
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendVkTelegramMessageJob;
+use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Services\ActionService\Send\ToTgMessageService;
 use App\Services\TgTopicService;
-use phpDocumentor\Reflection\Exception;
 
 class VkMessageService extends ToTgMessageService
 {
@@ -50,7 +50,8 @@ class VkMessageService extends ToTgMessageService
             }
 
             echo 'ok';
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
         }
     }
 

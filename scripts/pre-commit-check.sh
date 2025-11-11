@@ -22,4 +22,3 @@ echo "🧪 Проверка типизации (PHPStan)..."
 bash scripts/check_scripts/check_phpstan.sh commit
 echo
 
-#exit 1

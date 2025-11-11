@@ -26,7 +26,7 @@ class VkEditService extends ToTgEditService
     {
         try {
             if ($this->update->type !== 'message_edit') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->listFileUrl)) {
@@ -35,12 +35,7 @@ class VkEditService extends ToTgEditService
                 $this->editMessageText();
             }
         } catch (\Exception $e) {
-            $logger = new LokiLogger();
-            $logger->log('api_request', [
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile(),
-            ]);
+            (new LokiLogger())->logException($e);
         }
     }
 
@@ -54,7 +49,7 @@ class VkEditService extends ToTgEditService
 
         $messageData = Message::getMessageData($this->typeMessage, $this->update->id, $this->source);
         if (empty($messageData)) {
-            throw new \Exception('Сообщение не найдено!');
+            throw new \Exception('Сообщение не найдено!', 1);
         }
 
         $this->messageParamsDTO->message_id = $messageData->to_id;
@@ -77,7 +72,7 @@ class VkEditService extends ToTgEditService
 
         $messageData = Message::getMessageData($this->typeMessage, $this->update->id, $this->source);
         if (empty($messageData)) {
-            throw new \Exception('Сообщение не найдено!');
+            throw new \Exception('Сообщение не найдено!', 1);
         }
 
         $this->messageParamsDTO->message_id = $messageData->to_id;
