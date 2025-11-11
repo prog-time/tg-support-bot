@@ -17,7 +17,6 @@ class TgMessageServiceTest extends TestCase
     {
         parent::setUp();
 
-        //        $botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
         Message::truncate();
 
         $this->basicPayload = [
