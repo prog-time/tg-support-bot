@@ -2,8 +2,9 @@
 
 namespace Tests\Unit\Services\Tg;
 
-use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
+use App\Models\BotUser;
+use App\Models\Message;
 use App\Services\Tg\TgMessageService;
 use Illuminate\Support\Facades\Request;
 use Tests\TestCase;
@@ -15,6 +16,9 @@ class TgMessageServiceTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
+        //        $botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        Message::truncate();
 
         $this->basicPayload = [
             'update_id' => time(),
@@ -41,17 +45,30 @@ class TgMessageServiceTest extends TestCase
         ];
     }
 
-    public function sendTestQuery(array $payload): TelegramAnswerDto
+    public function sendTestQuery(array $payload, bool $statusDelete = true): Message
     {
         $request = Request::create('api/telegram/bot', 'POST', $payload);
         $dto = TelegramUpdateDto::fromRequest($request);
 
-        $resultQuery = (new TgMessageService($dto))->handleUpdate();
+        $botUser = BotUser::getTelegramUserData($dto);
 
-        $this->assertTrue($resultQuery->ok);
-        $this->assertEquals($resultQuery->response_code, 200);
+        // очищаем сообщения
+        if ($statusDelete) {
+            Message::where('bot_user_id', $botUser->id)->delete();
+        }
 
-        return $resultQuery;
+        (new TgMessageService($dto))->handleUpdate();
+
+        $this->app->make('queue')->connection('sync');
+
+        // Проверяем, что сообщение сохранилось в базе
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'message_type' => 'incoming',
+            'platform' => 'telegram',
+        ]);
+
+        return Message::where('bot_user_id', $botUser->id)->first();
     }
 
     public function test_send_text_message(): void
@@ -77,9 +94,7 @@ class TgMessageServiceTest extends TestCase
             ],
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
-
-        $this->assertTrue(!empty($resultQuery->fileId));
+        $this->sendTestQuery($payload);
     }
 
     public function test_send_document(): void
@@ -91,9 +106,7 @@ class TgMessageServiceTest extends TestCase
             'file_id' => $fileId,
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
-
-        $this->assertTrue(!empty($resultQuery->fileId));
+        $this->sendTestQuery($payload);
     }
 
     public function test_send_sticker(): void
@@ -105,9 +118,7 @@ class TgMessageServiceTest extends TestCase
             'file_id' => $fileId,
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
-
-        $this->assertTrue(!empty($resultQuery->fileId));
+        $this->sendTestQuery($payload);
     }
 
     public function test_send_location(): void
@@ -151,8 +162,6 @@ class TgMessageServiceTest extends TestCase
         $firstName = 'Тестовый';
         $lastName = 'Тест';
 
-        $validMessage = "Контакт: \nИмя: {$firstName}\nТелефон: {$phone}";
-
         $payload = $this->basicPayload;
         $payload['message']['contact'] = [
             'phone_number' => $phone,
@@ -161,8 +170,6 @@ class TgMessageServiceTest extends TestCase
             'user_id' => config('testing.tg_private.chat_id'),
         ];
 
-        $result = $this->sendTestQuery($payload);
-
-        $this->assertEquals($result->text, $validMessage);
+        $this->sendTestQuery($payload);
     }
 }

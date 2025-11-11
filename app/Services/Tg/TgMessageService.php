@@ -3,11 +3,9 @@
 namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
-use App\Models\Message;
+use App\Jobs\SendTelegramMessageJob;
+use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
 
 class TgMessageService extends FromTgMessageService
@@ -18,64 +16,48 @@ class TgMessageService extends FromTgMessageService
     }
 
     /**
-     * @return TelegramAnswerDto|null
+     * @return void
      */
-    public function handleUpdate(): ?TelegramAnswerDto
+    public function handleUpdate(): void
     {
         try {
             if ($this->update->typeQuery !== 'message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['message']['photo'])) {
-                $resultQuery = $this->sendPhoto();
+                $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
-                $resultQuery = $this->sendDocument();
+                $this->sendDocument();
             } elseif (!empty($this->update->rawData['message']['location'])) {
-                $resultQuery = $this->sendLocation();
+                $this->sendLocation();
             } elseif (!empty($this->update->rawData['message']['voice'])) {
-                $resultQuery = $this->sendVoice();
+                $this->sendVoice();
             } elseif (!empty($this->update->rawData['message']['sticker'])) {
-                $resultQuery = $this->sendSticker();
+                $this->sendSticker();
             } elseif (!empty($this->update->rawData['message']['video_note'])) {
-                $resultQuery = $this->sendVideoNote();
+                $this->sendVideoNote();
             } elseif (!empty($this->update->rawData['message']['contact'])) {
-                $resultQuery = $this->sendContact();
+                $this->sendContact();
             } elseif (!empty($this->update->text)) {
-                $resultQuery = $this->sendMessage();
+                $this->sendMessage();
             }
 
-            if (empty($resultQuery->ok)) {
-                throw new \Exception('Ошибка отправки запроса!');
-            }
-
-            $this->saveMessage($resultQuery);
-            switch ($this->update->typeSource) {
-                case 'private':
-                    $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                        'message_thread_id' => $this->botUser->topic_id,
-                        'icon_custom_emoji_id' => __('icons.incoming'),
-                    ]));
-                    break;
-
-                case 'supergroup':
-                    $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                        'message_thread_id' => $this->botUser->topic_id,
-                        'icon_custom_emoji_id' => __('icons.outgoing'),
-                    ]));
-                    break;
-            }
-
-            return $resultQuery;
+            SendTelegramMessageJob::dispatch(
+                $this->botUser,
+                $this->update,
+                $this->messageParamsDTO,
+                $this->typeMessage,
+            );
         } catch (\Exception $e) {
-            return null;
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendPhoto(): TelegramAnswerDto
+    protected function sendPhoto(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendPhoto';
         $this->messageParamsDTO->photo = $this->update->fileId;
@@ -85,13 +67,12 @@ class TgMessageService extends FromTgMessageService
             $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendDocument(): TelegramAnswerDto
+    protected function sendDocument(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendDocument';
         $this->messageParamsDTO->document = $this->update->fileId;
@@ -101,54 +82,49 @@ class TgMessageService extends FromTgMessageService
             $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendLocation(): TelegramAnswerDto
+    protected function sendLocation(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendLocation';
         $this->messageParamsDTO->latitude = $this->update->location['latitude'];
         $this->messageParamsDTO->longitude = $this->update->location['longitude'];
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVoice(): TelegramAnswerDto
+    protected function sendVoice(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendVoice';
         $this->messageParamsDTO->voice = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendSticker(): TelegramAnswerDto
+    protected function sendSticker(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendSticker';
         $this->messageParamsDTO->sticker = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVideoNote(): TelegramAnswerDto
+    protected function sendVideoNote(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendVideoNote';
         $this->messageParamsDTO->video_note = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendContact(): TelegramAnswerDto
+    protected function sendContact(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendMessage';
         $contactData = $this->update->rawData['message']['contact'];
@@ -160,35 +136,17 @@ class TgMessageService extends FromTgMessageService
         }
 
         $this->messageParamsDTO->text = $textMessage;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendMessage(): TelegramAnswerDto
+    protected function sendMessage(): void
     {
         $this->messageParamsDTO->text = $this->update->text;
         if (!empty($this->update->entities)) {
             $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
-    }
-
-    /**
-     * @param TelegramAnswerDto $resultQuery
-     *
-     * @return Message
-     */
-    protected function saveMessage(mixed $resultQuery): Message
-    {
-        return Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->source,
-            'message_type' => $this->typeMessage,
-            'from_id' => $this->update->messageId,
-            'to_id' => $resultQuery->message_id,
-        ]);
     }
 }
