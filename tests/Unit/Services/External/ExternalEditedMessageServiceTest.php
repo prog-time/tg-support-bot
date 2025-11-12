@@ -2,18 +2,16 @@
 
 namespace Tests\Unit\Services\External;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\External\ExternalMessageResponseDto;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
 use Tests\TestCase;
 
 class ExternalEditedMessageServiceTest extends TestCase
 {
-    public string $source = 'live_chat';
+    public string $source;
 
-    public string $external_id = 'wPsYu0HOXsuK';
+    public string $external_id;
 
     public string $text = 'Тестовое сообщение';
 
@@ -23,16 +21,8 @@ class ExternalEditedMessageServiceTest extends TestCase
     {
         parent::setUp();
 
-        $responseSend = (new ExternalTrafficService())->store(ExternalMessageDto::from([
-            'source' => $this->source,
-            'external_id' => $this->external_id,
-            'text' => $this->text,
-        ]));
-
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
-        ])->first();
-        $this->messageId = $messageData->from_id;
+        $this->source = config('testing.external.source');
+        $this->external_id = config('testing.external.external_id');
     }
 
     protected function getMessageParams(): array
@@ -46,17 +36,34 @@ class ExternalEditedMessageServiceTest extends TestCase
 
     public function test_edit_external_message(): void
     {
+        Message::truncate();
+
+        // создание сообщения
         $dataMessage = $this->getMessageParams();
-        $responseUpdate = (new ExternalTrafficService())->update(ExternalMessageDto::from(array_merge($dataMessage, [
-            'message_id' => $this->messageId,
+        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
+
+        // получаем созданное сообщение
+        $message = Message::where([
+            'platform' => $dataMessage['source'],
+            'message_type' => 'incoming',
+        ])->first();
+
+        $this->assertNotEmpty($message);
+
+        // отправляем сообщение
+        $dataUpdateMessage = array_merge($dataMessage, [
+            'message_id' => $message->from_id,
             'text' => 'Изменил сообщение!',
-        ])));
+        ]);
+        (new ExternalTrafficService())->update(ExternalMessageDto::from($dataUpdateMessage));
 
-        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $responseUpdate);
+        $updateMessage = Message::where([
+            'platform' => $dataUpdateMessage['source'],
+            'message_type' => 'incoming',
+            'from_id' => $message->from_id,
+        ])->first();
 
-        $this->assertNotEmpty($responseUpdate->status);
-        $this->assertIsBool($responseUpdate->status);
-
-        $this->assertInstanceOf(ExternalMessageResponseDto::class, $responseUpdate->result);
+        $this->assertNotEmpty($updateMessage);
+        $this->assertEquals($updateMessage->externalMessage->text, $dataUpdateMessage['text']);
     }
 }
