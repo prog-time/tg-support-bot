@@ -14,13 +14,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use phpDocumentor\Reflection\Exception;
 
 /**
- * @property int          $id
- * @property int          $topic_id
- * @property int          $chat_id
- * @property string       $platform
- * @property mixed        $aiCondition
- * @property mixed        $lastMessageManager
- * @property ExternalUser $externalUser
+ * @property int               $id
+ * @property int               $topic_id
+ * @property int               $chat_id
+ * @property string            $platform
+ * @property mixed             $aiCondition
+ * @property mixed             $lastMessageManager
+ * @property ExternalUser|null $externalUser
  */
 class BotUser extends Model
 {
