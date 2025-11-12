@@ -67,41 +67,23 @@ find_test_class_path() {
 # -----------------------------------------
 # Запуск теста на сервере через SSH + Docker
 # -----------------------------------------
-run_test_for_class() {
-    local test_classname="$1"
-    local test_file=$(find_test_class_path "$test_classname" "$PROJECT_ROOT")
-    if [[ -z "$test_file" ]]; then
-        warning "Тест не найден: $test_classname"
-        return 0
-    fi
-
+run_test_file() {
+    local test_file="$1"
     local relative_path="${test_file#$PROJECT_ROOT/}"
 
-    info "Запуск теста на сервере: $test_classname"
-    info "Файл: $(basename "$test_file")"
+    info "Запуск теста на сервере: $relative_path"
 
     ssh ${SERVER_USER}@${SERVER_HOST} \
         "cd ${PROJECT_DIR} && docker compose exec -T app php artisan test $relative_path"
 
     local exit_code=$?
     if [[ $exit_code -eq 0 ]]; then
-        success "Тест пройден: $test_classname"
+        success "Тест пройден: $relative_path"
         return 0
     else
-        error "Тест провален: $test_classname"
+        error "Тест провален: $relative_path"
         return 1
     fi
-}
-
-# -----------------------------------------
-# Анализ и запуск теста для файла
-# -----------------------------------------
-analyze_and_run_tests() {
-    local app_file="$1"
-    local normalized_classname=$(path_to_classname "$app_file")
-    local expected_test=$(get_expected_test_classname "$normalized_classname")
-
-    run_test_for_class "$expected_test"
 }
 
 # -----------------------------------------
@@ -137,16 +119,38 @@ main() {
 
     PROJECT_ROOT=$(find_project_root)
     has_failures=0
+    declare -a tests_to_run=()
 
-    # Разбиваем строки на массив вручную (bash 3.x совместимо)
-    files_to_test=()
-    while IFS= read -r f; do
-        [[ -n "$f" ]] && files_to_test+=("$f")
+    add_unique_test() {
+        local file="$1"
+        for f in "${tests_to_run[@]}"; do
+            [[ "$f" == "$file" ]] && return 0
+        done
+        tests_to_run+=("$file")
+    }
+
+    # Формируем уникальный список тестов
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+
+        # Если это тестовый файл
+        if [[ "$file" == tests/Unit/* ]]; then
+            local abs_path="$PROJECT_ROOT/$file"
+            [[ -f "$abs_path" ]] && add_unique_test "$abs_path"
+        fi
+
+        # Если это класс приложения
+        if [[ "$file" == app/* ]]; then
+            local classname=$(path_to_classname "$file")
+            local test_classname=$(get_expected_test_classname "$classname")
+            local test_file=$(find_test_class_path "$test_classname" "$PROJECT_ROOT")
+            [[ -n "$test_file" ]] && add_unique_test "$test_file"
+        fi
     done <<< "$ALL_FILES"
 
-    # Запускаем тесты по всем файлам
-    for app_file in "${files_to_test[@]}"; do
-        analyze_and_run_tests "$app_file" || has_failures=1
+    # Запуск тестов
+    for test_file in "${tests_to_run[@]}"; do
+        run_test_file "$test_file" || has_failures=1
     done
 
     if [[ $has_failures -eq 1 ]]; then
