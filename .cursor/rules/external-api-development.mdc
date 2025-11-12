@@ -16,7 +16,6 @@ description: External API integration patterns and best practices
 
 ## DTOs and Data Structures
 - Use [app/DTOs/External/ExternalMessageDto.php](mdc:app/DTOs/External/ExternalMessageDto.php) for message data
-- Use [app/DTOs/External/ExternalUpdateDto.php](mdc:app/DTOs/External/ExternalUpdateDto.php) for updates
 - Use [app/DTOs/ExternalSourceDto.php](mdc:app/DTOs/ExternalSourceDto.php) for source information
 
 ## Source Management
