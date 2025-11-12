@@ -4,7 +4,7 @@ namespace App\Services\TgVk;
 
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkTextMessageDto;
-use App\Jobs\SendVkMessageJob;
+use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Edit\FromTgEditService;
@@ -60,7 +60,7 @@ class TgVkEditService extends FromTgEditService
 
             SendVkMessageJob::dispatch(
                 $this->botUser,
-                $dataMessage->to_id,
+                $this->update,
                 VkTextMessageDto::from($queryParams),
             );
         }
