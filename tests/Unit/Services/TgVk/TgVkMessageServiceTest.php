@@ -17,8 +17,6 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        $this->app->make('queue')->connection('sync');
-
         // Проверяем, что сообщение сохранилось в базе
         $this->assertDatabaseHas('messages', [
             'bot_user_id' => $botUser->id,
