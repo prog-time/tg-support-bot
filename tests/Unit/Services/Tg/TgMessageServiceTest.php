@@ -6,55 +6,14 @@ use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\Tg\TgMessageService;
-use Illuminate\Support\Facades\Request;
+use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class TgMessageServiceTest extends TestCase
 {
-    private array $basicPayload;
-
-    public function setUp(): void
+    public function sendTestQuery(TelegramUpdateDto $dto): Message
     {
-        parent::setUp();
-
-        Message::truncate();
-
-        $this->basicPayload = [
-            'update_id' => time(),
-            'message' => [
-                'message_id' => time(),
-                'from' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'is_bot' => false,
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'language_code' => 'ru',
-                ],
-                'chat' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'type' => 'private',
-                ],
-                'date' => time(),
-                'text' => 'Тестовое сообщение',
-            ],
-        ];
-    }
-
-    public function sendTestQuery(array $payload, bool $statusDelete = true): Message
-    {
-        $request = Request::create('api/telegram/bot', 'POST', $payload);
-        $dto = TelegramUpdateDto::fromRequest($request);
-
         $botUser = BotUser::getTelegramUserData($dto);
-
-        // очищаем сообщения
-        if ($statusDelete) {
-            Message::where('bot_user_id', $botUser->id)->delete();
-        }
 
         (new TgMessageService($dto))->handleUpdate();
 
@@ -72,20 +31,19 @@ class TgMessageServiceTest extends TestCase
 
     public function test_send_text_message(): void
     {
-        $payload = $this->basicPayload;
-        $payload['message']['text'] = 'Тестовое сообщение';
+        Message::truncate();
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto());
     }
 
     public function test_send_photo(): void
     {
-        $fileId = config('testing.tg_file.photo');
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['photo'] = [
             [
-                'file_id' => $fileId,
+                'file_id' => config('testing.tg_file.photo'),
                 'file_unique_id' => 'AQAD854DoEp9',
                 'file_size' => 59609,
                 'width' => 684,
@@ -93,82 +51,82 @@ class TgMessageServiceTest extends TestCase
             ],
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_document(): void
     {
-        $fileId = config('testing.tg_file.document');
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['document'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.document'),
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_sticker(): void
     {
-        $fileId = config('testing.tg_file.sticker');
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['sticker'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.sticker'),
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_location(): void
     {
-        $payload = $this->basicPayload;
+        Message::truncate();
+
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['location'] = [
             'latitude' => 55.728387,
             'longitude' => 37.611953,
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_video_note(): void
     {
-        $fileId = config('testing.tg_file.video_note');
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['video_note'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.video_note'),
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_voice(): void
     {
-        $fileId = config('testing.tg_file.voice');
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['voice'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.voice'),
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 
     public function test_send_contact(): void
     {
-        $phone = '79999999999';
-        $firstName = 'Тестовый';
-        $lastName = 'Тест';
+        Message::truncate();
 
-        $payload = $this->basicPayload;
+        $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['contact'] = [
-            'phone_number' => $phone,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
+            'phone_number' => '79999999999',
+            'first_name' => 'Тестовый',
+            'last_name' => 'Тест',
             'user_id' => config('testing.tg_private.chat_id'),
         ];
 
-        $this->sendTestQuery($payload);
+        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
     }
 }
