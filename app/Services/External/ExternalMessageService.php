@@ -4,7 +4,7 @@ namespace App\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendExternalTelegramMessageJob;
+use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
 use App\Logging\LokiLogger;
 
 class ExternalMessageService extends ExternalService
