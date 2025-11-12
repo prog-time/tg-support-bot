@@ -10,7 +10,7 @@ use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\Helpers\TelegramHelper;
-use App\Jobs\SendVkMessageJob;
+use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
 
@@ -70,7 +70,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
@@ -96,7 +96,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
@@ -130,7 +130,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
@@ -148,7 +148,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
@@ -182,7 +182,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
@@ -200,7 +200,7 @@ class TgVkMessageService extends FromTgMessageService
 
         SendVkMessageJob::dispatch(
             $this->botUser,
-            $this->update->messageId,
+            $this->update,
             VkTextMessageDto::from($queryParams),
         );
     }
