@@ -11,18 +11,11 @@ use Tests\TestCase;
 
 class VkMessageServiceTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     public function sendTestQuery(VkUpdateDto $dto): Message
     {
         $botUser = BotUser::getUserByChatId($dto->from_id, 'vk');
 
         (new VkMessageService($dto))->handleUpdate();
-
-        $this->app->make('queue')->connection('sync');
 
         // Проверяем, что сообщение сохранилось в базе
         $this->assertDatabaseHas('messages', [
