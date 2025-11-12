@@ -46,21 +46,17 @@ path_to_classname() {
 }
 
 # -----------------------------------------
-# Получить ожидаемый тестовый класс
+# Найти путь тестового файла по классу приложения
 # -----------------------------------------
-get_expected_test_classname() {
-    echo "Tests\\Unit\\$1Test"
-}
-
-# -----------------------------------------
-# Найти путь тестового файла
-# -----------------------------------------
-find_test_class_path() {
-    local test_classname="$1"
+find_test_file_by_class() {
+    local classname="$1"
     local project_root="$2"
-    local test_path="${test_classname//\\//}.php"
-    local full_path="$project_root/tests/${test_path#*Tests/}"
-    [[ -f "$full_path" ]] && echo "$full_path" && return 0
+
+    for dir in Unit Feature; do
+        local test_file="$project_root/tests/$dir/${classname//\\//}Test.php"
+        [[ -f "$test_file" ]] && echo "$test_file" && return 0
+    done
+
     return 1
 }
 
@@ -69,6 +65,7 @@ find_test_class_path() {
 # -----------------------------------------
 run_test_file() {
     local test_file="$1"
+    # путь относительно PROJECT_DIR на сервере
     local relative_path="${test_file#$PROJECT_ROOT/}"
 
     info "Запуск теста на сервере: $relative_path"
@@ -134,7 +131,7 @@ main() {
         [[ -z "$file" ]] && continue
 
         # Если это тестовый файл
-        if [[ "$file" == tests/Unit/* ]]; then
+        if [[ "$file" == tests/Unit/* || "$file" == tests/Feature/* ]]; then
             local abs_path="$PROJECT_ROOT/$file"
             [[ -f "$abs_path" ]] && add_unique_test "$abs_path"
         fi
@@ -142,8 +139,7 @@ main() {
         # Если это класс приложения
         if [[ "$file" == app/* ]]; then
             local classname=$(path_to_classname "$file")
-            local test_classname=$(get_expected_test_classname "$classname")
-            local test_file=$(find_test_class_path "$test_classname" "$PROJECT_ROOT")
+            local test_file=$(find_test_file_by_class "$classname" "$PROJECT_ROOT")
             [[ -n "$test_file" ]] && add_unique_test "$test_file"
         fi
     done <<< "$ALL_FILES"
