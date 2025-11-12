@@ -4,7 +4,7 @@ namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
 use App\DTOs\TelegramUpdateDto;
-use App\Jobs\SendTelegramMessageJob;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
 
