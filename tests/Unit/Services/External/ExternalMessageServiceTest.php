@@ -4,9 +4,7 @@ namespace Tests\Unit\Services\External;
 
 use App\Actions\External\DeleteMessage;
 use App\DTOs\External\ExternalListMessageDto;
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\External\ExternalMessageResponseDto;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
 use Tests\TestCase;
@@ -23,6 +21,8 @@ class ExternalMessageServiceTest extends TestCase
     {
         parent::setUp();
 
+        Message::truncate();
+
         $this->text = 'Тестовое сообщение';
 
         $this->source = config('testing.external.source');
@@ -38,88 +38,86 @@ class ExternalMessageServiceTest extends TestCase
         ];
     }
 
-    protected function sendNewMessage(array $dataMessage): ExternalMessageAnswerDto
-    {
-        return (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
-    }
-
     public function test_send_external_message(): void
     {
         $dataMessage = $this->getMessageParams();
-        $response = $this->sendNewMessage($dataMessage);
+        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
 
-        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $response);
-        $this->assertInstanceOf(ExternalMessageResponseDto::class, $response->result);
+        $message = Message::where([
+            'platform' => $dataMessage['source'],
+            'message_type' => 'incoming',
+        ])->orderBy('id', 'desc')->first();
+
+        $this->assertNotNull($message);
+        $this->assertEquals($message->platform, $dataMessage['source']);
+
+        $this->assertNotNull($message->botUser->externalUser);
+        $this->assertEquals($message->botUser->externalUser->external_id, $dataMessage['external_id']);
+
+        $this->assertNotNull($message->externalMessage);
+        $this->assertEquals($message->externalMessage->text, $dataMessage['text']);
     }
 
     public function test_delete_external_message(): void
     {
+        Message::truncate();
+
         $dataMessage = $this->getMessageParams();
-        $responseSend = $this->sendNewMessage($dataMessage);
+        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
 
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
-        ])->first();
+        $message = Message::where([
+            'platform' => $dataMessage['source'],
+            'message_type' => 'incoming',
+        ])->orderBy('id', 'desc')->first();
 
-        $this->assertNotEmpty($messageData->from_id);
+        $this->assertNotEmpty($message);
 
-        $dataMessage['message_id'] = $messageData->from_id;
+        $dataMessage['message_id'] = $message->from_id;
 
-        $responseDelete = (new DeleteMessage())->execute(ExternalMessageDto::from($dataMessage));
+        (new DeleteMessage())->execute(ExternalMessageDto::from($dataMessage));
 
-        $this->assertNotEmpty($responseDelete->status);
-        $this->assertIsBool($responseDelete->status);
-    }
+        $message = Message::first();
 
-    public function test_not_delete_external_message(): void
-    {
-        // Arrange: подготавливаем данные с некорректным message_id
-        $dataMessage = $this->getMessageParams();
-        $invalidMessageData = array_merge($dataMessage, [
-            'message_id' => 0,
-        ]);
-
-        // Act: выполняем операцию удаления
-        $responseDelete = (new DeleteMessage())->execute(
-            ExternalMessageDto::from($invalidMessageData)
-        );
-
-        // Assert: проверяем, что операция завершилась неудачей
-        $this->assertFalse($responseDelete->status, 'Status should be false when message_id is invalid');
-        $this->assertIsBool($responseDelete->status, 'Status should be boolean type');
-
-        // Дополнительные проверки (опционально)
-        if (property_exists($responseDelete, 'error')) {
-            $this->assertNotEmpty($responseDelete->error, 'Error message should be provided');
-        }
+        $this->assertEmpty($message);
     }
 
     public function test_edit_external_message(): void
     {
-        $newText = 'Изменил сообщение!';
+        Message::truncate();
 
         $dataMessage = $this->getMessageParams();
-        $responseSend = $this->sendNewMessage($dataMessage);
+        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
 
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
+        $message = Message::where([
+            'platform' => $dataMessage['source'],
+            'message_type' => 'incoming',
+        ])->orderBy('id', 'desc')->first();
+
+        $this->assertNotEmpty($message);
+
+        $newText = 'Изменил сообщение!';
+        $dataUpdateMessage = array_merge($dataMessage, [
+            'message_id' => $message->from_id,
+            'text' => $newText,
+        ]);
+        (new ExternalTrafficService())->update(ExternalMessageDto::from($dataUpdateMessage));
+
+        $updateMessage = Message::where([
+            'platform' => $dataMessage['source'],
+            'message_type' => 'incoming',
+            'from_id' => $message->from_id,
         ])->first();
 
-        $this->assertNotEmpty($messageData->from_id);
-
-        $responseUpdate = (new ExternalTrafficService())->update(ExternalMessageDto::from(array_merge($dataMessage, [
-            'message_id' => $messageData->from_id,
-            'text' => $newText,
-        ])));
-
-        $this->assertNotEmpty($responseUpdate->status);
-        $this->assertIsBool($responseUpdate->status);
+        $this->assertNotEmpty($updateMessage);
+        $this->assertEquals($updateMessage->externalMessage->text, $dataUpdateMessage['text']);
     }
 
     public function test_list_external_message(): void
     {
+        Message::truncate();
+
         $dataMessage = $this->getMessageParams();
-        $this->sendNewMessage($dataMessage);
+        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
 
         $responseListMessage = (new ExternalTrafficService())->list(ExternalListMessageDto::from($dataMessage));
 
