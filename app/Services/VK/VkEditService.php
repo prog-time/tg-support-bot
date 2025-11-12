@@ -3,7 +3,7 @@
 namespace App\Services\VK;
 
 use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendVkTelegramMessageJob;
+use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Edit\ToTgEditService;
