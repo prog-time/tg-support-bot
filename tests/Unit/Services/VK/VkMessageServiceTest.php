@@ -6,62 +6,49 @@ use App\DTOs\Vk\VkUpdateDto;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\VK\VkMessageService;
-use Illuminate\Support\Facades\Request;
+use Tests\Mocks\Vk\VkUpdateDtoMock;
 use Tests\TestCase;
 
 class VkMessageServiceTest extends TestCase
 {
-    private array $basicPayload;
-
-    private array $attachmentsTest;
-
     public function setUp(): void
     {
         parent::setUp();
+    }
 
-        $this->basicPayload = [
-            'group_id' => config('testing.vk_private.group_id'),
-            'type' => 'message_new',
-            'event_id' => '23ff3b705c7ee0ac3e762d40fa4016b88ed384a1',
-            'v' => '5.199',
-            'object' => [
-                'client_info' => [
-                    'button_actions' => [
-                        'text',
-                        'vkpay',
-                        'open_app',
-                        'location',
-                        'open_link',
-                        'open_photo',
-                        'callback',
-                        'intent_subscribe',
-                        'intent_unsubscribe',
-                    ],
-                    'keyboard' => true,
-                    'inline_keyboard' => true,
-                    'carousel' => true,
-                    'lang_id' => 0,
-                ],
-                'message' => [
-                    'date' => time(),
-                    'from_id' => config('testing.vk_private.chat_id'),
-                    'id' => time(),
-                    'version' => time(),
-                    'out' => 0,
-                    'fwd_messages' => [],
-                    'important' => false,
-                    'is_hidden' => false,
-                    'attachments' => [],
-                    'conversation_message_id' => time(),
-                    'text' => 'Test text',
-                    'peer_id' => config('testing.vk_private.chat_id'),
-                    'random_id' => 0,
-                ],
-            ],
-            'secret' => config('testing.vk_private.secret'),
-        ];
+    public function sendTestQuery(VkUpdateDto $dto): Message
+    {
+        $botUser = BotUser::getUserByChatId($dto->from_id, 'vk');
 
-        $this->attachmentsTest = [
+        (new VkMessageService($dto))->handleUpdate();
+
+        $this->app->make('queue')->connection('sync');
+
+        // Проверяем, что сообщение сохранилось в базе
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'message_type' => 'incoming',
+            'platform' => 'vk',
+        ]);
+
+        return Message::where('bot_user_id', $botUser->id)->first();
+    }
+
+    public function test_send_text_message(): void
+    {
+        Message::truncate();
+
+        $vkDto = VkUpdateDtoMock::getDto();
+        $this->sendTestQuery($vkDto);
+    }
+
+    public function test_send_document(): void
+    {
+        Message::truncate();
+
+        $dtoParams = VkUpdateDtoMock::getDtoParams();
+
+        $dtoParams['object']['message']['attachments'] = [
             [
                 'type' => 'photo',
                 'photo' => [
@@ -95,55 +82,19 @@ class VkMessageServiceTest extends TestCase
                 ],
             ],
         ];
-    }
 
-    public function sendTestQuery(array $payload, bool $statusDelete = true): Message
-    {
-        $request = Request::create('api/vk/bot', 'POST', $payload);
-        $dto = VkUpdateDto::fromRequest($request);
-
-        $botUser = BotUser::getUserByChatId($dto->from_id, 'vk');
-
-        // очищаем сообщения
-        if ($statusDelete) {
-            Message::where('bot_user_id', $botUser->id)->delete();
-        }
-
-        (new VkMessageService($dto))->handleUpdate();
-
-        $this->app->make('queue')->connection('sync');
-
-        // Проверяем, что сообщение сохранилось в базе
-        $this->assertDatabaseHas('messages', [
-            'bot_user_id' => $botUser->id,
-            'message_type' => 'incoming',
-            'platform' => 'vk',
-        ]);
-
-        return Message::where('bot_user_id', $botUser->id)->first();
-    }
-
-    public function test_send_text_message(): void
-    {
-        $payload = $this->basicPayload;
-        $payload['object']['message']['text'] = 'Тестовое сообщение';
-
-        $this->sendTestQuery($payload);
-    }
-
-    public function test_send_document(): void
-    {
-        $payload = $this->basicPayload;
-        $payload['object']['message']['attachments'] = $this->attachmentsTest;
-
-        $this->sendTestQuery($payload);
+        $vkDto = VkUpdateDtoMock::getDto($dtoParams);
+        $this->sendTestQuery($vkDto);
     }
 
     public function test_send_location(): void
     {
-        $payload = $this->basicPayload;
-        $payload['object']['message']['text'] = null;
-        $payload['object']['message']['geo'] = [
+        Message::truncate();
+
+        $dtoParams = VkUpdateDtoMock::getDtoParams();
+
+        $dtoParams['object']['message']['text'] = null;
+        $dtoParams['object']['message']['geo'] = [
             'coordinates' => [
                 'latitude' => 55.524442,
                 'longitude' => 37.705064,
@@ -156,6 +107,7 @@ class VkMessageServiceTest extends TestCase
             'type' => 'point',
         ];
 
-        $this->sendTestQuery($payload);
+        $vkDto = VkUpdateDtoMock::getDto($dtoParams);
+        $this->sendTestQuery($vkDto);
     }
 }

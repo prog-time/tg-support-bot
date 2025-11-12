@@ -4,7 +4,7 @@ namespace App\Services\VK;
 
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendVkTelegramMessageJob;
+use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Services\ActionService\Send\ToTgMessageService;
