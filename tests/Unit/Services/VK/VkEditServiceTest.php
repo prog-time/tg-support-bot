@@ -14,7 +14,6 @@ class VkEditServiceTest extends TestCase
     public function test_edit_text_message(): void
     {
         Message::truncate();
-        $this->app->make('queue')->connection('sync');
 
         $chatId = config('testing.vk_private.chat_id');
         $botUser = BotUser::getUserByChatId($chatId, 'vk');
