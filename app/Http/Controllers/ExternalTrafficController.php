@@ -58,42 +58,40 @@ class ExternalTrafficController
     /**
      * Создать текстового сообщение
      *
-     * @return JsonResponse
+     * @return void
      */
-    public function store(): JsonResponse
+    public function store(): void
     {
-        return response()->json($this->externalTrafficService->store($this->dataHook)->toArray());
+        $this->externalTrafficService->store($this->dataHook);
     }
 
     /**
      * Отправка файла
      *
-     * @return JsonResponse
+     * @return void
      */
-    public function sendFile(): JsonResponse
+    public function sendFile(): void
     {
-        return response()->json($this->externalTrafficService->sendFile($this->dataHook)->toArray());
+        $this->externalTrafficService->sendFile($this->dataHook);
     }
 
     /**
      * Обновить сообщение
      *
-     * @return JsonResponse
+     * @return void
      */
-    public function update(): JsonResponse
+    public function update(): void
     {
-        $dataDto = $this->dataHook;
-        return response()->json($this->externalTrafficService->update($dataDto)->toArray());
+        $this->externalTrafficService->update($this->dataHook);
     }
 
     /**
      * Удалить сообщение
      *
-     * @return JsonResponse
+     * @return void
      */
-    public function destroy(): JsonResponse
+    public function destroy(): void
     {
-        $dataDto = $this->dataHook;
-        return response()->json($this->externalTrafficService->destroy($dataDto)->toArray());
+        $this->externalTrafficService->destroy($this->dataHook);
     }
 }

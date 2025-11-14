@@ -5,7 +5,6 @@ namespace App\Services\External;
 use App\Actions\External\DeleteMessage;
 use App\DTOs\External\ExternalListMessageAnswerDto;
 use App\DTOs\External\ExternalListMessageDto;
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\External\ExternalMessageResponseDto;
 use App\Helpers\TelegramHelper;
@@ -131,11 +130,11 @@ class ExternalTrafficService
      *
      * @param ExternalMessageDto $dto
      *
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function store(ExternalMessageDto $dto): ExternalMessageAnswerDto
+    public function store(ExternalMessageDto $dto): void
     {
-        return (new ExternalMessageService($dto))->handleUpdate();
+        (new ExternalMessageService($dto))->handleUpdate();
     }
 
     /**
@@ -143,11 +142,11 @@ class ExternalTrafficService
      *
      * @param ExternalMessageDto $dto
      *
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function sendFile(ExternalMessageDto $dto): ExternalMessageAnswerDto
+    public function sendFile(ExternalMessageDto $dto): void
     {
-        return (new ExternalFileService($dto))->handleUpdate();
+        (new ExternalFileService($dto))->handleUpdate();
     }
 
     /**
@@ -155,11 +154,11 @@ class ExternalTrafficService
      *
      * @param ExternalMessageDto $dto
      *
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function update(ExternalMessageDto $dto): ExternalMessageAnswerDto
+    public function update(ExternalMessageDto $dto): void
     {
-        return (new ExternalEditedMessageService($dto))->handleUpdate();
+        (new ExternalEditedMessageService($dto))->handleUpdate();
     }
 
     /**
@@ -167,10 +166,10 @@ class ExternalTrafficService
      *
      * @param ExternalMessageDto $dto
      *
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function destroy(ExternalMessageDto $dto): ExternalMessageAnswerDto
+    public function destroy(ExternalMessageDto $dto): void
     {
-        return DeleteMessage::execute($dto);
+        DeleteMessage::execute($dto);
     }
 }
