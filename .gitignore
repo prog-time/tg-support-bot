@@ -22,6 +22,7 @@ yarn-error.log
 /.vscode
 /.zed
 /config/tg-logger.php
+/docker/nginx/logs
 /docker/grafana
 /docker/postgres
 /storage/api-docs

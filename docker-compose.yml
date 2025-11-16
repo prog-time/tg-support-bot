@@ -46,6 +46,7 @@ services:
             - .:/var/www
             - ./docker/nginx:/etc/nginx/conf.d
             - /etc/letsencrypt:/etc/letsencrypt:ro
+            - ./docker/nginx/logs:/var/log/nginx
         environment:
             - TZ=${SYSTEM_TIMEZONE}
         depends_on:
@@ -144,6 +145,18 @@ services:
         container_name: loki
         ports:
             - ${LOKI_PORT}
+        networks:
+            - pet
+
+    promtail:
+        image: grafana/promtail:2.9.1
+        container_name: promtail
+        volumes:
+            - ./docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
+            - ./docker/nginx/logs:/var/log/nginx
+        command: -config.file=/etc/promtail/config.yml
+        depends_on:
+            - loki
         networks:
             - pet
 

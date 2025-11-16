@@ -13,17 +13,14 @@ server {
 
     client_max_body_size 60M;
 
-    # Директория, в которой находится index.php
     root /var/www/public;
     index index.php index.html;
 
     location / {
-        # CORS-заголовки для всех запросов
-        add_header 'Access-Control-Allow-Origin' '*' always; # Замените '*' на ваш фронтенд-домен, если известен
+        add_header 'Access-Control-Allow-Origin' '*' always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
         add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
 
-        # Обработка preflight-запросов (OPTIONS)
         if ($request_method = OPTIONS) {
             add_header 'Access-Control-Max-Age' 86400;
             return 204;
@@ -45,9 +42,9 @@ server {
         deny all;
     }
 
-    # Добавляем проксирование для Socket.IO
+    # Socket.IO
     location /socket.io/ {
-        proxy_pass http://node_server:3000; # имя контейнера Node.js и порт
+        proxy_pass http://node_server:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
@@ -62,14 +59,12 @@ server {
 # GRAFANA
 ##############################################
 
-# HTTP → HTTPS redirect
 server {
     listen 80;
     server_name grafana.__MAIN_DOMAIN__;
     return 301 https://$host$request_uri;
 }
 
-# HTTPS
 server {
     listen 443 ssl;
     server_name grafana.__MAIN_DOMAIN__;
@@ -90,14 +85,12 @@ server {
 # PGADMIN
 ##############################################
 
-# HTTP → HTTPS redirect
 server {
     listen 80;
     server_name pgadmin.__MAIN_DOMAIN__;
     return 301 https://$host$request_uri;
 }
 
-# HTTPS
 server {
     listen 443 ssl;
     server_name pgadmin.__MAIN_DOMAIN__;
@@ -107,6 +100,38 @@ server {
 
     location / {
         proxy_pass http://pgadmin:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+##############################################
+# NODE.JS
+##############################################
+
+# HTTP → HTTPS redirect
+server {
+    listen 80;
+    server_name node.__MAIN_DOMAIN__;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS
+server {
+    listen 443 ssl;
+    server_name node.__MAIN_DOMAIN__;
+
+    ssl_certificate     /etc/letsencrypt/live/node.__MAIN_DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/node.__MAIN_DOMAIN__/privkey.pem;
+
+    client_max_body_size 60M;
+
+    # Проксирование всех маршрутов Node.js
+    location / {
+        proxy_pass http://node_server:3000;
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
