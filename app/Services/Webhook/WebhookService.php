@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook;
 
+use App\Logging\LokiLogger;
 use Illuminate\Support\Facades\Http;
 
 class WebhookService
@@ -21,7 +22,11 @@ class WebhookService
             }
 
             return $response->body();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
+
+            dump($e->getMessage());
+
             return null;
         }
     }
