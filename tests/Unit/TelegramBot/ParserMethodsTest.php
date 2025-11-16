@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\TelegramBot;
 
 use App\TelegramBot\ParserMethods;
 use Illuminate\Support\Facades\Http;
