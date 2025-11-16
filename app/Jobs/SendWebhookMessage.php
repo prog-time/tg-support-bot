@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Logging\LokiLogger;
 use App\Services\Webhook\WebhookService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,12 +35,14 @@ class SendWebhookMessage implements ShouldQueue
     {
         try {
             if (empty($this->url)) {
-                throw new \Exception('Webhook URL is empty');
+                throw new \Exception('Webhook URL пустой', 1);
             }
 
             (new WebhookService())->sendMessage($this->url, $this->payload);
-        } catch (\Exception $exception) {
-            $this->fail($exception->getMessage());
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
+
+            $this->fail($e->getMessage());
         }
     }
 }
