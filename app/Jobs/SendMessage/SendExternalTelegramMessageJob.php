@@ -11,6 +11,8 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgTopicService;
 use App\TelegramBot\TelegramMethods;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class SendExternalTelegramMessageJob extends AbstractSendMessageJob
 {
@@ -47,6 +49,24 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
         try {
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
+
+            if (!empty($params['uploaded_file_path'])) {
+                $params['uploaded_file'] = Storage::get($params['uploaded_file_path']);
+
+                $fullPath = storage_path('app/public/' . $params['uploaded_file_path']);
+
+                if (!file_exists($fullPath)) {
+                    throw new \Exception('Файл не найден: ' . $fullPath);
+                }
+
+                $params['uploaded_file'] = new UploadedFile(
+                    $fullPath,
+                    basename($fullPath),
+                    mime_content_type($fullPath),
+                    null,
+                    true
+                );
+            }
 
             $response = TelegramMethods::sendQueryTelegram(
                 $methodQuery,
