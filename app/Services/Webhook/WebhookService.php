@@ -25,8 +25,6 @@ class WebhookService
         } catch (\Exception $e) {
             (new LokiLogger())->logException($e);
 
-            dump($e->getMessage());
-
             return null;
         }
     }
