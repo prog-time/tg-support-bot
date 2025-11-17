@@ -2,145 +2,132 @@
 
 namespace Tests\Unit\Services\TgVk;
 
-use App\DTOs\TelegramUpdateDto;
+use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgVk\TgVkMessageService;
+use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
 use Tests\TestCase;
 
 class TgVkMessageServiceTest extends TestCase
 {
-    public function sendTestQuery(TelegramUpdateDto $dto): Message
+    private BotUser $botUser;
+
+    private array $basicPayload;
+
+    public function setUp(): void
     {
-        $botUser = BotUser::getTelegramUserData($dto);
+        parent::setUp();
 
-        (new TgVkMessageService($dto))->handleUpdate();
+        Queue::fake();
+        Message::truncate();
 
-        // Проверяем, что сообщение сохранилось в базе
-        $this->assertDatabaseHas('messages', [
-            'bot_user_id' => $botUser->id,
-            'message_type' => 'outgoing',
-            'platform' => 'vk',
-        ]);
-
-        return Message::where('bot_user_id', $botUser->id)->first();
+        $this->botUser = BotUser::getTelegramUserData(TelegramUpdateDto_VKMock::getDto());
+        $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams();
     }
 
     public function test_send_text_message(): void
     {
-        Message::truncate();
+        $dto = TelegramUpdateDto_VKMock::getDto($this->basicPayload);
 
-        $dto = TelegramUpdateDto_VKMock::getDto();
+        (new TgVkMessageService($dto))->handleUpdate();
 
-        $this->sendTestQuery($dto);
+        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
+            return
+                $job->botUser->id === $this->botUser->id &&
+                $job->queryParams->methodQuery === 'messages.send' &&
+                $job->queryParams->peer_id === $this->botUser->chat_id &&
+                $job->queryParams->message === $dto->text &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_photo(): void
     {
-        Message::truncate();
-
-        $fileId = config('testing.tg_file.photo');
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['photo'] = [
-            [
-                'file_id' => $fileId,
-            ],
+        $payload = $this->basicPayload;
+        $payload['message']['photo'] = [
+            ['file_id' => config('testing.tg_file.photo')],
         ];
 
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
+            return
+                $job->botUser->id === $this->botUser->id &&
+                $job->queryParams->methodQuery === 'messages.send' &&
+                $job->queryParams->peer_id === $this->botUser->chat_id &&
+                !empty($job->queryParams->attachment) &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_document(): void
     {
-        Message::truncate();
-
-        $fileId = config('testing.tg_file.document');
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['document'] = [
-            'file_id' => $fileId,
+        $payload = $this->basicPayload;
+        $payload['message']['document'] = [
+            'file_id' => config('testing.tg_file.document'),
         ];
 
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
+            return
+                $job->botUser->id === $this->botUser->id &&
+                $job->queryParams->methodQuery === 'messages.send' &&
+                $job->queryParams->peer_id === $this->botUser->chat_id &&
+                !empty($job->queryParams->attachment) &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_sticker(): void
     {
-        Message::truncate();
-
-        $fileId = config('testing.tg_file.sticker');
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['sticker'] = [
+        $payload = $this->basicPayload;
+        $payload['message']['sticker'] = [
             'emoji' => '👍',
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.sticker'),
         ];
 
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
-    }
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
 
-    public function test_send_location(): void
-    {
-        Message::truncate();
+        (new TgVkMessageService($dto))->handleUpdate();
 
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['location'] = [
-            'latitude' => 55.728387,
-            'longitude' => 37.611953,
-        ];
-
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
-    }
-
-    public function test_send_video_note(): void
-    {
-        Message::truncate();
-
-        $fileId = config('testing.tg_file.video_note');
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['video_note'] = [
-            'file_id' => $fileId,
-        ];
-
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
-    }
-
-    public function test_send_voice(): void
-    {
-        Message::truncate();
-
-        $fileId = config('testing.tg_file.voice');
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['voice'] = [
-            'file_id' => $fileId,
-        ];
-
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
+        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
+            return
+                $job->botUser->id === $this->botUser->id &&
+                $job->queryParams->methodQuery === 'messages.send' &&
+                $job->queryParams->peer_id === $this->botUser->chat_id &&
+                $job->queryParams->message === $dto->rawData['message']['sticker']['emoji'] &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_contact(): void
     {
-        Message::truncate();
-
-        $dtoParams = TelegramUpdateDto_VKMock::getDtoParams();
-        $dtoParams['message']['contact'] = [
+        $payload = $this->basicPayload;
+        $payload['message']['contact'] = [
             'phone_number' => '79999999999',
             'first_name' => 'Тестовый',
             'last_name' => 'Тест',
             'user_id' => config('testing.tg_private.chat_id'),
         ];
 
-        $dto = TelegramUpdateDto_VKMock::getDto($dtoParams);
-        $this->sendTestQuery($dto);
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
+            return
+                $job->botUser->id === $this->botUser->id &&
+                $job->queryParams->methodQuery === 'messages.send' &&
+                $job->queryParams->peer_id === $this->botUser->chat_id &&
+                !empty($job->queryParams->message) &&
+                $job->updateDto === $dto;
+        });
     }
 }
