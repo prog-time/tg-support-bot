@@ -50,20 +50,22 @@ class TgVkEditService extends FromTgEditService
             'from_id' => $this->update->messageId,
         ])->first();
 
-        if (!empty($dataMessage)) {
-            $queryParams = [
-                'methodQuery' => 'messages.edit',
-                'peer_id' => $this->botUser->chat_id,
-                'message_id' => $dataMessage->to_id,
-                'message' => $this->update->text,
-            ];
-
-            SendVkMessageJob::dispatch(
-                $this->botUser,
-                $this->update,
-                VkTextMessageDto::from($queryParams),
-            );
+        if (empty($dataMessage)) {
+            throw new \Exception('Сообщение не найдено!', 1);
         }
+
+        $queryParams = [
+            'methodQuery' => 'messages.edit',
+            'peer_id' => $this->botUser->chat_id,
+            'message_id' => $dataMessage->to_id,
+            'message' => $this->update->text,
+        ];
+
+        SendVkMessageJob::dispatch(
+            $this->botUser,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
