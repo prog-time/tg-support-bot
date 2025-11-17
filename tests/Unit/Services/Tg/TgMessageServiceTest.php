@@ -2,45 +2,55 @@
 
 namespace Tests\Unit\Services\Tg;
 
-use App\DTOs\TelegramUpdateDto;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
 use App\Services\Tg\TgMessageService;
+use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class TgMessageServiceTest extends TestCase
 {
-    public function sendTestQuery(TelegramUpdateDto $dto): Message
+    private BotUser $botUser;
+
+    private array $basicPayload;
+
+    public function setUp(): void
     {
-        $botUser = BotUser::getTelegramUserData($dto);
+        parent::setUp();
 
-        (new TgMessageService($dto))->handleUpdate();
+        Queue::fake();
 
-        $this->app->make('queue')->connection('sync');
+        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
 
-        // Проверяем, что сообщение сохранилось в базе
-        $this->assertDatabaseHas('messages', [
-            'bot_user_id' => $botUser->id,
-            'message_type' => 'incoming',
-            'platform' => 'telegram',
-        ]);
-
-        return Message::where('bot_user_id', $botUser->id)->first();
+        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload['message']['message_thread_id'] = $this->botUser->topic_id;
+        $this->basicPayload = $payload;
     }
 
     public function test_send_text_message(): void
     {
-        Message::truncate();
+        $dto = TelegramUpdateDtoMock::getDto($this->basicPayload);
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto());
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_photo(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['photo'] = [
             [
                 'file_id' => config('testing.tg_file.photo'),
@@ -51,75 +61,147 @@ class TgMessageServiceTest extends TestCase
             ],
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendPhoto';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_document(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['document'] = [
             'file_id' => config('testing.tg_file.document'),
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendDocument';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_sticker(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['sticker'] = [
             'file_id' => config('testing.tg_file.sticker'),
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendSticker';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_location(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['location'] = [
             'latitude' => 55.728387,
             'longitude' => 37.611953,
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendLocation';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_video_note(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['video_note'] = [
             'file_id' => config('testing.tg_file.video_note'),
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendVideoNote';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_voice(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['voice'] = [
             'file_id' => config('testing.tg_file.voice'),
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendVoice';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 
     public function test_send_contact(): void
     {
-        Message::truncate();
-
-        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload = $this->basicPayload;
         $payload['message']['contact'] = [
             'phone_number' => '79999999999',
             'first_name' => 'Тестовый',
@@ -127,6 +209,20 @@ class TgMessageServiceTest extends TestCase
             'user_id' => config('testing.tg_private.chat_id'),
         ];
 
-        $this->sendTestQuery(TelegramUpdateDtoMock::getDto($payload));
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
+            $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
+
+            $sameUser = $job->botUser->id === $this->botUser->id;
+            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+
+            return
+                $sameMethodQuery &&
+                $sameUser &&
+                $sameTopic &&
+                $job->updateDto === $dto;
+        });
     }
 }
