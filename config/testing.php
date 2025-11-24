@@ -4,6 +4,7 @@ return [
     'external' => [
         'source' => env('TEST_EXTERNAL_SOURCE', ''),
         'external_id' => env('TEST_EXTERNAL_ID', ''),
+        'hook_url' => env('TEST_EXTERNAL_HOOK_URL', 'https://example.com/hook'),
     ],
     'tg_bot_ai' => [
         'username' => env('TEST_USER_USERNAME', ''),
