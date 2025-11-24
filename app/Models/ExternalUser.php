@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $updated_at
  * @property string $created_at
  * @property-read ExternalSource $externalSource
+ * @property-read BotUser $botUser
  */
 class ExternalUser extends Model
 {
@@ -27,6 +29,14 @@ class ExternalUser extends Model
         'updated_at',
         'created_at',
     ];
+
+    /**
+     * @return BelongsTo
+     */
+    public function botUser(): BelongsTo
+    {
+        return $this->belongsTo(BotUser::class, 'chat_id', 'id');
+    }
 
     /**
      * @return HasOne
