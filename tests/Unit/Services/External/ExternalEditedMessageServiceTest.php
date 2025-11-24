@@ -3,8 +3,12 @@
 namespace Tests\Unit\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
+use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
+use App\Models\BotUser;
+use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ExternalEditedMessageServiceTest extends TestCase
@@ -17,12 +21,27 @@ class ExternalEditedMessageServiceTest extends TestCase
 
     public int $messageId = 0;
 
+    private BotUser $botUser;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        Message::truncate();
+        Queue::fake();
+
         $this->source = config('testing.external.source');
         $this->external_id = config('testing.external.external_id');
+
+        $externalUser = ExternalUser::firstOrCreate([
+            'external_id' => $this->external_id,
+            'source' => $this->source,
+        ]);
+
+        $this->botUser = BotUser::firstOrCreate([
+            'chat_id' => $externalUser->id,
+            'platform' => $this->source,
+        ]);
     }
 
     protected function getMessageParams(): array
@@ -34,21 +53,31 @@ class ExternalEditedMessageServiceTest extends TestCase
         ];
     }
 
+    public function createMessage(): Message
+    {
+        // Сохраняем сообщения в БД
+        $whereMessageParams = [
+            'bot_user_id' => $this->botUser->id,
+            'message_type' => 'incoming',
+            'platform' => $this->source,
+            'from_id' => rand(),
+            'to_id' => rand(),
+        ];
+        $createdMessage = Message::where($whereMessageParams)->firstOrCreate($whereMessageParams);
+
+        $createdMessage->externalMessage()->create([
+            'text' => 'Тестовое сообщение',
+            'file_id' => null,
+        ]);
+
+        return $createdMessage;
+    }
+
     public function test_edit_external_message(): void
     {
-        Message::truncate();
-
         // создание сообщения
+        $message = $this->createMessage();
         $dataMessage = $this->getMessageParams();
-        (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
-
-        // получаем созданное сообщение
-        $message = Message::where([
-            'platform' => $dataMessage['source'],
-            'message_type' => 'incoming',
-        ])->first();
-
-        $this->assertNotEmpty($message);
 
         // отправляем сообщение
         $dataUpdateMessage = array_merge($dataMessage, [
@@ -57,13 +86,15 @@ class ExternalEditedMessageServiceTest extends TestCase
         ]);
         (new ExternalTrafficService())->update(ExternalMessageDto::from($dataUpdateMessage));
 
-        $updateMessage = Message::where([
-            'platform' => $dataUpdateMessage['source'],
-            'message_type' => 'incoming',
-            'from_id' => $message->from_id,
-        ])->first();
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendExternalTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-        $this->assertNotEmpty($updateMessage);
-        $this->assertEquals($updateMessage->externalMessage->text, $dataUpdateMessage['text']);
+        $job = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $job->botUser->id);
+        $this->assertEquals('editMessageText', $job->queryParams->methodQuery);
+        $this->assertEquals('private', $job->queryParams->typeSource);
+        $this->assertEquals($job->queryParams->message_thread_id, $this->botUser->topic_id);
     }
 }
