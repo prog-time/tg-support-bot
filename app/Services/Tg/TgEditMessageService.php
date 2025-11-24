@@ -19,7 +19,7 @@ class TgEditMessageService extends FromTgEditService
     /**
      * @return void
      */
-    public function handleUpdate(): void
+    public function handleUpdate(): mixed
     {
         if ($this->update->typeQuery === 'edited_message') {
             if (!empty($this->update->rawData['edited_message']['photo']) ||
@@ -29,9 +29,10 @@ class TgEditMessageService extends FromTgEditService
                 $this->editMessageText();
             }
 
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            return '';
         }
+
+        throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
     }
 
     /**
