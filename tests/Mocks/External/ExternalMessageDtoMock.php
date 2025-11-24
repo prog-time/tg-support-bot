@@ -3,11 +3,13 @@
 namespace Tests\Mocks\External;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TelegramUpdateDto;
 use Illuminate\Support\Facades\Request;
 
-class ExternalMessageDtoMock extends TelegramUpdateDto
+class ExternalMessageDtoMock
 {
+    /**
+     * @return array
+     */
     public static function getDtoParams(): array
     {
         return [
@@ -19,6 +21,11 @@ class ExternalMessageDtoMock extends TelegramUpdateDto
         ];
     }
 
+    /**
+     * @param array $dtoParams
+     *
+     * @return ExternalMessageDto
+     */
     public static function getDto(array $dtoParams = []): ExternalMessageDto
     {
         if (empty($dtoParams)) {

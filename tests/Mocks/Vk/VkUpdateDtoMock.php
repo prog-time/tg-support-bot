@@ -2,12 +2,14 @@
 
 namespace Tests\Mocks\Vk;
 
-use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkUpdateDto;
 use Illuminate\Support\Facades\Request;
 
-class VkUpdateDtoMock extends TelegramUpdateDto
+class VkUpdateDtoMock
 {
+    /**
+     * @return array
+     */
     public static function getDtoParams(): array
     {
         return [
@@ -53,6 +55,11 @@ class VkUpdateDtoMock extends TelegramUpdateDto
         ];
     }
 
+    /**
+     * @param array $dtoParams
+     *
+     * @return VkUpdateDto
+     */
     public static function getDto(array $dtoParams = []): VkUpdateDto
     {
         if (empty($dtoParams)) {

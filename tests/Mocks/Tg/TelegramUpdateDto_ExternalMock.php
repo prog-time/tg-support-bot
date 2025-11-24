@@ -2,11 +2,12 @@
 
 namespace Tests\Mocks\Tg;
 
+use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
 use Illuminate\Support\Facades\Request;
 
-class TelegramUpdateDtoMock extends TelegramUpdateDto
+class TelegramUpdateDto_ExternalMock
 {
     /**
      * @param BotUser|null $botUser
@@ -15,6 +16,15 @@ class TelegramUpdateDtoMock extends TelegramUpdateDto
      */
     public static function getDtoParams(?BotUser $botUser = null): array
     {
+        if (!$botUser) {
+            $botUser = (new BotUser())->getExternalBotUser(ExternalMessageDto::from([
+                'source' => config('testing.external.source'),
+                'external_id' => config('testing.external.external_id'),
+                'message_id' => time(),
+                'text' => 'Тестовое сообщение',
+            ]));
+        }
+
         return [
             'update_id' => time(),
             'message' => [
@@ -28,14 +38,15 @@ class TelegramUpdateDtoMock extends TelegramUpdateDto
                     'language_code' => 'ru',
                 ],
                 'chat' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'type' => 'private',
+                    'id' => config('testing.tg_group.chat_id'),
+                    'title' => 'Prog-Time | Чаты',
+                    'is_forum' => true,
+                    'type' => 'supergroup',
                 ],
                 'date' => time(),
+                'message_thread_id' => $botUser->topic_id,
                 'text' => 'Тестовое сообщение',
+                'is_topic_message' => true,
             ],
         ];
     }

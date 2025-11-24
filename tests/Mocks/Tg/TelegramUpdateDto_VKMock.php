@@ -8,9 +8,16 @@ use Illuminate\Support\Facades\Request;
 
 class TelegramUpdateDto_VKMock extends TelegramUpdateDto
 {
-    public static function getDtoParams(): array
+    /**
+     * @param BotUser|null $botUser
+     *
+     * @return array
+     */
+    public static function getDtoParams(?BotUser $botUser = null): array
     {
-        $botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        if (!$botUser) {
+            $botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        }
 
         return [
             'update_id' => time(),
@@ -38,6 +45,11 @@ class TelegramUpdateDto_VKMock extends TelegramUpdateDto
         ];
     }
 
+    /**
+     * @param array $dtoParams
+     *
+     * @return TelegramUpdateDto
+     */
     public static function getDto(array $dtoParams = []): TelegramUpdateDto
     {
         if (empty($dtoParams)) {
