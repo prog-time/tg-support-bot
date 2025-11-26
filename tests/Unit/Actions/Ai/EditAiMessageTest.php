@@ -3,11 +3,16 @@
 namespace Tests\Unit\Actions\Ai;
 
 use App\Actions\Ai\EditAiMessage;
-use App\Actions\Telegram\SendAiAnswerMessage;
-use App\Helpers\AiHelper;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
+use App\Models\AiMessage;
 use App\Models\BotUser;
+use App\Models\Message;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\TelegramUpdate_AiAcceptDtoMock;
+use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
+use Tests\TestCase;
 
-class EditAiMessageTest extends AiActionTest
+class EditAiMessageTest extends TestCase
 {
     private BotUser $botUser;
 
@@ -15,43 +20,61 @@ class EditAiMessageTest extends AiActionTest
     {
         parent::setUp();
 
-        $this->botUser = $this->botTestUser();
+        Message::truncate();
+        Queue::fake();
+
+        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+
+        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
     }
 
     public function test_edit_ai_message(): void
     {
-        // Отправка команды /ai_generate
-        $testMessage = 'Напиши приветствие';
-        $resultGenerateMessage = $this->sendGenerateAiMessage($testMessage);
+        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+        $aiTextMessage = 'Тестовое сообщение от AI';
+        $managerTextMessage = 'Сообщение от менеджера';
 
-        $dto = $this->createDto($resultGenerateMessage->message_id);
-        $resultAiQuery = (new SendAiAnswerMessage())->execute($dto);
+        $messageData = Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'message_type' => 'outgoing',
+            'platform' => 'telegram',
+            'from_id' => time(),
+            'to_id' => time(),
+        ]);
 
-        $this->createAiMessage($this->botUser->id, $dto->messageId);
-        // -------
+        AiMessage::create([
+            'bot_user_id' => $this->botUser->id,
+            'message_id' => $messageData->id,
+            'text_ai' => $aiTextMessage,
+            'text_manager' => $managerTextMessage,
+        ]);
 
         // Создание сообщения с командой на редактирование
         $editMessage = 'Новый ответ от AI';
         $usernameBot = config('traffic_source.settings.telegram_ai.username');
-        $newMessage = "@{$usernameBot} ai_message_edit_{$resultAiQuery->message_id} \n {$editMessage}";
+        $newMessage = "@{$usernameBot} ai_message_edit_{$messageData->id} \n {$editMessage}";
 
-        $resultGenerateMessage = $this->sendGenerateAiMessage($newMessage);
-
-        $dto = $this->createDto($resultGenerateMessage->message_id, null, $newMessage);
+        $dataParams = TelegramUpdateDto_GroupMock::getDtoParams();
+        $dataParams['message']['text'] = $newMessage;
+        $dto = TelegramUpdate_AiAcceptDtoMock::getDto($dataParams);
         // -------
 
         // Редактирования сообщения
-        $resultAiQuery = (new EditAiMessage())->execute($dto);
+        (new EditAiMessage())->execute($dto);
         // -------
 
-        $this->assertTrue($resultAiQuery->ok);
-        $this->assertEquals($resultAiQuery->response_code, 200);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(2, $pushed);
 
-        $this->assertTrue(str_contains($resultAiQuery->text, $editMessage));
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $firstJob->queryParams->chat_id);
+        $this->assertEquals('editMessageText', $firstJob->queryParams->methodQuery);
 
-        //        $this->assertEquals(
-        //            $resultAiQuery->rawData['result']['reply_markup'],
-        //            AiHelper::preparedAiReplyMarkup($resultAiQuery->message_id, $resultAiQuery->text)
-        //        );
+        $secondJob = $pushed[1]['job'];
+        $this->assertEquals($this->botUser->id, $secondJob->botUserId);
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $secondJob->queryParams->chat_id);
+        $this->assertEquals('deleteMessage', $secondJob->queryParams->methodQuery);
     }
 }
