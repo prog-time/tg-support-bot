@@ -3,10 +3,11 @@
 namespace App\Actions\Ai;
 
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\AiMessage;
 use App\Models\BotUser;
-use App\TelegramBot\TelegramMethods;
 use phpDocumentor\Reflection\Exception;
 
 class AiCancelMessage extends AiAction
@@ -16,9 +17,9 @@ class AiCancelMessage extends AiAction
      *
      * @param TelegramUpdateDto $update
      *
-     * @return bool
+     * @return void
      */
-    public function execute(TelegramUpdateDto $update): bool
+    public function execute(TelegramUpdateDto $update): void
     {
         try {
             if (empty(config('traffic_source.settings.telegram_ai.token'))) {
@@ -35,22 +36,23 @@ class AiCancelMessage extends AiAction
                 throw new Exception('Сообщение не найдено в БД!', 1);
             }
 
-            $result = TelegramMethods::sendQueryTelegram('deleteMessage', [
-                'chat_id' => $update->chatId,
-                'message_thread_id' => $update->messageThreadId,
-                'message_id' => $messageData->message_id,
-            ], config('traffic_source.settings.telegram_ai.token'));
-
-            if ($result->response_code !== 200) {
-                throw new Exception('Не удалось удалить сообщение!', 1);
-            }
+            SendTelegramMessageJob::dispatch(
+                $botUser->id,
+                $update,
+                TGTextMessageDto::from([
+                    'token' => config('traffic_source.settings.telegram_ai.token'),
+                    'methodQuery' => 'deleteMessage',
+                    'typeSource' => 'private',
+                    'chat_id' => $update->chatId,
+                    'message_thread_id' => $update->messageThreadId,
+                    'message_id' => $messageData->message_id,
+                ]),
+                'outgoing',
+            );
 
             AiMessage::where('message_id', $messageData->message_id)->delete();
-
-            return true;
         } catch (\Exception $e) {
             (new LokiLogger())->log('ai_error', json_encode($e->getMessage()));
-            return false;
         }
     }
 }

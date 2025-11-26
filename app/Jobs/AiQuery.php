@@ -37,8 +37,8 @@ class AiQuery implements ShouldQueue
     {
         try {
             (new SendAiAutoMessage(app(AiAssistantService::class)))->execute($this->dataHook);
-        } catch (\Throwable $e) {
-            (new LokiLogger())->log('error', $e->getMessage());
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
 
             $this->fail($e);
         }
