@@ -3,8 +3,11 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\BanMessage;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
-use App\TelegramBot\TelegramMethods;
+use App\Models\Message;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
 use Tests\TestCase;
 
 class BanMessageTest extends TestCase
@@ -15,30 +18,26 @@ class BanMessageTest extends TestCase
     {
         parent::setUp();
 
-        $this->botUser = $this->botTestUser();
+        Message::truncate();
+        Queue::fake();
 
-        TelegramMethods::sendQueryTelegram('sendMessage', [
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
-            'message_thread_id' => $this->botUser->topic_id,
-            'text' => 'Тестовое сообщение',
-        ]);
-    }
-
-    public function botTestUser(): BotUser
-    {
-        return BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
     }
 
     public function test_send_ban_message_with_correct_text(): void
     {
-        // Получаем ожидаемый текст сообщения
-        $expectedMessage = __('messages.ban_bot');
+        $dto = TelegramUpdateDto_GroupMock::getDto();
 
-        // Act
-        $result = BanMessage::execute($this->botUser->topic_id);
+        BanMessage::execute($this->botUser, $dto);
 
-        // Assert
-        $this->assertTrue($result->ok);
-        $this->assertEquals($expectedMessage, $result->text);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $firstJob->queryParams->chat_id);
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals(__('messages.ban_bot'), $firstJob->queryParams->text);
     }
 }
