@@ -8,9 +8,11 @@ use App\DTOs\Vk\VkTextMessageDto;
 use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\VkBot\VkMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
+use Tests\Mocks\Vk\Answer\VkAnswerDtoMock;
 use Tests\TestCase;
 
 class SendVkMessageJobTest extends TestCase
@@ -45,14 +47,25 @@ class SendVkMessageJobTest extends TestCase
     {
         try {
             $typeMessage = 'outgoing';
+            $textMessage = 'Тестовое сообщение';
+            $dto = VkAnswerDtoMock::getDto();
+
+            // Мокаем ответ от VK
+            $mockTelegramMethods = \Mockery::mock(VkMethods::class);
+            $mockTelegramMethods->shouldReceive('sendQueryVk')->andReturn($dto);
 
             $queryParams = VkTextMessageDto::from([
                 'methodQuery' => 'messages.send',
                 'peer_id' => $this->botUser->chat_id,
-                'message' => 'Тестовое сообщение',
+                'message' => $textMessage,
             ]);
 
-            $job = new SendVkMessageJob($this->botUser, $this->dto, $queryParams);
+            $job = new SendVkMessageJob(
+                $this->botUser->id,
+                $this->dto,
+                $queryParams,
+                $mockTelegramMethods
+            );
             $job->handle();
 
             $this->assertDatabaseHas('messages', [

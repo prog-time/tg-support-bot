@@ -6,12 +6,14 @@ use App\Actions\Telegram\BanMessage;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TGTextMessageDto;
+use App\Jobs\TopicCreateJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgTopicService;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class SendExternalTelegramMessageJob extends AbstractSendMessageJob
@@ -19,8 +21,6 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
     public int $tries = 5;
 
     public int $timeout = 20;
-
-    public BotUser $botUser;
 
     public mixed $updateDto;
 
@@ -30,23 +30,32 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
 
     public TgTopicService $tgTopicService;
 
+    public int $botUserId;
+
+    private mixed $telegramMethods;
+
     public function __construct(
-        BotUser $botUser,
+        int $botUserId,
         ExternalMessageDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
+        mixed $telegramMethods = null,
     ) {
         $this->tgTopicService = new TgTopicService();
 
-        $this->botUser = $botUser;
+        $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
         $this->typeMessage = $typeMessage;
+
+        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
     public function handle(): void
     {
         try {
+            $botUser = BotUser::find($this->botUserId);
+
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
@@ -68,7 +77,11 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                 );
             }
 
-            $response = TelegramMethods::sendQueryTelegram(
+            if ($botUser->topic_id && $this->typeMessage === 'incoming') {
+                $params['message_thread_id'] = $botUser->topic_id;
+            }
+
+            $response = $this->telegramMethods->sendQueryTelegram(
                 $methodQuery,
                 $params,
                 $this->queryParams->token
@@ -77,12 +90,12 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
             // ✅ Успешная отправка
             if ($response->ok === true) {
                 if ($methodQuery === 'editMessageText' || $methodQuery === 'editMessageCaption') {
-                    $this->editMessage($response);
-                    $this->updateTopic();
+                    $this->editMessage($botUser, $response);
+                    $this->updateTopic($botUser, $this->typeMessage);
                     return;
                 } else {
-                    $this->saveMessage($response);
-                    $this->updateTopic();
+                    $this->saveMessage($botUser, $response);
+                    $this->updateTopic($botUser, $this->typeMessage);
                     return;
                 }
             }
@@ -126,14 +139,17 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
 
             // ✅ 400 TOPIC_NOT_FOUND
             if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND') {
-                (new LokiLogger())->log('warning', [
-                    'message' => 'TOPIC_NOT_FOUND → создаём новую тему',
-                    'bot_user_id' => $this->botUser->id,
-                ]);
+                Log::warning('TOPIC_NOT_FOUND → создаём новую тему');
 
-                $newThreadId = $this->botUser->saveNewTopic();
-                $this->queryParams->message_thread_id = $newThreadId;
-                $this->release(1);
+                TopicCreateJob::withChain([
+                    new SendTelegramMessageJob(
+                        $this->botUserId,
+                        $this->updateDto,
+                        $this->queryParams,
+                        $this->typeMessage
+                    ),
+                ])->dispatch($this->botUserId, $this->updateDto);
+
                 return;
             }
 
@@ -144,11 +160,11 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                     'bot_user_id' => $this->botUser->id,
                 ]);
 
-                BanMessage::execute($this->botUser->topic_id);
+                BanMessage::execute($this->botUser, $this->updateDto);
                 return;
             }
 
-            throw new \Exception('SendTelegramMessageJob: неизвестная ошибка', 1);
+            throw new \Exception('SendExternalTelegramMessageJob: неизвестная ошибка', 1);
         } catch (\Exception $e) {
             (new LokiLogger())->logException($e);
         }
@@ -157,19 +173,20 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
     /**
      * Сохраняем сообщение в базу после успешной отправки
      *
-     * @param mixed $resultQuery
+     * @param BotUser $botUser
+     * @param mixed   $resultQuery
      *
      * @return void
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
         if (!$resultQuery instanceof TelegramAnswerDto) {
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
         $message = Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->externalUser->source,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->externalUser->source,
             'message_type' => 'incoming',
             'from_id' => time(),
             'to_id' => $resultQuery->message_id,
@@ -187,15 +204,15 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
      *
      * @return void
      */
-    protected function editMessage(mixed $resultQuery): void
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
         if (!$resultQuery instanceof TelegramAnswerDto) {
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
         $message = Message::where([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->externalUser->source,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->externalUser->source,
             'message_type' => 'incoming',
             'to_id' => $resultQuery->message_id,
         ])->first();

@@ -6,6 +6,7 @@ use App\Actions\Telegram\BanMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
+use App\Jobs\TopicCreateJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\Message;
@@ -19,8 +20,6 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
 
     public int $timeout = 20;
 
-    public BotUser $botUser;
-
     public mixed $updateDto;
 
     public mixed $queryParams;
@@ -31,27 +30,40 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
 
     public string $typeSource;
 
+    private mixed $telegramMethods;
+
+    public int $botUserId;
+
     public function __construct(
-        BotUser $botUser,
+        int $botUserId,
         VkUpdateDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
+        mixed $telegramMethods = null,
     ) {
         $this->tgTopicService = new TgTopicService();
 
-        $this->botUser = $botUser;
+        $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
         $this->typeMessage = $typeMessage;
+
+        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
     public function handle(): void
     {
         try {
+            $botUser = BotUser::find($this->botUserId);
+
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
-            $response = TelegramMethods::sendQueryTelegram(
+            if ($botUser->topic_id && $this->typeMessage === 'incoming') {
+                $params['message_thread_id'] = $botUser->topic_id;
+            }
+
+            $response = $this->telegramMethods->sendQueryTelegram(
                 $methodQuery,
                 $params,
                 $this->queryParams->token
@@ -60,14 +72,16 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
             // ✅ Успешная отправка
             if ($response->ok === true) {
                 if ($methodQuery !== 'editMessageText' && $methodQuery !== 'editMessageCaption') {
-                    $this->saveMessage($response);
-                    $this->updateTopic();
+                    $this->saveMessage($botUser, $response);
+                    $this->updateTopic($botUser, $this->typeMessage);
                     return;
                 }
             }
 
             // ✅ 429 Too Many Requests
             if ($response->response_code === 429) {
+                dump($response);
+
                 $retryAfter = $response->parameters->retry_after ?? 3;
                 Log::warning("429 Too Many Requests. Повтор через {$retryAfter} сек.");
                 $this->release($retryAfter);
@@ -85,21 +99,28 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
             // ✅ 400 TOPIC_NOT_FOUND
             if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND') {
                 Log::warning('TOPIC_NOT_FOUND → создаём новую тему');
-                $newThreadId = $this->botUser->saveNewTopic();
-                $this->queryParams->message_thread_id = $newThreadId;
-                $this->release(1);
+
+                TopicCreateJob::withChain([
+                    new SendTelegramMessageJob(
+                        $this->botUserId,
+                        $this->updateDto,
+                        $this->queryParams,
+                        $this->typeMessage
+                    ),
+                ])->dispatch($this->botUserId, $this->updateDto);
+
                 return;
             }
 
             // ✅ 403 — пользователь заблокировал бота
             if ($response->response_code === 403) {
                 Log::warning('403 — пользователь заблокировал бота');
-                BanMessage::execute($this->botUser->topic_id);
+                BanMessage::execute($this->botUser, $this->updateDto);
                 return;
             }
 
             // ✅ Неизвестная ошибка
-            Log::error('SendTelegramMessageJob: неизвестная ошибка', [
+            Log::error('SendVkTelegramMessageJob: неизвестная ошибка', [
                 'response' => (array)$response,
             ]);
         } catch (\Exception $e) {
@@ -114,15 +135,15 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
      *
      * @return void
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
         if (!$resultQuery instanceof TelegramAnswerDto) {
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
         Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->platform,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->id,
             'to_id' => $resultQuery->message_id,
@@ -136,7 +157,7 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
      *
      * @return void
      */
-    protected function editMessage(mixed $resultQuery): void
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
         //
     }

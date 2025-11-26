@@ -6,6 +6,7 @@ use App\Actions\Telegram\BanMessage;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
+use App\Jobs\TopicCreateJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\Message;
@@ -31,35 +32,40 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
 
     public string $typeSource;
 
+    private mixed $telegramMethods;
+
+    public int $botUserId;
+
     public function __construct(
-        BotUser $botUser,
+        int $botUserId,
         TelegramUpdateDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
+        mixed $telegramMethods = null,
     ) {
         $this->tgTopicService = new TgTopicService();
 
-        $this->botUser = $botUser;
+        $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
         $this->typeMessage = $typeMessage;
+
+        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
     public function handle(): void
     {
         try {
+            $botUser = BotUser::find($this->botUserId);
+
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
-            if (empty($params['message_thread_id']) && $this->typeMessage === 'incoming') {
-                $params['message_thread_id'] = $this->botUser->topic_id;
-
-                if (empty($params['message_thread_id'])) {
-                    throw new \Exception('Ошибка! Отсутствует topic_id при запросах в группу!');
-                }
+            if ($botUser->topic_id && $this->typeMessage === 'incoming') {
+                $params['message_thread_id'] = $botUser->topic_id;
             }
 
-            $response = TelegramMethods::sendQueryTelegram(
+            $response = $this->telegramMethods->sendQueryTelegram(
                 $methodQuery,
                 $params,
                 $this->queryParams->token
@@ -68,8 +74,8 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
             // ✅ Успешная отправка
             if ($response->ok === true) {
                 if ($methodQuery !== 'editMessageText' && $methodQuery !== 'editMessageCaption') {
-                    $this->saveMessage($response);
-                    $this->updateTopic();
+                    $this->saveMessage($botUser, $response);
+                    $this->updateTopic($botUser, $this->typeMessage);
                     return;
                 }
             }
@@ -93,16 +99,23 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
             // ✅ 400 TOPIC_NOT_FOUND
             if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND') {
                 Log::warning('TOPIC_NOT_FOUND → создаём новую тему');
-                $newThreadId = $this->botUser->saveNewTopic();
-                $this->queryParams->message_thread_id = $newThreadId;
-                $this->release(1);
+
+                TopicCreateJob::withChain([
+                    new SendTelegramMessageJob(
+                        $this->botUserId,
+                        $this->updateDto,
+                        $this->queryParams,
+                        $this->typeMessage
+                    ),
+                ])->dispatch($this->botUserId, $this->updateDto);
+
                 return;
             }
 
             // ✅ 403 — пользователь заблокировал бота
             if ($response->response_code === 403) {
                 Log::warning('403 — пользователь заблокировал бота');
-                BanMessage::execute($this->botUser->topic_id);
+                BanMessage::execute($botUser, $this->updateDto);
                 return;
             }
 
@@ -118,19 +131,20 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
     /**
      * Сохраняем сообщение в базу после успешной отправки
      *
-     * @param mixed $resultQuery
+     * @param BotUser $botUser
+     * @param mixed   $resultQuery
      *
      * @return void
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
         if (!$resultQuery instanceof TelegramAnswerDto) {
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
         Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->platform,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->messageId,
             'to_id' => $resultQuery->message_id,
@@ -144,7 +158,7 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
      *
      * @return void
      */
-    protected function editMessage(mixed $resultQuery): void
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
         //
     }

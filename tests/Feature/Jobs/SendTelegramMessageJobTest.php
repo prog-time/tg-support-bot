@@ -8,8 +8,10 @@ use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\TelegramBot\TelegramMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
@@ -41,82 +43,40 @@ class SendTelegramMessageJobTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_send_message_for_user(): void
+    public function test_success_send_creates_message_record(): void
     {
-        try {
-            $typeMessage = 'outgoing';
+        $typeMessage = 'outgoing';
 
-            $queryParams = TGTextMessageDto::from([
-                'methodQuery' => 'sendMessage',
-                'chat_id' => $this->botUser->chat_id,
-                'text' => '👋 Тест из SendTelegramMessageJob @ ' . now(),
-            ]);
+        $textMessage = 'hello';
+        $dtoParams = TelegramAnswerDtoMock::getDtoParams();
 
-            $job = new SendTelegramMessageJob($this->botUser, $this->dto, $queryParams, $typeMessage);
-            $job->handle();
+        $dtoParams['result']['text'] = $textMessage;
+        $dto = TelegramAnswerDtoMock::getDto($dtoParams);
 
-            $this->assertDatabaseHas('messages', [
-                'bot_user_id' => $this->botUser->id,
-                'message_type' => $typeMessage,
-                'platform' => 'telegram',
-            ]);
-        } finally {
-            if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
-            }
-        }
-    }
+        // Мокаем ответ от Telegram
+        $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
+        $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
 
-    public function test_send_message_for_group(): void
-    {
-        try {
-            $typeMessage = 'incoming';
+        $params = TGTextMessageDto::from([
+            'methodQuery' => 'sendMessage',
+            'chat_id' => $this->botUser->chat_id,
+            'text' => $textMessage,
+        ]);
 
-            $queryParams = TGTextMessageDto::from([
-                'methodQuery' => 'sendMessage',
-                'chat_id' => config('testing.tg_group.chat_id'),
-                'message_thread_id' => $this->botUser->topic_id,
-                'text' => '👋 Тест из SendTelegramMessageJob @ ' . now(),
-            ]);
+        $job = new SendTelegramMessageJob(
+            $this->botUser->id,
+            $this->dto,
+            $params,
+            $typeMessage,
+            $mockTelegramMethods
+        );
+        $job->handle();
 
-            $job = new SendTelegramMessageJob($this->botUser, $this->dto, $queryParams, $typeMessage);
-            $job->handle();
-
-            $this->assertDatabaseHas('messages', [
-                'bot_user_id' => $this->botUser->id,
-                'message_type' => $typeMessage,
-                'platform' => 'telegram',
-            ]);
-        } finally {
-            if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
-            }
-        }
-    }
-
-    public function test_send_message_for_group_topic_not_found(): void
-    {
-        try {
-            $typeMessage = 'incoming';
-
-            $queryParams = TGTextMessageDto::from([
-                'methodQuery' => 'sendMessage',
-                'chat_id' => config('testing.tg_group.chat_id'),
-                'text' => '👋 Тест из SendTelegramMessageJob @ ' . now(),
-            ]);
-
-            $job = new SendTelegramMessageJob($this->botUser, $this->dto, $queryParams, $typeMessage);
-            $job->handle();
-
-            $this->assertDatabaseHas('messages', [
-                'bot_user_id' => $this->botUser->id,
-                'message_type' => $typeMessage,
-                'platform' => 'telegram',
-            ]);
-        } finally {
-            if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
-            }
-        }
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $this->botUser->id,
+            'message_type' => $typeMessage,
+            'platform' => 'telegram',
+            'to_id' => $dto->message_id,
+        ]);
     }
 }

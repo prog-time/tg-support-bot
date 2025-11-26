@@ -9,15 +9,12 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgTopicService;
 use App\VkBot\VkMethods;
-use Illuminate\Support\Facades\DB;
 
 class SendVkMessageJob extends AbstractSendMessageJob
 {
     public int $tries = 5;
 
     public int $timeout = 20;
-
-    public BotUser $botUser;
 
     public mixed $updateDto;
 
@@ -27,38 +24,45 @@ class SendVkMessageJob extends AbstractSendMessageJob
 
     public string $typeMessage = 'outgoing';
 
+    private mixed $vkMethods;
+
+    public int $botUserId;
+
     public function __construct(
-        BotUser $botUser,
+        int $botUserId,
         TelegramUpdateDto $updateDto,
         VkTextMessageDto $queryParams,
+        mixed $vkMethods = null,
     ) {
         $this->tgTopicService = new TgTopicService();
 
-        $this->botUser = $botUser;
+        $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
+
+        $this->vkMethods = $vkMethods ?? new VkMethods();
     }
 
     public function handle(): void
     {
         try {
-            DB::transaction(function () {
-                $methodQuery = $this->queryParams->methodQuery;
-                $dataQuery = $this->queryParams->toArray();
+            $botUser = BotUser::find($this->botUserId);
 
-                $response = VkMethods::sendQueryVk($methodQuery, $dataQuery);
+            $methodQuery = $this->queryParams->methodQuery;
+            $dataQuery = $this->queryParams->toArray();
 
-                // ✅ Успешная отправка
-                if ($response->response_code === 200) {
-                    $this->saveMessage($response);
-                    $this->updateTopic();
-                    return;
-                } elseif (!empty($response->error_message)) {
-                    throw new \Exception($response->error_message, 1);
-                }
+            $response = $this->vkMethods->sendQueryVk($methodQuery, $dataQuery);
 
-                throw new \Exception('SendTelegramMessageJob: неизвестная ошибка', 1);
-            });
+            // ✅ Успешная отправка
+            if ($response->response_code === 200) {
+                $this->saveMessage($botUser, $response);
+                $this->updateTopic($botUser, $this->typeMessage);
+                return;
+            } elseif (!empty($response->error_message)) {
+                throw new \Exception($response->error_message, 1);
+            }
+
+            throw new \Exception('SendVkMessageJob: неизвестная ошибка', 1);
         } catch (\Exception $e) {
             (new LokiLogger())->logException($e);
         }
@@ -67,15 +71,16 @@ class SendVkMessageJob extends AbstractSendMessageJob
     /**
      * Сохраняем сообщение в базу после успешной отправки
      *
-     * @param mixed $resultQuery
+     * @param BotUser $botUser
+     * @param mixed   $resultQuery
      *
      * @return void
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
         Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->platform,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->messageId,
             'to_id' => $resultQuery->response,
@@ -89,7 +94,7 @@ class SendVkMessageJob extends AbstractSendMessageJob
      *
      * @return void
      */
-    protected function editMessage(mixed $resultQuery): void
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
         //
     }
