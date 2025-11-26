@@ -39,7 +39,7 @@ class SendStartMessageTest extends TestCase
         $job = $pushed[0]['job'];
 
         // Assert
-        $this->assertEquals($botUser->id, $job->botUser->id);
+        $this->assertEquals($botUser->id, $job->botUserId);
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
     }
 }

@@ -39,7 +39,7 @@ class SendStartMessage
             $botUser = BotUser::getTelegramUserData($update);
 
             SendTelegramMessageJob::dispatch(
-                $botUser,
+                $botUser->id,
                 $update,
                 $messageParamsDTO,
                 'outgoing'
