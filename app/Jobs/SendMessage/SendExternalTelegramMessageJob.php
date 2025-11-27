@@ -148,7 +148,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                         $this->queryParams,
                         $this->typeMessage
                     ),
-                ])->dispatch($this->botUserId, $this->updateDto);
+                ])->dispatch($this->botUserId);
 
                 return;
             }
