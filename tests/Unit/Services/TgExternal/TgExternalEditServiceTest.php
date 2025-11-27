@@ -7,10 +7,10 @@ use App\Models\BotUser;
 use App\Models\ExternalMessage;
 use App\Models\Message;
 use App\Services\TgExternal\TgExternalEditService;
-use App\Services\TgExternal\TgExternalMessageService;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\External\ExternalMessageDtoMock;
 use Tests\Mocks\Tg\TelegramUpdateDto_ExternalMock;
-use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
 use Tests\TestCase;
 
 class TgExternalEditServiceTest extends TestCase
@@ -25,28 +25,34 @@ class TgExternalEditServiceTest extends TestCase
 
         ExternalMessage::truncate();
         Message::truncate();
+
+        Artisan::call('app:generate-token', [
+            'source' => config('testing.external.source'),
+            'hook_url' => config('testing.external.hook_url'),
+        ]);
     }
 
     public function test_edit_text_message(): void
     {
-        // Новое сообщение из группы
-        $newGroupMessageDto = TelegramUpdateDto_ExternalMock::getDtoParams();
-        $groupMessageDto = TelegramUpdateDto_GroupMock::getDto($newGroupMessageDto);
+        $messageDto = ExternalMessageDtoMock::getDto();
+        $this->botUser = (new BotUser())->getExternalBotUser($messageDto);
 
-        $this->botUser = (new BotUser())->getTelegramUserData($groupMessageDto);
+        $this->botUser->topic_id = time();
+        $this->botUser->save();
 
-        (new TgExternalMessageService($groupMessageDto))->handleUpdate();
-
-        $whereMessageParams = [
+        $newGroupMessageData = Message::create([
             'bot_user_id' => $this->botUser->id,
             'message_type' => 'outgoing',
             'platform' => $this->botUser->platform,
-        ];
-        $this->assertDatabaseHas('messages', $whereMessageParams);
+            'from_id' => time(),
+            'to_id' => time(),
+        ]);
 
-        $newGroupMessageData = Message::where($whereMessageParams)
-            ->orderBy('id', 'desc')
-            ->first();
+        $newGroupMessageData->externalMessage()->create([
+            'text' => 'Тестовое сообщение',
+            'file_id' => null,
+            'file_type' => null,
+        ]);
 
         // Изменение сообщения
         $editPayload = [
@@ -56,6 +62,7 @@ class TgExternalEditServiceTest extends TestCase
 
         $editTextMessage = 'Новый текст сообщения';
         $editPayload['edited_message']['text'] = $editTextMessage;
+        $editPayload['edited_message']['message_thread_id'] = $this->botUser->topic_id;
         $editPayload['edited_message']['message_id'] = $newGroupMessageData->from_id;
 
         $editMessageDto = TelegramUpdateDto_ExternalMock::getDto($editPayload);

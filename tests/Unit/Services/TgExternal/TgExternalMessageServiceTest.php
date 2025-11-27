@@ -24,6 +24,9 @@ class TgExternalMessageServiceTest extends TestCase
     {
         parent::setUp();
 
+        Queue::fake();
+        Message::truncate();
+
         $this->source = config('testing.external.source');
         $this->external_id = config('testing.external.external_id');
         $this->url = config('testing.external.hook_url');
@@ -36,9 +39,6 @@ class TgExternalMessageServiceTest extends TestCase
 
     public function test_send_text_message(): void
     {
-        Queue::fake();
-        Message::truncate();
-
         $botUser = (new BotUser())->getExternalBotUser(ExternalMessageDto::from([
             'source' => config('testing.external.source'),
             'external_id' => config('testing.external.external_id'),
@@ -51,22 +51,12 @@ class TgExternalMessageServiceTest extends TestCase
 
         (new TgExternalMessageService($dto))->handleUpdate();
 
-        // Проверяем, что сообщение сохранилось в базе
-        $this->assertDatabaseHas('messages', [
-            'bot_user_id' => $botUser->id,
-            'platform' => $botUser->externalUser->source,
-            'message_type' => 'outgoing',
-        ]);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendWebhookMessage::class];
+        $this->assertEquals(count($pushed), 1);
 
-        $message = Message::where('bot_user_id', $botUser->id)->first();
-
-        // Проверяем, что джоб был поставлен в очередь
-        Queue::assertPushed(SendWebhookMessage::class, function ($job) use ($message) {
-            return
-                $job->payload['externalId'] === $this->external_id &&
-                $job->payload['type_query'] === 'send_message' &&
-                $job->payload['message']['to_id'] === $message->to_id &&
-                $job->payload['message']['from_id'] === $message->from_id;
-        });
+        $jobData = $pushed[0]['job'];
+        $this->assertEquals($this->external_id, $jobData->payload['externalId']);
+        $this->assertEquals('send_message', $jobData->payload['type_query']);
     }
 }

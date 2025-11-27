@@ -21,14 +21,17 @@ class TgExternalEditService extends FromTgEditService
     {
         parent::__construct($update);
 
-        $this->messageData = Message::where([
+        $message = Message::where([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->externalUser->source,
             'message_type' => 'outgoing',
             'from_id' => $this->update->messageId,
         ])->first();
 
-        $this->messageData->externalMessage->text = $this->update->text;
+        $message->externalMessage->text = $this->update->text;
+        $message->save();
+
+        $this->messageData = $message;
     }
 
     /**

@@ -36,14 +36,10 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
-
+            $sameUser = $job->botUserId === $this->botUser->id;
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -66,14 +62,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendPhoto';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -90,14 +83,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendDocument';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -114,14 +104,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendSticker';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -139,14 +126,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendLocation';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -163,14 +147,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendVideoNote';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -187,14 +168,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendVoice';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }
@@ -214,14 +192,11 @@ class TgMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
             $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
-
-            $sameUser = $job->botUser->id === $this->botUser->id;
-            $sameTopic = $job->botUser->topic_id === $this->botUser->topic_id;
+            $sameUser = $job->botUserId === $this->botUser->id;
 
             return
                 $sameMethodQuery &&
                 $sameUser &&
-                $sameTopic &&
                 $job->updateDto === $dto;
         });
     }

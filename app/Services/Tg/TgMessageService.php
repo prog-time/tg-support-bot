@@ -44,7 +44,7 @@ class TgMessageService extends FromTgMessageService
             }
 
             SendTelegramMessageJob::dispatch(
-                $this->botUser,
+                $this->botUser->id,
                 $this->update,
                 $this->messageParamsDTO,
                 $this->typeMessage,
