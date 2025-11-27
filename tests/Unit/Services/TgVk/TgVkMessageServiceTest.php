@@ -35,7 +35,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
                 $job->queryParams->methodQuery === 'messages.send' &&
                 $job->queryParams->peer_id === $this->botUser->chat_id &&
                 $job->queryParams->message === $dto->text &&
@@ -56,7 +56,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
                 $job->queryParams->methodQuery === 'messages.send' &&
                 $job->queryParams->peer_id === $this->botUser->chat_id &&
                 !empty($job->queryParams->attachment) &&
@@ -77,7 +77,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
                 $job->queryParams->methodQuery === 'messages.send' &&
                 $job->queryParams->peer_id === $this->botUser->chat_id &&
                 !empty($job->queryParams->attachment) &&
@@ -99,7 +99,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
                 $job->queryParams->methodQuery === 'messages.send' &&
                 $job->queryParams->peer_id === $this->botUser->chat_id &&
                 $job->queryParams->message === $dto->rawData['message']['sticker']['emoji'] &&
@@ -123,7 +123,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
                 $job->queryParams->methodQuery === 'messages.send' &&
                 $job->queryParams->peer_id === $this->botUser->chat_id &&
                 !empty($job->queryParams->message) &&

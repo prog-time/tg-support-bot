@@ -22,6 +22,7 @@ class TgVkEditServiceTest extends TestCase
         parent::setUp();
 
         Queue::fake();
+        Message::truncate();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams($this->botUser)['message'];
@@ -29,26 +30,19 @@ class TgVkEditServiceTest extends TestCase
 
     public function test_edit_text_message(): void
     {
-        Message::truncate();
-
-        // Создаём новое сообщение
-        $newMessagePayload = [
-            'update_id' => time(),
-            'message' => $this->basicPayload,
-        ];
-
-        $newMessageDto = TelegramUpdateDto_VKMock::getDto($newMessagePayload);
+        // новое сообщение
+        $newMessageDto = TelegramUpdateDto_VKMock::getDto();
 
         (new TgVkMessageService($newMessageDto))->handleUpdate();
 
-        $whereMessageParams = [
+        $newMessageData = Message::create([
             'bot_user_id' => $this->botUser->id,
             'message_type' => 'outgoing',
             'platform' => 'vk',
             'from_id' => rand(),
             'to_id' => rand(),
-        ];
-        $newMessageData = Message::where($whereMessageParams)->firstOrCreate($whereMessageParams);
+        ]);
+        // ---------------
 
         // Редактируем сообщение
         $editPayload = [
@@ -73,14 +67,14 @@ class TgVkEditServiceTest extends TestCase
         $firstJob = array_shift($pushed);
         $jobData = $firstJob['job'];
         $this->assertEquals($newMessageDto->text, $jobData->updateDto->text);
-        $this->assertEquals($this->botUser->id, $jobData->botUser->id);
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
         $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
         $this->assertEquals($newMessageDto, $jobData->updateDto);
 
         // проверка редактирования сообщения
         $jobData = $pushed[0]['job'];
         $this->assertEquals($editDto->text, $jobData->updateDto->text);
-        $this->assertEquals($this->botUser->id, $jobData->botUser->id);
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
         $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
         $this->assertEquals($editDto, $jobData->updateDto);
     }

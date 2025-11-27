@@ -69,7 +69,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
@@ -95,7 +95,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
@@ -129,7 +129,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
@@ -147,7 +147,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
@@ -181,7 +181,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
@@ -199,7 +199,7 @@ class TgVkMessageService extends FromTgMessageService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );

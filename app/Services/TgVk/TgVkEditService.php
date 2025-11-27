@@ -62,7 +62,7 @@ class TgVkEditService extends FromTgEditService
         ];
 
         SendVkMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             VkTextMessageDto::from($queryParams),
         );
