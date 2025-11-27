@@ -17,9 +17,9 @@ class SendWebhookMessage implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    protected string $url;
+    public string $url;
 
-    protected array $payload;
+    public array $payload;
 
     public int $tries = 3;
 
@@ -31,6 +31,9 @@ class SendWebhookMessage implements ShouldQueue
         $this->payload = $payload;
     }
 
+    /**
+     * @return void
+     */
     public function handle(): void
     {
         try {

@@ -55,7 +55,7 @@ class VkEditService extends ToTgEditService
         $this->messageParamsDTO->message_id = $messageData->to_id;
 
         SendVkTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,
@@ -78,7 +78,7 @@ class VkEditService extends ToTgEditService
         $this->messageParamsDTO->message_id = $messageData->to_id;
 
         SendVkTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,

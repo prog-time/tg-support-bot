@@ -57,9 +57,7 @@ class ExternalMessageServiceTest extends TestCase
 
         $job = $pushed[0]['job'];
 
-        dump($job->queryParams->message_thread_id, $this->botUser->topic_id);
-
-        $this->assertEquals($this->botUser->id, $job->botUser->id);
+        $this->assertEquals($this->botUser->id, $job->botUserId);
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery, );
         $this->assertEquals('private', $job->queryParams->typeSource, );
         $this->assertEquals($job->queryParams->message_thread_id, $this->botUser->topic_id);

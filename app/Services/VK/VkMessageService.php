@@ -66,7 +66,7 @@ class VkMessageService extends ToTgMessageService
         $this->messageParamsDTO->caption = $this->update->text ?? '';
 
         SendVkTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,
@@ -83,7 +83,7 @@ class VkMessageService extends ToTgMessageService
         $this->messageParamsDTO->longitude = $this->update->geo['coordinates']['longitude'];
 
         SendVkTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,
@@ -98,7 +98,7 @@ class VkMessageService extends ToTgMessageService
         $this->messageParamsDTO->text = $this->update->text;
 
         SendVkTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,
