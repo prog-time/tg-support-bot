@@ -2,11 +2,9 @@
 
 namespace App\Models;
 
-use App\Actions\Telegram\SendContactMessage;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Logging\LokiLogger;
-use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -77,28 +75,6 @@ class BotUser extends Model
     }
 
     /**
-     * Create new TG topic
-     *
-     * @return int|null
-     */
-    public function saveNewTopic(): ?int
-    {
-        try {
-            $tgTopicService = new TgTopicService();
-            $dataTopic = $tgTopicService->createNewTgTopic($this);
-
-            $this->topic_id = $dataTopic->message_thread_id;
-            $this->save();
-
-            (new SendContactMessage())->executeByBotUser($this);
-
-            return $dataTopic->message_thread_id;
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-
-    /**
      * Get platform by chat id
      *
      * @param int $chatId
@@ -163,9 +139,6 @@ class BotUser extends Model
                         'platform' => 'telegram',
                     ]
                 );
-                if (empty($botUser->topic_id)) {
-                    $botUser->saveNewTopic();
-                }
             }
 
             return $botUser ?? null;
@@ -183,19 +156,11 @@ class BotUser extends Model
     public static function getUserByChatId(string|int $chatId, string $platform): ?BotUser
     {
         try {
-            $botUser = self::firstOrCreate(
-                [
-                    'chat_id' => $chatId,
-                ],
-                [
-                    'platform' => $platform,
-                ]
-            );
-            if (empty($botUser->topic_id)) {
-                $botUser->saveNewTopic();
-            }
-
-            return $botUser;
+            return self::firstOrCreate([
+                'chat_id' => $chatId,
+            ], [
+                'platform' => $platform,
+            ]);
         } catch (\Exception $e) {
             return null;
         }
@@ -218,16 +183,10 @@ class BotUser extends Model
                 throw new Exception('External user not found!');
             }
 
-            $botUser = BotUser::firstOrCreate([
+            return BotUser::firstOrCreate([
                 'chat_id' => $this->externalUser->id,
                 'platform' => $this->externalUser->source,
             ]);
-
-            if (empty($botUser->topic_id)) {
-                $botUser->saveNewTopic();
-            }
-
-            return $botUser;
         } catch (\Exception $e) {
             return null;
         }

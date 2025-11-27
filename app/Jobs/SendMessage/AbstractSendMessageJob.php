@@ -37,28 +37,30 @@ abstract class AbstractSendMessageJob implements ShouldQueue
     /**
      * Сохраняем сообщение в базу после успешной отправки
      *
-     * @param mixed $resultQuery
+     * @param BotUser $botUser
+     * @param mixed   $resultQuery
      */
-    abstract protected function saveMessage(mixed $resultQuery): void;
+    abstract protected function saveMessage(BotUser $botUser, mixed $resultQuery): void;
 
     /**
      * Сохраняем сообщение в базу после успешной отправки
      *
-     * @param mixed $resultQuery
+     * @param mixed   $resultQuery
+     * @param BotUser $botUser
      */
-    abstract protected function editMessage(mixed $resultQuery): void;
+    abstract protected function editMessage(BotUser $botUser, mixed $resultQuery): void;
 
     /**
      * Обновляем тему в зависимости от типа источника
      *
      * @return void
      */
-    protected function updateTopic(): void
+    protected function updateTopic(BotUser $botUser, string $typeMessage): void
     {
         $this->tgTopicService->editTgTopic(
             TelegramTopicDto::fromData([
-                'message_thread_id' => $this->botUser->topic_id,
-                'icon_custom_emoji_id' => __('icons.' . $this->typeMessage),
+                'message_thread_id' => $botUser->topic_id,
+                'icon_custom_emoji_id' => __('icons.' . $typeMessage),
             ])
         );
     }

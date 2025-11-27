@@ -85,7 +85,7 @@ class ExternalEditedMessageService extends ExternalService
         $this->messageParamsDTO->message_id = $toIdMessage;
 
         SendExternalTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,

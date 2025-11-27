@@ -39,7 +39,7 @@ class VkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkTelegramMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
 
                 $job->queryParams->methodQuery == 'sendMessage' &&
                 $job->queryParams->chat_id == $this->groupChatId &&
@@ -70,7 +70,7 @@ class VkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkTelegramMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
 
                 $job->queryParams->methodQuery == 'sendDocument' &&
                 $job->queryParams->chat_id == $this->groupChatId &&
@@ -100,7 +100,7 @@ class VkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkTelegramMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
 
                 $job->queryParams->methodQuery == 'sendDocument' &&
                 $job->queryParams->chat_id == $this->groupChatId &&
@@ -131,7 +131,7 @@ class VkMessageServiceTest extends TestCase
 
         Queue::assertPushed(SendVkTelegramMessageJob::class, function ($job) use ($dto) {
             return
-                $job->botUser->id === $this->botUser->id &&
+                $job->botUserId === $this->botUser->id &&
 
                 $job->queryParams->methodQuery == 'sendMessage' &&
                 $job->queryParams->chat_id == $this->groupChatId &&

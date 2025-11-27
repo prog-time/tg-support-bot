@@ -48,7 +48,7 @@ class ExternalFileService extends ExternalService
         $this->update->uploaded_file = null;
 
         SendExternalTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             'incoming',

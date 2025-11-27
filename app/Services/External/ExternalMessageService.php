@@ -47,7 +47,7 @@ class ExternalMessageService extends ExternalService
         $this->messageParamsDTO->text = $this->update->text;
 
         SendExternalTelegramMessageJob::dispatch(
-            $this->botUser,
+            $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
             $this->typeMessage,
