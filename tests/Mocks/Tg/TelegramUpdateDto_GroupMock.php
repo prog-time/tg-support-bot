@@ -3,12 +3,15 @@
 namespace Tests\Mocks\Tg;
 
 use App\DTOs\TelegramUpdateDto;
+use App\Models\BotUser;
 use Illuminate\Support\Facades\Request;
 
 class TelegramUpdateDto_GroupMock extends TelegramUpdateDto
 {
     public static function getDtoParams(): array
     {
+        $botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+
         return [
             'update_id' => time(),
             'message' => [
@@ -30,7 +33,7 @@ class TelegramUpdateDto_GroupMock extends TelegramUpdateDto
                 'date' => time(),
                 'edit_date' => time(),
                 'text' => 'Тестовое сообщение',
-                'message_thread_id' => 0,
+                'message_thread_id' => $botUser->topic_id,
             ],
         ];
     }
