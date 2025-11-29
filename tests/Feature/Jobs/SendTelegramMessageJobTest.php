@@ -6,6 +6,7 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
+use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -32,6 +33,11 @@ class SendTelegramMessageJobTest extends TestCase
 
         $this->dto = TelegramUpdateDtoMock::getDto();
         $this->botUser = BotUser::getTelegramUserData($this->dto);
+
+        $jobTopicCreate = new TopicCreateJob(
+            $this->botUser->id,
+        );
+        $jobTopicCreate->handle();
     }
 
     protected function tearDown(): void
