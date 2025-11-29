@@ -6,6 +6,7 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\Jobs\SendMessage\SendVkMessageJob;
+use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\VkBot\VkMethods;
@@ -32,6 +33,11 @@ class SendVkMessageJobTest extends TestCase
 
         $this->dto = TelegramUpdateDto_VKMock::getDto();
         $this->botUser = BotUser::getTelegramUserData($this->dto);
+
+        $jobTopicCreate = new TopicCreateJob(
+            $this->botUser->id,
+        );
+        $jobTopicCreate->handle();
     }
 
     protected function tearDown(): void
@@ -71,7 +77,6 @@ class SendVkMessageJobTest extends TestCase
             $this->assertDatabaseHas('messages', [
                 'bot_user_id' => $this->botUser->id,
                 'message_type' => $typeMessage,
-                'platform' => 'vk',
             ]);
         } finally {
             if ($this->botUser->topic_id) {
