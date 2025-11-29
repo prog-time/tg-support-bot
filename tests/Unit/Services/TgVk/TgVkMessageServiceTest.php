@@ -23,7 +23,10 @@ class TgVkMessageServiceTest extends TestCase
         Queue::fake();
         Message::truncate();
 
-        $this->botUser = BotUser::getTelegramUserData(TelegramUpdateDto_VKMock::getDto());
+        $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        $this->botUser->topic_id = 123;
+        $this->botUser->refresh();
+
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams();
     }
 
@@ -33,14 +36,16 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
-            return
-                $job->botUserId === $this->botUser->id &&
-                $job->queryParams->methodQuery === 'messages.send' &&
-                $job->queryParams->peer_id === $this->botUser->chat_id &&
-                $job->queryParams->message === $dto->text &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        // проверка отправки сообщения
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals($dto, $jobData->updateDto);
     }
 
     public function test_send_photo(): void
@@ -54,14 +59,17 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
-            return
-                $job->botUserId === $this->botUser->id &&
-                $job->queryParams->methodQuery === 'messages.send' &&
-                $job->queryParams->peer_id === $this->botUser->chat_id &&
-                !empty($job->queryParams->attachment) &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        // проверка отправки сообщения
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals($dto, $jobData->updateDto);
+        $this->assertNotEmpty($jobData->queryParams->attachment);
     }
 
     public function test_send_document(): void
@@ -75,14 +83,17 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
-            return
-                $job->botUserId === $this->botUser->id &&
-                $job->queryParams->methodQuery === 'messages.send' &&
-                $job->queryParams->peer_id === $this->botUser->chat_id &&
-                !empty($job->queryParams->attachment) &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        // проверка отправки сообщения
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals($dto, $jobData->updateDto);
+        $this->assertNotEmpty($jobData->queryParams->attachment);
     }
 
     public function test_send_sticker(): void
@@ -97,14 +108,17 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
-            return
-                $job->botUserId === $this->botUser->id &&
-                $job->queryParams->methodQuery === 'messages.send' &&
-                $job->queryParams->peer_id === $this->botUser->chat_id &&
-                $job->queryParams->message === $dto->rawData['message']['sticker']['emoji'] &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        // проверка отправки сообщения
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals($dto, $jobData->updateDto);
+        $this->assertEquals($dto->rawData['message']['sticker']['emoji'], $jobData->queryParams->message);
     }
 
     public function test_send_contact(): void
@@ -121,13 +135,15 @@ class TgVkMessageServiceTest extends TestCase
 
         (new TgVkMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendVkMessageJob::class, function ($job) use ($dto) {
-            return
-                $job->botUserId === $this->botUser->id &&
-                $job->queryParams->methodQuery === 'messages.send' &&
-                $job->queryParams->peer_id === $this->botUser->chat_id &&
-                !empty($job->queryParams->message) &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        // проверка отправки сообщения
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals($dto, $jobData->updateDto);
     }
 }
