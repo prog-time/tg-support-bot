@@ -6,6 +6,7 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
+use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -30,6 +31,13 @@ class SendExternalTelegramMessageJobTest extends TestCase
 
         $this->dto = ExternalMessageDtoMock::getDto();
         $this->botUser = (new BotUser())->getExternalBotUser($this->dto);
+
+        $jobTopicCreate = new TopicCreateJob(
+            $this->botUser->id,
+        );
+        $jobTopicCreate->handle();
+
+        $this->botUser->refresh();
     }
 
     protected function tearDown(): void

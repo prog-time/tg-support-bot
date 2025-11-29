@@ -71,8 +71,6 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
                 $this->queryParams->token
             );
 
-            dump($response);
-
             if ($response->ok === true) {
                 if ($methodQuery !== 'editMessageText' && $methodQuery !== 'editMessageCaption') {
                     $this->saveMessage($botUser, $response);
@@ -83,7 +81,6 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
                 $this->telegramResponseHandler($response);
             }
         } catch (\Exception $e) {
-            dump($e->getMessage());
             (new LokiLogger())->logException($e);
         }
     }

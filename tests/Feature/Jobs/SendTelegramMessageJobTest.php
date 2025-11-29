@@ -36,6 +36,8 @@ class SendTelegramMessageJobTest extends TestCase
             $this->botUser->id,
         );
         $jobTopicCreate->handle();
+
+        $this->botUser->refresh();
     }
 
     protected function tearDown(): void
