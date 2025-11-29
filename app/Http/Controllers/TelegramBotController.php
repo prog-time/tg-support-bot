@@ -30,8 +30,10 @@ class TelegramBotController
 
         if ($this->dataHook->typeSource === 'private') {
             $this->platform = 'telegram';
-        } else {
+        } elseif (!empty($this->dataHook->messageThreadId)) {
             $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
+        } else {
+            $this->platform = 'ignore';
         }
     }
 
@@ -74,6 +76,9 @@ class TelegramBotController
                 case 'vk':
                     $this->controllerPlatformVk();
                     break;
+
+                case 'ignore':
+                    return;
 
                 default:
                     $this->controllerExternalPlatform();
