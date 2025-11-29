@@ -30,8 +30,6 @@ class AiAcceptMessage extends AiAction
                 throw new Exception('Пользователь не найден', 1);
             }
 
-            dump($botUser);
-
             $messageData = $this->getMessageDataByCallbackData($update->callbackData);
             if (empty($messageData)) {
                 throw new Exception('Сообщение не найдено в БД!', 1);
