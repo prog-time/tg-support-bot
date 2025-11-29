@@ -28,7 +28,7 @@ class BanMessageTest extends TestCase
     {
         $dto = TelegramUpdateDto_GroupMock::getDto();
 
-        BanMessage::execute($this->botUser, $dto);
+        BanMessage::execute($this->botUser->id, $dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];

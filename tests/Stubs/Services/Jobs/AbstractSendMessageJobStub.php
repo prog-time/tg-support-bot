@@ -3,6 +3,7 @@
 namespace Tests\Stubs\Services\Jobs;
 
 use App\Jobs\SendMessage\AbstractSendMessageJob;
+use App\Models\BotUser;
 
 class AbstractSendMessageJobStub extends AbstractSendMessageJob
 {
@@ -15,7 +16,7 @@ class AbstractSendMessageJobStub extends AbstractSendMessageJob
      *
      * @param mixed $resultQuery
      */
-    protected function saveMessage(mixed $resultQuery): void
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
     }
 
@@ -24,7 +25,7 @@ class AbstractSendMessageJobStub extends AbstractSendMessageJob
      *
      * @param mixed $resultQuery
      */
-    protected function editMessage(mixed $resultQuery): void
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
     }
 }

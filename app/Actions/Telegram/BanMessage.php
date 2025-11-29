@@ -9,15 +9,17 @@ use App\Models\BotUser;
 class BanMessage
 {
     /**
-     * Сообщение о том, что пользователь забанил бота
+     * Сообщение о том, что пользователь заблокировал бота
      *
-     * @param BotUser $botUser
-     * @param mixed   $update
+     * @param int   $botUserId
+     * @param mixed $update
      *
      * @return void
      */
-    public static function execute(BotUser $botUser, mixed $update): void
+    public static function execute(int $botUserId, mixed $update): void
     {
+        $botUser = BotUser::find($botUserId);
+
         SendTelegramMessageJob::dispatch(
             $botUser->id,
             $update,
