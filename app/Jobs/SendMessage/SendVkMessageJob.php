@@ -7,7 +7,6 @@ use App\DTOs\Vk\VkTextMessageDto;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\Services\TgTopicService;
 use App\VkBot\VkMethods;
 
 class SendVkMessageJob extends AbstractSendMessageJob
@@ -16,17 +15,15 @@ class SendVkMessageJob extends AbstractSendMessageJob
 
     public int $timeout = 20;
 
+    public int $botUserId;
+
     public mixed $updateDto;
 
     public mixed $queryParams;
 
-    public TgTopicService $tgTopicService;
-
     public string $typeMessage = 'outgoing';
 
     private mixed $vkMethods;
-
-    public int $botUserId;
 
     public function __construct(
         int $botUserId,
@@ -34,8 +31,6 @@ class SendVkMessageJob extends AbstractSendMessageJob
         VkTextMessageDto $queryParams,
         mixed $vkMethods = null,
     ) {
-        $this->tgTopicService = new TgTopicService();
-
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
@@ -53,7 +48,6 @@ class SendVkMessageJob extends AbstractSendMessageJob
 
             $response = $this->vkMethods->sendQueryVk($methodQuery, $dataQuery);
 
-            // ✅ Успешная отправка
             if ($response->response_code === 200) {
                 $this->saveMessage($botUser, $response);
                 $this->updateTopic($botUser, $this->typeMessage);

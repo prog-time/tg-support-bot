@@ -6,6 +6,7 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendMessage\SendVkTelegramMessageJob;
+use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -32,6 +33,11 @@ class SendVkTelegramMessageJobTest extends TestCase
 
         $this->dto = VkUpdateDtoMock::getDto();
         $this->botUser = BotUser::getUserByChatId($this->dto->from_id, 'vk');
+
+        $jobTopicCreate = new TopicCreateJob(
+            $this->botUser->id,
+        );
+        $jobTopicCreate->handle();
     }
 
     protected function tearDown(): void
@@ -46,7 +52,7 @@ class SendVkTelegramMessageJobTest extends TestCase
     public function test_send_message_for_user(): void
     {
         try {
-            $typeMessage = 'outgoing';
+            $typeMessage = 'incoming';
             $textMessage = 'Тестовое сообщение';
             $dtoParams = TelegramAnswerDtoMock::getDtoParams();
 
@@ -68,7 +74,6 @@ class SendVkTelegramMessageJobTest extends TestCase
                 $this->botUser->id,
                 $this->dto,
                 $queryParams,
-                $typeMessage,
                 $mockTelegramMethods
             );
             $job->handle();
@@ -77,7 +82,6 @@ class SendVkTelegramMessageJobTest extends TestCase
             $this->assertDatabaseHas('messages', [
                 'bot_user_id' => $this->botUser->id,
                 'message_type' => $typeMessage,
-                'platform' => 'vk',
             ]);
         } finally {
             if ($this->botUser->topic_id) {

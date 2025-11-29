@@ -11,7 +11,6 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\VkBot\VkMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
 use Tests\Mocks\Vk\Answer\VkAnswerDtoMock;
 use Tests\TestCase;
@@ -29,7 +28,6 @@ class SendVkMessageJobTest extends TestCase
         parent::setUp();
 
         Message::truncate();
-        Queue::fake();
 
         $this->dto = TelegramUpdateDto_VKMock::getDto();
         $this->botUser = BotUser::getTelegramUserData($this->dto);

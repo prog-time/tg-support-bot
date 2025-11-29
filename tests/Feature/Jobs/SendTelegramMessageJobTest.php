@@ -11,7 +11,6 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
@@ -29,7 +28,6 @@ class SendTelegramMessageJobTest extends TestCase
         parent::setUp();
 
         Message::truncate();
-        Queue::fake();
 
         $this->dto = TelegramUpdateDtoMock::getDto();
         $this->botUser = BotUser::getTelegramUserData($this->dto);

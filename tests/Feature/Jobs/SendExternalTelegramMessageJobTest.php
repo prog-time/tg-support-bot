@@ -10,7 +10,6 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\External\ExternalMessageDtoMock;
 use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
 use Tests\TestCase;
@@ -28,7 +27,6 @@ class SendExternalTelegramMessageJobTest extends TestCase
         parent::setUp();
 
         Message::truncate();
-        Queue::fake();
 
         $this->dto = ExternalMessageDtoMock::getDto();
         $this->botUser = (new BotUser())->getExternalBotUser($this->dto);
