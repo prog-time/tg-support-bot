@@ -58,7 +58,6 @@ class TgVkEditServiceTest extends TestCase
 
         (new TgVkEditService($editDto))->handleUpdate();
 
-        // Получаем все джобы нужного класса
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
         $this->assertEquals(count($pushed), 2);

@@ -45,7 +45,6 @@ class TgVkEditService extends FromTgEditService
     {
         $dataMessage = Message::where([
             'bot_user_id' => $this->botUser->id,
-            'platform' => $this->botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->update->messageId,
         ])->first();
