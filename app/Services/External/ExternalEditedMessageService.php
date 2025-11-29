@@ -14,7 +14,7 @@ use phpDocumentor\Reflection\Exception;
 
 class ExternalEditedMessageService extends ExternalService
 {
-    protected string $typeMessage = '';
+    protected string $typeMessage = 'incoming';
 
     protected ExternalMessageDto $update;
 

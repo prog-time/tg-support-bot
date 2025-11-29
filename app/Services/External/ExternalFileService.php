@@ -9,6 +9,8 @@ use App\Logging\LokiLogger;
 
 class ExternalFileService extends ExternalService
 {
+    protected string $typeMessage = 'incoming';
+
     public function __construct(ExternalMessageDto $update)
     {
         parent::__construct($update);

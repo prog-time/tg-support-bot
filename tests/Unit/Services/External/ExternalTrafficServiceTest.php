@@ -129,7 +129,7 @@ class ExternalTrafficServiceTest extends TestCase
 
         $job = $pushed[0]['job'];
 
-        $this->assertEquals($this->botUser->id, $job->botUser->id);
+        $this->assertEquals($this->botUser->id, $job->botUserId);
         $this->assertEquals('sendDocument', $job->queryParams->methodQuery, );
         $this->assertEquals('private', $job->queryParams->typeSource, );
         $this->assertEquals($job->queryParams->message_thread_id, $this->botUser->topic_id);
