@@ -93,7 +93,6 @@ class EditAiMessage
                 'incoming',
             );
         } catch (\Exception $e) {
-            dump($e->getMessage());
             (new LokiLogger())->log('ai_error', json_encode($e->getMessage()));
         }
     }
