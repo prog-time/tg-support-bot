@@ -58,7 +58,6 @@ class VkEditService extends ToTgEditService
             $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
-            $this->typeMessage,
         );
     }
 
@@ -81,7 +80,6 @@ class VkEditService extends ToTgEditService
             $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
-            $this->typeMessage,
         );
     }
 }

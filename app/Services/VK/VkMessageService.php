@@ -69,7 +69,6 @@ class VkMessageService extends ToTgMessageService
             $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
-            $this->typeMessage,
         );
     }
 
@@ -86,7 +85,6 @@ class VkMessageService extends ToTgMessageService
             $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
-            $this->typeMessage,
         );
     }
 
@@ -101,7 +99,6 @@ class VkMessageService extends ToTgMessageService
             $this->botUser->id,
             $this->update,
             $this->messageParamsDTO,
-            $this->typeMessage,
         );
     }
 
