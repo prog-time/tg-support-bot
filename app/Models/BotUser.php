@@ -126,7 +126,7 @@ class BotUser extends Model
     public static function getTelegramUserData(TelegramUpdateDto $update): ?BotUser
     {
         try {
-            if ($update->typeSource === 'supergroup') {
+            if ($update->typeSource === 'supergroup' && !empty($update->messageThreadId)) {
                 $botUser = self::where('topic_id', $update->messageThreadId)
                     ->with('externalUser')
                     ->first();
