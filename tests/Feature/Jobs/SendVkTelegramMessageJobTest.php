@@ -6,7 +6,6 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendMessage\SendVkTelegramMessageJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -33,22 +32,8 @@ class SendVkTelegramMessageJobTest extends TestCase
 
         $this->dto = VkUpdateDtoMock::getDto();
         $this->botUser = BotUser::getUserByChatId($this->dto->from_id, 'vk');
-
-        $jobTopicCreate = new TopicCreateJob(
-            $this->botUser->id,
-        );
-        $jobTopicCreate->handle();
-
-        $this->botUser->refresh();
-    }
-
-    protected function tearDown(): void
-    {
-        if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
-        }
-
-        parent::tearDown();
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
     }
 
     public function test_send_message_for_user(): void

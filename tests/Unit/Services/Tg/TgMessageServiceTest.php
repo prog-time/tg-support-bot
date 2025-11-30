@@ -5,12 +5,15 @@ namespace Tests\Unit\Services\Tg;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
 use App\Services\Tg\TgMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class TgMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     private array $basicPayload;
@@ -22,6 +25,8 @@ class TgMessageServiceTest extends TestCase
         Queue::fake();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
 
         $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['message_thread_id'] = $this->botUser->topic_id;

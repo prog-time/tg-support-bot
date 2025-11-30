@@ -7,12 +7,15 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\Tg\TgEditMessageService;
 use App\Services\Tg\TgMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class TgEditMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $groupChatId;
@@ -25,6 +28,9 @@ class TgEditMessageServiceTest extends TestCase
         Queue::fake();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
+
         $this->groupChatId = config('testing.tg_group.chat_id');
     }
 

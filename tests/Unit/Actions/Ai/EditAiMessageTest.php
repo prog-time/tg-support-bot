@@ -7,13 +7,16 @@ use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Tests\Mocks\Tg\TelegramUpdate_AiAcceptDtoMock;
+use Tests\Mocks\Tg\TelegramUpdate_AiButtonAction;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
 use Tests\TestCase;
 
 class EditAiMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void
@@ -26,6 +29,8 @@ class EditAiMessageTest extends TestCase
         config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
 
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
     }
 
     public function test_edit_ai_message(): void
@@ -56,7 +61,7 @@ class EditAiMessageTest extends TestCase
 
         $dataParams = TelegramUpdateDto_GroupMock::getDtoParams();
         $dataParams['message']['text'] = $newMessage;
-        $dto = TelegramUpdate_AiAcceptDtoMock::getDto($dataParams);
+        $dto = TelegramUpdate_AiButtonAction::getDto($dataParams);
         // -------
 
         // Редактирования сообщения

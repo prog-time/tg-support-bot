@@ -3,14 +3,12 @@
 namespace Tests\Unit\Actions\Ai;
 
 use App\Actions\Ai\AiAcceptMessage;
-use App\Actions\Telegram\DeleteForumTopic;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
 use Illuminate\Support\Facades\Queue;
-use Tests\Mocks\Tg\TelegramUpdate_AiAcceptDtoMock;
+use Tests\Mocks\Tg\TelegramUpdate_AiButtonAction;
 use Tests\TestCase;
 
 class AiAcceptMessageTest extends TestCase
@@ -27,22 +25,8 @@ class AiAcceptMessageTest extends TestCase
         config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
 
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
-
-        $jobTopicCreate = new TopicCreateJob(
-            $this->botUser->id,
-        );
-        $jobTopicCreate->handle();
-
-        $this->botUser->refresh();
-    }
-
-    protected function tearDown(): void
-    {
-        if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
-        }
-
-        parent::tearDown();
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
     }
 
     public function test_accept_ai_message(): void
@@ -66,9 +50,10 @@ class AiAcceptMessageTest extends TestCase
             'text_manager' => $managerTextMessage,
         ]);
 
-        $dataParams = TelegramUpdate_AiAcceptDtoMock::getDtoParams();
+        $dataParams = TelegramUpdate_AiButtonAction::getDtoParams();
         $dataParams['callback_query']['data'] = 'ai_message_send_' . $messageAiData->message_id;
-        $dto = TelegramUpdate_AiAcceptDtoMock::getDto($dataParams);
+        $dataParams['callback_query']['message']['message_thread_id'] = $this->botUser->topic_id;
+        $dto = TelegramUpdate_AiButtonAction::getDto($dataParams);
 
         (new AiAcceptMessage())->execute($dto);
 

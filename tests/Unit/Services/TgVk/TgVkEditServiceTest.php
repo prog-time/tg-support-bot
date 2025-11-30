@@ -7,12 +7,15 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgVk\TgVkEditService;
 use App\Services\TgVk\TgVkMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
 use Tests\TestCase;
 
 class TgVkEditServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     private array $basicPayload;
@@ -25,6 +28,9 @@ class TgVkEditServiceTest extends TestCase
         Message::truncate();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
+
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams($this->botUser)['message'];
     }
 

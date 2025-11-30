@@ -13,6 +13,8 @@ class TelegramMethodsTest extends TestCase
     {
         parent::setUp();
         $this->chatId = config('testing.tg_private.chat_id');
+
+        sleep(2);
     }
 
     protected function getMessageParams(): array
