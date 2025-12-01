@@ -9,7 +9,6 @@ use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 class ExternalEditedMessageService extends ExternalService
@@ -17,8 +16,6 @@ class ExternalEditedMessageService extends ExternalService
     protected string $typeMessage = 'incoming';
 
     protected ExternalMessageDto $update;
-
-    protected TgTopicService $tgTopicService;
 
     protected ?BotUser $botUser;
 

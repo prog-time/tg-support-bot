@@ -5,7 +5,6 @@ namespace App\Services\ActionService\Send;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -17,7 +16,6 @@ abstract class FromTgMessageService extends TemplateMessageService
     public function __construct(TelegramUpdateDto $update)
     {
         $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
         $this->botUser = BotUser::getTelegramUserData($this->update);
 
         if (empty($this->botUser)) {

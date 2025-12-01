@@ -8,7 +8,6 @@ use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Services\ActionService\Send\ToTgMessageService;
-use App\Services\TgTopicService;
 
 class VkMessageService extends ToTgMessageService
 {
@@ -21,8 +20,6 @@ class VkMessageService extends ToTgMessageService
     protected ?BotUser $botUser;
 
     protected TGTextMessageDto $messageParamsDTO;
-
-    protected TgTopicService $tgTopicService;
 
     public function __construct(VkUpdateDto $update)
     {

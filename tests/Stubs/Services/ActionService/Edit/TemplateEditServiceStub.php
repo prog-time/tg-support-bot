@@ -5,7 +5,6 @@ namespace Tests\Stubs\Services\ActionService\Edit;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Services\ActionService\Edit\TemplateEditService;
-use App\Services\TgTopicService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class TemplateEditServiceStub extends TemplateEditService
@@ -21,8 +20,6 @@ class TemplateEditServiceStub extends TemplateEditService
     protected ?BotUser $botUser;
 
     protected TGTextMessageDto $messageParamsDTO;
-
-    protected TgTopicService $tgTopicService;
 
     /**
      * @return void

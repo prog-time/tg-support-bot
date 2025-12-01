@@ -6,15 +6,12 @@ use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
-use App\Services\TgTopicService;
 
 abstract class ExternalService
 {
     protected string $typeMessage = '';
 
     protected ExternalMessageDto $update;
-
-    protected TgTopicService $tgTopicService;
 
     protected ?BotUser $botUser;
 
@@ -25,7 +22,6 @@ abstract class ExternalService
     public function __construct(ExternalMessageDto $update)
     {
         $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
 
         $this->botUser = (new BotUser())->getExternalBotUser($this->update);
 

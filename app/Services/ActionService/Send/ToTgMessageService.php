@@ -4,7 +4,6 @@ namespace App\Services\ActionService\Send;
 
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -23,13 +22,10 @@ abstract class ToTgMessageService extends TemplateMessageService
 
     protected TGTextMessageDto $messageParamsDTO;
 
-    protected TgTopicService $tgTopicService;
-
     public function __construct(mixed $update)
     {
         try {
             $this->update = $update;
-            $this->tgTopicService = new TgTopicService();
 
             $this->typeMessage = 'incoming';
 

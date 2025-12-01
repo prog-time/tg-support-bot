@@ -4,7 +4,6 @@ namespace App\Services\ActionService\Send;
 
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 
 /**
  * Class TemplateMessageService
@@ -20,8 +19,6 @@ abstract class TemplateMessageService
     protected ?BotUser $botUser;
 
     protected TGTextMessageDto $messageParamsDTO;
-
-    protected TgTopicService $tgTopicService;
 
     /**
      * @return void

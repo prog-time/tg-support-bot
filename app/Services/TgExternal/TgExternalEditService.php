@@ -5,9 +5,10 @@ namespace App\Services\TgExternal;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\Redis\WebhookMessageDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
 use App\Helpers\TelegramHelper;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\SendWebhookMessage;
 use App\Logging\LokiLogger;
 use App\Models\Message;
@@ -69,7 +70,9 @@ class TgExternalEditService extends FromTgEditService
                 ]);
             }
 
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+            SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+                'methodQuery' => 'editForumTopic',
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
