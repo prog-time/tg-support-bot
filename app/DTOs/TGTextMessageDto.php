@@ -55,6 +55,7 @@ class TGTextMessageDto extends Data
         public ?array         $media = null,
         public ?float         $latitude = null,
         public ?float         $longitude = null,
+        public int|string|null         $icon_custom_emoji_id = null,
     ) {
     }
 
