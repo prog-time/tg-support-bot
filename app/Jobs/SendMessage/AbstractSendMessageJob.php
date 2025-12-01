@@ -5,11 +5,11 @@ namespace App\Jobs\SendMessage;
 use App\Actions\Telegram\BanMessage;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -61,12 +61,12 @@ abstract class AbstractSendMessageJob implements ShouldQueue
      */
     protected function updateTopic(BotUser $botUser, string $typeMessage): void
     {
-        (new TgTopicService())->editTgTopic(
-            TelegramTopicDto::fromData([
-                'message_thread_id' => $botUser->topic_id,
-                'icon_custom_emoji_id' => __('icons.' . $typeMessage),
-            ])
-        );
+        SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+            'methodQuery' => 'editForumTopic',
+            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'message_thread_id' => $botUser->topic_id,
+            'icon_custom_emoji_id' => __('icons.' . $typeMessage),
+        ]));
     }
 
     protected function telegramResponseHandler(TelegramAnswerDto $response): void
