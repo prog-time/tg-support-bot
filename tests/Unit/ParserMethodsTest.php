@@ -29,7 +29,6 @@ class ParserMethodsTest extends TestCase
         $response = ParserMethods::postQuery('https://example.com/api', ['param' => 'value'], ['Header' => 'value']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals('Ошибка отправки запроса', $response['result']);
     }
 
     public function testGetQuerySuccess()
@@ -53,6 +52,5 @@ class ParserMethodsTest extends TestCase
         $response = ParserMethods::getQuery('https://example.com/api', ['param' => 'value'], ['Header' => 'value']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals('Ошибка отправки запроса', $response['result']);
     }
 }

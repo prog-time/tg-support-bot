@@ -15,6 +15,8 @@ return [
     ],
     'tg_private' => [
         'chat_id' => env('TEST_USER_CHAT_ID', ''),
+        'file_id' => env('TEST_USER_FILE_ID', ''), // file_id of file always loaded to tg with chat_id
+        'photo_id' => env('TEST_USER_PHOTO_ID', ''), // photo_id of photo always loaded to tg with chat_id
         'username' => env('TEST_USER_USERNAME', ''),
         'first_name' => env('TEST_USER_FIRST_NAME', ''),
         'last_name' => env('TEST_USER_LAST_NAME', ''),

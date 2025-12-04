@@ -44,7 +44,7 @@ class TelegramMethodsTest extends TestCase
 
         $queryParams = array_merge($this->getMessageParams(), [
             'caption' => $testMessage,
-            'document' => 'BQACAgIAAxkBAAIHOmi-0ihwIBW1gZH2kie-2qZ39FKUAAJWhAACLrvxSdnwd0Zd4TtpNgQ',
+            'document' => config('testing.tg_private.file_id'),
         ]);
 
         $resultQuery = TelegramMethods::sendQueryTelegram('sendDocument', $queryParams);
@@ -61,7 +61,7 @@ class TelegramMethodsTest extends TestCase
 
         $queryParams = array_merge($this->getMessageParams(), [
             'caption' => $testMessage,
-            'photo' => 'AgACAgIAAxkBAAIHO2i-0nqM0rxqaqBPjrcf9937EzNRAAJw-jEbLrv5SSpf9j0qc59iAQADAgADeQADNgQ',
+            'photo' => config('testing.tg_private.photo_id'),
         ]);
 
         $resultQuery = TelegramMethods::sendQueryTelegram('sendPhoto', $queryParams);
