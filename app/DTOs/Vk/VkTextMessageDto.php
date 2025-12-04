@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\VK;
+namespace App\DTOs\Vk;
 
 use Spatie\LaravelData\Data;
 
