@@ -36,3 +36,4 @@ yarn-error.log
 .DS_Store
 
 /resources/views/site/hide/*
+/storage/certs/*
