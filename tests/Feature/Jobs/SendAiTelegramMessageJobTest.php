@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendAiResponseMessageJob;
+use App\DTOs\Ai\AiRequestDto;
 use App\Jobs\SendMessage\SendAiTelegramMessageJob;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Services\Ai\AiAssistantService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
@@ -18,6 +19,8 @@ class SendAiTelegramMessageJobTest extends TestCase
 
     private string $baseProviderUrl;
 
+    private string $provider;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -28,6 +31,7 @@ class SendAiTelegramMessageJobTest extends TestCase
 
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
 
+        $this->provider = 'gigachat';
         $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
     }
 
@@ -35,11 +39,6 @@ class SendAiTelegramMessageJobTest extends TestCase
     {
         $managerTextMessage = 'Напиши приветствие';
         $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot. 123';
-
-        $dtoParams = TelegramUpdateDtoMock::getDtoParams();
-
-        $dtoParams['message']['text'] = $managerTextMessage;
-        $dto = TelegramUpdateDtoMock::getDto($dtoParams);
 
         Http::fake([
             $this->baseProviderUrl . '/chat/completions' => Http::response([
@@ -65,25 +64,42 @@ class SendAiTelegramMessageJobTest extends TestCase
             ], 200),
         ]);
 
-        $params = TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
-            'chat_id' => $this->botUser->chat_id,
-            'text' => $managerTextMessage,
-        ]);
+        $dtoParams = TelegramUpdateDtoMock::getDtoParams();
+        $dtoParams['message']['text'] = $managerTextMessage;
+        $dto = TelegramUpdateDtoMock::getDto($dtoParams);
 
-        $job = new SendAiResponseMessageJob(
+        $aiRequest = new AiRequestDto(
+            message: $managerTextMessage,
+            userId: $this->botUser->id,
+            platform: 'telegram',
+            provider: $this->provider,
+            forceEscalation: false
+        );
+
+        $aiService = new AiAssistantService();
+        $aiResponse = $aiService->processMessage($aiRequest);
+
+        $job = new SendAiTelegramMessageJob(
             $this->botUser->id,
             $dto,
-            $params,
+            $managerTextMessage,
+            $aiResponse->response
         );
         $job->handle();
 
         /** @phpstan-ignore-next-line */
-        $pushed = Queue::pushedJobs()[SendAiTelegramMessageJob::class] ?? [];
-        $this->assertCount(1, $pushed);
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(2, $pushed);
 
         $jobData = $pushed[0]['job'];
-        $this->assertEquals($managerTextMessage, $jobData->managerTextMessage);
-        $this->assertEquals($answerMessage, $jobData->aiTextMessage);
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals('editMessageText', $jobData->queryParams->methodQuery);
+        $this->assertEquals(config('traffic_source.settings.telegram_ai.token'), $jobData->queryParams->token);
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $jobData->queryParams->chat_id);
+
+        $jobData = $pushed[1]['job'];
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals('deleteMessage', $jobData->queryParams->methodQuery);
+        $this->assertEquals(config('testing.tg_private.chat_id'), $jobData->queryParams->chat_id);
     }
 }
