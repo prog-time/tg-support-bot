@@ -54,7 +54,7 @@ class LokiLogger
                         'values' => [
                             [
                                 (string) (int) (microtime(true) * 1e9),
-                                json_encode($message),
+                                is_string($message) ? $message : json_encode($message, JSON_UNESCAPED_UNICODE),
                             ],
                         ],
                     ],
