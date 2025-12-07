@@ -3,6 +3,7 @@
 namespace Tests\Unit\TelegramBot;
 
 use App\TelegramBot\TelegramMethods;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TelegramMethodsTest extends TestCase
@@ -13,8 +14,6 @@ class TelegramMethodsTest extends TestCase
     {
         parent::setUp();
         $this->chatId = config('testing.tg_private.chat_id');
-
-        sleep(2);
     }
 
     protected function getMessageParams(): array
@@ -27,6 +26,30 @@ class TelegramMethodsTest extends TestCase
     public function test_send_text_message(): void
     {
         $testMessage = 'Тестовое сообщение';
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'text' => $testMessage,
+                ],
+            ]),
+        ]);
 
         $queryParams = array_merge($this->getMessageParams(), [
             'text' => $testMessage,
@@ -44,6 +67,51 @@ class TelegramMethodsTest extends TestCase
     {
         $testMessage = 'Тестовое сообщение';
 
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'document' => [
+                        'file_name' => '119f98712538b4d27f0290c798d1f011.png',
+                        'mime_type' => 'image/png',
+                        'thumbnail' => [
+                            'file_id' => config('testing.tg_file.document'),
+                            'file_unique_id' => 'AQADVoQAAi678Uly',
+                            'file_size' => 13279,
+                            'width' => 320,
+                            'height' => 210,
+                        ],
+                        'thumb' => [
+                            'file_id' => config('testing.tg_file.document'),
+                            'file_unique_id' => 'AQADVoQAAi678Uly',
+                            'file_size' => 13279,
+                            'width' => 320,
+                            'height' => 210,
+                        ],
+                        'file_id' => config('testing.tg_file.document'),
+                        'file_unique_id' => 'AgADVoQAAi678Uk',
+                        'file_size' => 1052715,
+                    ],
+                    'caption' => $testMessage,
+                ],
+            ]),
+        ]);
+
         $queryParams = array_merge($this->getMessageParams(), [
             'caption' => $testMessage,
             'document' => 'BQACAgIAAxkBAAIHOmi-0ihwIBW1gZH2kie-2qZ39FKUAAJWhAACLrvxSdnwd0Zd4TtpNgQ',
@@ -60,6 +128,60 @@ class TelegramMethodsTest extends TestCase
     public function test_send_photo_and_caption(): void
     {
         $testMessage = 'Тестовое сообщение';
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'photo' => [
+                        [
+                            'file_id' => config('testing.tg_file.photo'),
+                            'file_unique_id' => 'AQADcPoxGy67-Ul4',
+                            'file_size' => 899,
+                            'width' => 90,
+                            'height' => 58,
+                        ],
+                        [
+                            'file_id' => config('testing.tg_file.photo'),
+                            'file_unique_id' => 'AQADcPoxGy67-Uly',
+                            'file_size' => 12933,
+                            'width' => 320,
+                            'height' => 208,
+                        ],
+                        [
+                            'file_id' => config('testing.tg_file.photo'),
+                            'file_unique_id' => 'AQADcPoxGy67-Ul9',
+                            'file_size' => 56681,
+                            'width' => 800,
+                            'height' => 521,
+                        ],
+                        [
+                            'file_id' => config('testing.tg_file.photo'),
+                            'file_unique_id' => 'AQADcPoxGy67-Ul-',
+                            'file_size' => 83643,
+                            'width' => 1280,
+                            'height' => 833,
+                        ],
+                    ],
+                    'caption' => $testMessage,
+                ],
+            ]),
+        ]);
 
         $queryParams = array_merge($this->getMessageParams(), [
             'caption' => $testMessage,

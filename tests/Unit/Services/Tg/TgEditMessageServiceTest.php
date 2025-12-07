@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Services\Tg\TgEditMessageService;
 use App\Services\Tg\TgMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
@@ -32,6 +33,30 @@ class TgEditMessageServiceTest extends TestCase
         $this->botUser->save();
 
         $this->groupChatId = config('testing.tg_group.chat_id');
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'text' => 'Тестовое сообщение',
+                ],
+            ]),
+        ]);
     }
 
     public function test_edit_text_message_private(): void

@@ -41,6 +41,30 @@ class SendAiTelegramMessageJobTest extends TestCase
         $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot. 123';
 
         Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'text' => $managerTextMessage,
+                ],
+            ]),
+        ]);
+
+        Http::fake([
             $this->baseProviderUrl . '/chat/completions' => Http::response([
                 'choices' => [
                     [
@@ -61,7 +85,7 @@ class SendAiTelegramMessageJobTest extends TestCase
                     'total_tokens' => 1319,
                     'precached_prompt_tokens' => 1,
                 ],
-            ], 200),
+            ]),
         ]);
 
         $dtoParams = TelegramUpdateDtoMock::getDtoParams();

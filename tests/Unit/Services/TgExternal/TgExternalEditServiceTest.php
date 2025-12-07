@@ -7,6 +7,7 @@ use App\Models\BotUser;
 use App\Models\ExternalMessage;
 use App\Models\Message;
 use App\Services\TgExternal\TgExternalEditService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\External\ExternalMessageDtoMock;
@@ -15,6 +16,8 @@ use Tests\TestCase;
 
 class TgExternalEditServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     public function setUp(): void
