@@ -10,9 +10,6 @@ use Tests\TestCase;
 
 class AiAssistantServiceTest extends TestCase
 {
-    /**
-     * Тест создания DTO для AI-запроса.
-     */
     public function test_ai_request_dto_creation(): void
     {
         $request = new AiRequestDto(
@@ -26,9 +23,6 @@ class AiAssistantServiceTest extends TestCase
         $this->assertEquals('telegram', $request->platform);
     }
 
-    /**
-     * Тест создания DTO для AI-ответа.
-     */
     public function test_ai_response_dto_creation(): void
     {
         $response = new AiResponseDto(
@@ -47,9 +41,6 @@ class AiAssistantServiceTest extends TestCase
         $this->assertEquals('openai', $response->provider);
     }
 
-    /**
-     * Тест проверки уверенности AI-ответа.
-     */
     public function test_ai_response_confidence_check(): void
     {
         $highConfidenceResponse = new AiResponseDto(
@@ -76,9 +67,6 @@ class AiAssistantServiceTest extends TestCase
         $this->assertFalse($lowConfidenceResponse->isConfident());
     }
 
-    /**
-     * Тест преобразования DTO AI-запроса в массив.
-     */
     public function test_ai_request_dto_to_array(): void
     {
         $request = new AiRequestDto(
@@ -102,9 +90,6 @@ class AiAssistantServiceTest extends TestCase
         $this->assertFalse($array['force_escalation']);
     }
 
-    /**
-     * Тест преобразования DTO AI-ответа в массив.
-     */
     public function test_ai_response_dto_to_array(): void
     {
         $response = new AiResponseDto(

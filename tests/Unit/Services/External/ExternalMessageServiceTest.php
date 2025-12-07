@@ -6,12 +6,15 @@ use App\DTOs\External\ExternalMessageDto;
 use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
 use App\Models\BotUser;
 use App\Services\External\ExternalMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\External\ExternalMessageDtoMock;
 use Tests\TestCase;
 
 class ExternalMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public string $source;
 
     public string $external_id;

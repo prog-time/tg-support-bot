@@ -8,11 +8,14 @@ use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ExternalEditedMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public string $source;
 
     public string $external_id;
