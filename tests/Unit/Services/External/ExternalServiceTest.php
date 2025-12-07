@@ -3,12 +3,15 @@
 namespace Tests\Unit\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Request;
 use Tests\Stubs\Services\External\ExternalServiceStub;
 use Tests\TestCase;
 
 class ExternalServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private array $basicPayload;
 
     public function setUp(): void

@@ -10,6 +10,7 @@ use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\External\ExternalMessageDtoMock;
@@ -17,6 +18,8 @@ use Tests\TestCase;
 
 class ExternalTrafficServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private mixed $source;
 
     private mixed $external_id;
