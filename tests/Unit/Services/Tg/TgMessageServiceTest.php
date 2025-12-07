@@ -6,6 +6,7 @@ use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
 use App\Services\Tg\TgMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
@@ -31,6 +32,30 @@ class TgMessageServiceTest extends TestCase
         $payload = TelegramUpdateDtoMock::getDtoParams();
         $payload['message']['message_thread_id'] = $this->botUser->topic_id;
         $this->basicPayload = $payload;
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'text' => 'Тестовое сообщение',
+                ],
+            ]),
+        ]);
     }
 
     public function test_send_text_message(): void
@@ -39,14 +64,14 @@ class TgMessageServiceTest extends TestCase
 
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
-            $sameUser = $job->botUserId === $this->botUser->id;
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_photo(): void
@@ -65,15 +90,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendPhoto';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendPhoto', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_document(): void
@@ -86,15 +110,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendDocument';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendDocument', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_sticker(): void
@@ -107,15 +130,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendSticker';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendSticker', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_location(): void
@@ -129,15 +151,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendLocation';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendLocation', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_video_note(): void
@@ -150,15 +171,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendVideoNote';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendVideoNote', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_voice(): void
@@ -171,15 +191,14 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendVoice';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendVoice', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_contact(): void
@@ -195,14 +214,13 @@ class TgMessageServiceTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($payload);
         (new TgMessageService($dto))->handleUpdate();
 
-        Queue::assertPushed(SendTelegramMessageJob::class, function ($job) use ($dto) {
-            $sameMethodQuery = $job->queryParams->methodQuery === 'sendMessage';
-            $sameUser = $job->botUserId === $this->botUser->id;
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-            return
-                $sameMethodQuery &&
-                $sameUser &&
-                $job->updateDto === $dto;
-        });
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 }

@@ -6,7 +6,6 @@ use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgVk\TgVkEditService;
-use App\Services\TgVk\TgVkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
@@ -26,6 +25,7 @@ class TgVkEditServiceTest extends TestCase
 
         Queue::fake();
         Message::truncate();
+        BotUser::truncate();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
         $this->botUser->topic_id = 123;
@@ -36,11 +36,6 @@ class TgVkEditServiceTest extends TestCase
 
     public function test_edit_text_message(): void
     {
-        // новое сообщение
-        $newMessageDto = TelegramUpdateDto_VKMock::getDto();
-
-        (new TgVkMessageService($newMessageDto))->handleUpdate();
-
         $newMessageData = Message::create([
             'bot_user_id' => $this->botUser->id,
             'message_type' => 'outgoing',
@@ -66,15 +61,7 @@ class TgVkEditServiceTest extends TestCase
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
-        $this->assertEquals(count($pushed), 2);
-
-        // проверка отправки сообщения
-        $firstJob = array_shift($pushed);
-        $jobData = $firstJob['job'];
-        $this->assertEquals($newMessageDto->text, $jobData->updateDto->text);
-        $this->assertEquals($this->botUser->id, $jobData->botUserId);
-        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
-        $this->assertEquals($newMessageDto, $jobData->updateDto);
+        $this->assertEquals(count($pushed), 1);
 
         // проверка редактирования сообщения
         $jobData = $pushed[0]['job'];

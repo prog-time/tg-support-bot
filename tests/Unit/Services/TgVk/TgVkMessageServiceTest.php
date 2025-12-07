@@ -25,6 +25,7 @@ class TgVkMessageServiceTest extends TestCase
 
         Queue::fake();
         Message::truncate();
+        BotUser::truncate();
 
         $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
         $this->botUser->topic_id = 123;

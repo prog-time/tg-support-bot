@@ -7,12 +7,15 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\VK\VkEditService;
 use App\Services\VK\VkMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Vk\VkUpdateDtoMock;
 use Tests\TestCase;
 
 class VkEditServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private string $chatId;
 
     private ?BotUser $botUser;
