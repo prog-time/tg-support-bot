@@ -4,35 +4,42 @@ namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\DeleteForumTopic;
 use App\Models\BotUser;
-use App\TelegramBot\TelegramMethods;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class DeleteForumTopicTest extends TestCase
 {
     public int $chatId;
 
-    private ?BotUser $botUser;
-
     public function setUp(): void
     {
         parent::setUp();
 
         $this->chatId = config('testing.tg_private.chat_id');
-
-        $this->botUser = BotUser::getUserByChatId($this->chatId, 'telegram');
     }
 
-    public function test_get_chat(): void
+    public function test_it_calls_sendQueryTelegram_with_correct_parameters(): void
     {
-        $resultCreateTopic = TelegramMethods::sendQueryTelegram('createForumTopic', [
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
-            'name' => 'Тестовый топик',
-            'icon_custom_emoji_id' => __('icons.incoming'),
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
         ]);
 
-        $this->assertTrue($resultCreateTopic->ok);
-        $this->assertNotEmpty($resultCreateTopic->message_thread_id);
+        // Подготовка данных
+        $botUser = new BotUser();
+        $botUser->topic_id = 123;
 
-        DeleteForumTopic::execute($this->botUser);
+        // Act — вызываем действие
+        DeleteForumTopic::execute($botUser);
+
+        // Assert
+        $sentRequests = Http::recorded();
+        $this->assertCount(1, $sentRequests);
+
+        /** @var \Illuminate\Http\Client\Request $request */
+        $request = $sentRequests[0][0];
+
+        $this->assertStringContainsString('deleteForumTopic', $request->url());
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $request['chat_id']);
+        $this->assertEquals($botUser->topic_id, $request['message_thread_id']);
     }
 }
