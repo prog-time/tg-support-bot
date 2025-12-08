@@ -11,11 +11,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiQuery
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         try {
@@ -24,9 +19,10 @@ class ApiQuery
                 throw new Exception('Bearer Token не найден!');
             }
 
-            $itemAccessToken = (new ExternalSourceAccessTokens())->where('token', $token)
-                ->first()
-                ?->external_source()
+            $itemAccessToken = ExternalSourceAccessTokens::where('token', $token)
+                ->with([
+                    'external_source',
+                ])
                 ->first();
 
             if (!$itemAccessToken) {
