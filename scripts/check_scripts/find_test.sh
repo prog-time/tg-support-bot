@@ -1,34 +1,48 @@
 #!/bin/bash
 
-# Скрипт для проверки наличия тестов для классов
+# Script to check if classes have corresponding tests
 
 set -e
 
-# Цвета для вывода
+# -----------------------------
+# CONFIG
+# -----------------------------
+EXCLUDE_PATTERNS=(
+    "*Test" "*Search" "*Controller*" "*Console*" "*Jobs*"
+    "*Models*" "*Resources*" "*Requests*" "*DTO*" "*Dtos*"
+    "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
+    "*Enum*" "*Exception*" "*Migration*" "*Seeder*"
+    "*MockDto*" "*api*" "*Providers*" "*Abstract*"
+)
+
+# -----------------------------
+# Colors
+# -----------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Функция для вывода сообщений
+# -----------------------------
+# Output helpers
+# -----------------------------
 info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
-
 success() {
     echo -e "${GREEN}✅ $1${NC}"
 }
-
 warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
-
 error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# Определение корневой директории проекта
+# -----------------------------
+# Find project root
+# -----------------------------
 find_project_root() {
     local current_dir="$PWD"
 
@@ -40,53 +54,30 @@ find_project_root() {
         current_dir=$(dirname "$current_dir")
     done
 
-    error "Не найден корень Laravel проекта (composer.json)"
+    error "Laravel project root not found (composer.json missing)"
     exit 1
 }
 
-# Преобразование пути файла в имя класса
+# -----------------------------
+# Path → ClassName
+# -----------------------------
 path_to_classname() {
     local path="$1"
-
-    # Убираем .php расширение
     path="${path%.php}"
-
-    # Удаляем 'app/' в начале, если есть
     path="${path#app/}"
-
-    # Заменяем / на \
     local classname="${path//\//\\}"
 
     echo "$classname"
 }
 
-# Проверка, нужно ли тестировать класс
+# -----------------------------
+# Determine if class should be tested
+# -----------------------------
 should_be_tested() {
     local classname="$1"
 
-    # Исключения
-    local exclude_patterns=(
-        "*Controller*"
-        "*Mocks*"
-        "*views*"
-        "*Traits*"
-        "*Stub*"
-        "*routes*"
-        "*migrations*"
-        "*Jobs*"
-        "*DTO*"
-        "*Model*"
-        "*Test*"
-        "*ValueObject*"
-        "*Enum*"
-        "*Exception*"
-        "*bootstrap*"
-        "*Migration*"
-        "*Seeder*"
-    )
-
-    for pattern in "${exclude_patterns[@]}"; do
-        if [[ "$classname" == $pattern ]]; then
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        if [[ "$classname" == "$pattern" ]]; then
             return 1
         fi
 
@@ -98,18 +89,22 @@ should_be_tested() {
     return 0
 }
 
-# Получение ожидаемого имени тестового класса
+# -----------------------------
+# Get expected test class name
+# -----------------------------
 get_expected_test_classname() {
     local classname="$1"
     echo "Tests\Unit\\${classname}Test"
 }
 
-# Поиск всех тестовых классов
+# -----------------------------
+# Find all test classes
+# -----------------------------
 find_test_classes() {
     local project_root="$1"
     local test_classes=()
 
-    # Пути для поиска тестов
+    # Include module tests
     local test_paths=(
         "$project_root/tests/Unit"
         "$project_root/tests/Feature"
@@ -125,12 +120,14 @@ find_test_classes() {
         done
     fi
 
-    # Ищем тестовые файлы
+    # Collect test classes
     for path in "${test_paths[@]}"; do
         if [[ -d "$path" ]]; then
             while IFS= read -r -d '' file; do
                 if [[ "$file" == *"Test.php" ]]; then
-                    local classname=$(extract_classname_from_file "$file")
+                    local classname
+                    classname=$(extract_classname_from_file "$file")
+
                     if [[ -n "$classname" ]]; then
                         test_classes+=("$classname")
                     fi
@@ -139,11 +136,13 @@ find_test_classes() {
         fi
     done
 
-    # Возвращаем уникальные классы
+    # Return unique class names
     printf '%s\n' "${test_classes[@]}" | sort -u
 }
 
-# Извлечение имени класса из файла
+# -----------------------------
+# Extract class name from a PHP file
+# -----------------------------
 extract_classname_from_file() {
     local file="$1"
 
@@ -154,10 +153,8 @@ extract_classname_from_file() {
     local namespace=""
     local classname=""
 
-    # Ищем namespace
     namespace=$(grep -m1 "^namespace " "$file" | sed 's/namespace \(.*\);/\1/' | tr -d ' ')
 
-    # Ищем имя класса
     classname=$(grep -m1 "^class " "$file" | sed 's/class \([a-zA-Z0-9_]*\).*/\1/')
 
     if [[ -n "$namespace" && -n "$classname" ]]; then
@@ -165,7 +162,9 @@ extract_classname_from_file() {
     fi
 }
 
-# Проверка наличия теста
+# -----------------------------
+# Check if a test class exists
+# -----------------------------
 has_test() {
     local classname="$1"
     local expected_test="$2"
@@ -181,7 +180,9 @@ has_test() {
     return 1
 }
 
-# Получение пути к файлу теста
+# -----------------------------
+# Get file path of a test class
+# -----------------------------
 get_test_file_path() {
     local test_classname="$1"
     local project_root="$2"
@@ -190,44 +191,45 @@ get_test_file_path() {
     echo "${project_root}/${path}.php"
 }
 
-# Основная функция анализа
+# -----------------------------
+# Analyze if class has a test
+# -----------------------------
 analyze_coverage() {
     local app_class="$1"
     local project_root="$2"
 
-    # Нормализуем имя класса
-    local normalized_classname=$(path_to_classname "$app_class")
+    local normalized_classname
+    normalized_classname=$(path_to_classname "$app_class")
 
-    # Проверяем, нужно ли тестировать
     if ! should_be_tested "$normalized_classname"; then
-        warning "Класс не требует тестирования: $normalized_classname"
+        warning "Class does not require testing: $normalized_classname"
         echo "---"
         return 0
     fi
 
-    # Получаем ожидаемое имя теста
-    local expected_test=$(get_expected_test_classname "$normalized_classname")
+    local expected_test
+    expected_test=$(get_expected_test_classname "$normalized_classname")
 
-    # Ищем все тестовые классы
+    # Load all test classes
     local test_classes_array=()
     while IFS= read -r line; do
         test_classes_array+=("$line")
     done < <(find_test_classes "$project_root")
 
-    # Проверяем наличие теста
     if has_test "$normalized_classname" "$expected_test" "${test_classes_array[@]}"; then
-        success "Тест найден: $expected_test"
+        success "Test found: $expected_test"
         echo "---"
         return 0
     else
-        local test_file_path=$(get_test_file_path "$expected_test" "$project_root")
-        error "Создайте файл теста: $expected_test"
+        error "Please create test file: $expected_test"
         echo "---"
         return 1
     fi
 }
 
-# Главная функция
+# -----------------------------
+# Main function
+# -----------------------------
 main() {
     COMMAND="$1"  # commit или push
 
@@ -237,21 +239,20 @@ main() {
         BRANCH=$(git rev-parse --abbrev-ref HEAD)
         ALL_FILES=$(git diff --name-only origin/$BRANCH --diff-filter=ACM | grep '\.php$' || true)
     else
-        echo "Неизвестная команда: $COMMAND"
+        echo "Unknown command: $COMMAND"
         exit 1
     fi
 
     if [ -z "$ALL_FILES" ]; then
-      echo "✅ [FindTest] Тесты не требуются!"
+      warning " [FindTest] No tests required!"
       exit 0
     fi
 
     local status_analyze=1
     for app_class in $ALL_FILES; do
-        # Находим корень проекта
-        local project_root=$(find_project_root)
+        local project_root
+        project_root=$(find_project_root)
 
-        # Анализируем покрытие
         if ! analyze_coverage "$app_class" "$project_root"; then
             status_analyze=0
         fi
@@ -262,5 +263,4 @@ main() {
     fi
 }
 
-# Запуск скрипта
 main "$@"

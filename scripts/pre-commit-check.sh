@@ -2,22 +2,22 @@
 
 set -e
 
-# исправления стиля кода
-echo "🎨 Исправление стиля кода (Pint)..."
+echo "🐚 Checking shell scripts with ShellCheck..."
+bash scripts/check_scripts/ssh_start_shellcheck.sh
+echo
+
+echo "🎨 Fixing code style with Pint..."
 bash scripts/check_scripts/check_pint.sh commit
 echo
 
-# проверка на наличие ошибок
-echo "🧪 Проверка типизации (PHPStan)..."
+echo "🧪 Running type checks with PHPStan..."
 bash scripts/check_scripts/check_phpstan.sh commit
 echo
 
-# проверка наличия тестов
-echo "🔍 Проверка наличия тестов..."
+echo "🔍 Checking for the presence of tests..."
 bash scripts/check_scripts/find_test.sh commit
 echo
 
-# проверка работы тестов
-echo "🧑🏻‍💻 Проверка работы тестов..."
+echo "🧑🏻‍💻 Running tests..."
 bash scripts/check_scripts/ssh_start_tests.sh commit
 echo

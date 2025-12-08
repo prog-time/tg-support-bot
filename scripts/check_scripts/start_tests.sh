@@ -67,7 +67,7 @@ should_be_tested() {
     local exclude_patterns=("*Controller*" "*DTO*" "*ValueObject*" "*Enum*" "*Exception*" "*Migration*" "*Seeder*")
 
     for pattern in "${exclude_patterns[@]}"; do
-        if [[ "$classname" == $pattern ]]; then
+        if [[ "$classname" == "$pattern" ]]; then
             return 1
         fi
     done
@@ -135,14 +135,17 @@ run_test_for_class() {
     local test_classname="$1"
     local project_root="$2"
 
-    local test_file=$(find_test_class_path "$test_classname" "$project_root")
+    local test_file
+    test_file=$(find_test_class_path "$test_classname" "$project_root")
 
     if [[ -z "$test_file" ]]; then
         error "Тестовый файл не найден для: $test_classname"
         return 1
     fi
 
-    local classname=$(basename "$test_file" .php)
+    local classname
+    classname=$(basename "$test_file" .php)
+
     echo "$classname"
 
     info "Запуск теста: $test_classname"
@@ -165,9 +168,8 @@ analyze_and_run_tests() {
     local project_root="$2"
 
     # Преобразуем путь к файлу в имя класса
-    local normalized_classname=$(path_to_classname "$app_file")
-
-
+    local normalized_classname
+    normalized_classname=$(path_to_classname "$app_file")
 
     # Проверяем, нужно ли тестировать
     if ! should_be_tested "$normalized_classname"; then
@@ -177,18 +179,10 @@ analyze_and_run_tests() {
     fi
 
     # Получаем ожидаемое имя теста
-    local expected_test=$(get_expected_test_classname "$normalized_classname")
+    local expected_test
+    expected_test=$(get_expected_test_classname "$normalized_classname")
 
-    echo $expected_test
-
-#    # Проверяем, существует ли файл теста
-#    local test_file_path=$(find_test_class_path "$expected_test" "$project_root")
-#
-#    if [[ -z "$test_file_path" ]]; then
-#        error "Создайте тест: $expected_test"
-#        echo "---"
-#        return 1
-#    fi
+    echo "$expected_test"
 
     # Запускаем тест
     if run_test_for_class "$expected_test" "$project_root"; then
@@ -229,7 +223,9 @@ main() {
         exit 0
     fi
 
-    local project_root=$(find_project_root)
+    local project_root
+    project_root=$(find_project_root)
+
     local has_failures=0
 
     while IFS= read -r app_file; do
