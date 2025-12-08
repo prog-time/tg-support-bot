@@ -1,12 +1,13 @@
 FROM php:8.3-fpm
 
-USER root
+# Используем bash с pipefail для всех RUN
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Установка системных пакетов и Node.js
 RUN apt-get update && \
-    apt-get install -y git curl zip unzip libpq-dev && \
+    apt-get install -y --no-install-recommends git curl zip unzip libpq-dev shellcheck && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
     docker-php-ext-install pdo pdo_pgsql pgsql && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -17,19 +18,20 @@ COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
+# WORKDIR ставим до COPY проекта
 WORKDIR /var/www
 
 # Копируем проект
 COPY . .
 
 # Права доступа
-RUN mkdir -p /var/www/storage/logs \
-    /var/www/storage/framework/sessions \
-    /var/www/storage/framework/views \
-    /var/www/storage/framework/cache && \
-    chown -R www-data:www-data /var/www/storage && \
-    find /var/www/storage -type d -exec chmod 775 {} + && \
-    find /var/www/storage -type f -exec chmod 664 {} +
+RUN mkdir -p storage/logs \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache && \
+    chown -R www-data:www-data storage && \
+    find storage -type d -exec chmod 775 {} + && \
+    find storage -type f -exec chmod 664 {} +
 
 # Установка PHP и Node зависимостей
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader && \

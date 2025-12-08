@@ -2,6 +2,10 @@
 
 set -e
 
+echo "🐳 Checking Dockerfiles with Hadolint..."
+bash scripts/check_scripts/ssh_start_hadolint.sh
+echo
+
 echo "🐚 Checking shell scripts with ShellCheck..."
 bash scripts/check_scripts/ssh_start_shellcheck.sh
 echo
