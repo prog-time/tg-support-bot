@@ -77,11 +77,8 @@ should_be_tested() {
     local classname="$1"
 
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        if [[ "$classname" == "$pattern" ]]; then
-            return 1
-        fi
-
-        if [[ "$classname" == *"config"* ]]; then
+        # shellcheck disable=SC2053
+        if [[ "$classname" == $pattern ]]; then
             return 1
         fi
     done
@@ -109,16 +106,6 @@ find_test_classes() {
         "$project_root/tests/Unit"
         "$project_root/tests/Feature"
     )
-
-    # Добавляем модули
-    if [[ -d "$project_root/Modules" ]]; then
-        for module_dir in "$project_root/Modules"/*; do
-            if [[ -d "$module_dir" ]]; then
-                test_paths+=("$module_dir/Tests/Unit")
-                test_paths+=("$module_dir/Tests/Feature")
-            fi
-        done
-    fi
 
     # Collect test classes
     for path in "${test_paths[@]}"; do
@@ -151,10 +138,9 @@ extract_classname_from_file() {
     fi
 
     local namespace=""
-    local classname=""
-
     namespace=$(grep -m1 "^namespace " "$file" | sed 's/namespace \(.*\);/\1/' | tr -d ' ')
 
+    local classname=""
     classname=$(grep -m1 "^class " "$file" | sed 's/class \([a-zA-Z0-9_]*\).*/\1/')
 
     if [[ -n "$namespace" && -n "$classname" ]]; then

@@ -143,11 +143,16 @@ main() {
             classname=$(path_to_classname "$file")
 
             local test_file
-            test_file=$(find_test_file_by_class "$classname" "$PROJECT_ROOT")
-
-            [[ -n "$test_file" ]] && add_unique_test "$test_file"
+            if test_file=$(find_test_file_by_class "$classname" "$PROJECT_ROOT"); then
+                add_unique_test "$test_file"
+            fi
         fi
     done <<< "$ALL_FILES"
+
+    if [[ ${#tests_to_run[@]} -eq 0 ]]; then
+        warning "[RunTests] No tests found to run — skipping"
+        exit 0
+    fi
 
     # Run the tests
     for test_file in "${tests_to_run[@]}"; do
