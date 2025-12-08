@@ -2,22 +2,23 @@
 
 namespace App\Models;
 
-use App\Actions\Telegram\SendContactMessage;
+use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramUpdateDto;
 use App\Logging\LokiLogger;
-use App\Services\TgTopicService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use phpDocumentor\Reflection\Exception;
 
 /**
- * @property int    $topic_id
- * @property int    $chat_id
- * @property string $platform
- * @property mixed  $aiCondition
- * @property mixed  $lastMessageManager
- * @property-read ExternalUser $externalUser
+ * @property int               $id
+ * @property int               $topic_id
+ * @property int               $chat_id
+ * @property string            $platform
+ * @property mixed             $aiCondition
+ * @property mixed             $lastMessageManager
+ * @property ExternalUser|null $externalUser
  */
 class BotUser extends Model
 {
@@ -74,28 +75,6 @@ class BotUser extends Model
     }
 
     /**
-     * Create new TG topic
-     *
-     * @return int|null
-     */
-    public function saveNewTopic(): ?int
-    {
-        try {
-            $tgTopicService = new TgTopicService();
-            $dataTopic = $tgTopicService->createNewTgTopic($this);
-
-            $this->topic_id = $dataTopic->message_thread_id;
-            $this->save();
-
-            (new SendContactMessage())->executeByBotUser($this);
-
-            return $dataTopic->message_thread_id;
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-
-    /**
      * Get platform by chat id
      *
      * @param int $chatId
@@ -147,7 +126,7 @@ class BotUser extends Model
     public static function getTelegramUserData(TelegramUpdateDto $update): ?BotUser
     {
         try {
-            if ($update->typeSource === 'supergroup') {
+            if ($update->typeSource === 'supergroup' && !empty($update->messageThreadId)) {
                 $botUser = self::where('topic_id', $update->messageThreadId)
                     ->with('externalUser')
                     ->first();
@@ -160,9 +139,6 @@ class BotUser extends Model
                         'platform' => 'telegram',
                     ]
                 );
-                if (empty($botUser->topic_id)) {
-                    $botUser->saveNewTopic();
-                }
             }
 
             return $botUser ?? null;
@@ -180,19 +156,37 @@ class BotUser extends Model
     public static function getUserByChatId(string|int $chatId, string $platform): ?BotUser
     {
         try {
-            $botUser = self::firstOrCreate(
-                [
-                    'chat_id' => $chatId,
-                ],
-                [
-                    'platform' => $platform,
-                ]
-            );
-            if (empty($botUser->topic_id)) {
-                $botUser->saveNewTopic();
+            return self::firstOrCreate([
+                'chat_id' => $chatId,
+            ], [
+                'platform' => $platform,
+            ]);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param ExternalMessageDto $updateData
+     *
+     * @return BotUser|null
+     */
+    public function getExternalBotUser(ExternalMessageDto $updateData): ?BotUser
+    {
+        try {
+            $this->externalUser = ExternalUser::firstOrCreate([
+                'external_id' => $updateData->external_id,
+                'source' => $updateData->source,
+            ]);
+
+            if (empty($this->externalUser)) {
+                throw new Exception('External user not found!');
             }
 
-            return $botUser;
+            return BotUser::firstOrCreate([
+                'chat_id' => $this->externalUser->id,
+                'platform' => $this->externalUser->source,
+            ]);
         } catch (\Exception $e) {
             return null;
         }

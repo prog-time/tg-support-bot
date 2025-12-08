@@ -2,21 +2,15 @@
 
 namespace Tests\Unit\Services\ActionService\Send;
 
-use App\DTOs\TelegramUpdateDto;
-use App\Models\BotUser;
-use Illuminate\Support\Facades\Request;
+use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\Stubs\Services\ActionService\Send\ToTgMessageServiceStub;
 use Tests\TestCase;
 
 class ToTgMessageServiceTest extends TestCase
 {
-    private array $basicPayload;
-
-    public function setUp(): void
+    public function test_construct_with_private_source(): void
     {
-        parent::setUp();
-
-        $this->basicPayload = [
+        $dto = TelegramUpdateDtoMock::getDto([
             'update_id' => time(),
             'message' => [
                 'message_id' => time(),
@@ -38,14 +32,7 @@ class ToTgMessageServiceTest extends TestCase
                 'date' => time(),
                 'text' => 'Тестовое сообщение',
             ],
-        ];
-    }
-
-    public function test_construct_with_private_source(): void
-    {
-        $request = Request::create('api/telegram/bot', 'POST', $this->basicPayload);
-        $dto = TelegramUpdateDto::fromRequest($request);
-        $botUser = BotUser::where('chat_id', config('testing.tg_private.chat_id'))->first();
+        ]);
 
         $service = new ToTgMessageServiceStub($dto);
 

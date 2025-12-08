@@ -3,67 +3,43 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\SendStartMessage;
-use App\DTOs\TelegramUpdateDto;
-use Illuminate\Http\Request;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
+use App\Models\BotUser;
+use App\Models\Message;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class SendStartMessageTest extends TestCase
 {
-    private array $payload;
-
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 
-        $this->payload = [
-            'update_id' => 518622265,
-            'message' => [
-                'message_id' => 1901,
-                'from' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'is_bot' => false,
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'language_code' => 'ru',
-                ],
-                'chat' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'type' => 'private',
-                ],
-                'date' => 1757448913,
-                'text' => '/start',
-                'entities' => [
-                    [
-                        'offset' => 0,
-                        'length' => 6,
-                        'type' => 'bot_command',
-                    ],
-                ],
-            ],
-        ];
+        Message::truncate();
+        Queue::fake();
     }
 
     public function test_send_start_message(): void
     {
-        // Оборачиваем в Request
-        $request = Request::create('api/telegram/bot', 'POST', $this->payload);
+        $dtoUpdateParams = TelegramUpdateDtoMock::getDtoParams();
+        $dtoUpdateParams['message']['text'] = '/start';
 
         // Вызываем фабрику DTO
-        $dto = TelegramUpdateDto::fromRequest($request);
+        $dto = TelegramUpdateDtoMock::getDto($dtoUpdateParams);
+        $botUser = BotUser::getTelegramUserData($dto);
 
         // Act
-        $result = (new SendStartMessage())->execute($dto);
+        (new SendStartMessage())->execute($dto);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $job = $pushed[0]['job'];
 
         // Assert
-        $this->assertTrue($result->ok);
-        $this->assertEquals($result->response_code, 200);
-
-        $this->assertEquals(__('messages.start'), $result->text);
-
-        $this->assertNotEmpty($result->rawData);
+        $this->assertEquals($botUser->id, $job->botUserId);
+        $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
     }
 }

@@ -2,31 +2,42 @@
 
 namespace Tests\Unit\Services\External;
 
-use App\Actions\External\DeleteMessage;
-use App\DTOs\External\ExternalListMessageDto;
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\External\ExternalMessageResponseDto;
-use App\Models\Message;
-use App\Services\External\ExternalTrafficService;
+use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
+use App\Models\BotUser;
+use App\Services\External\ExternalMessageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\External\ExternalMessageDtoMock;
 use Tests\TestCase;
 
 class ExternalMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public string $source;
 
     public string $external_id;
 
     public string $text;
 
+    public BotUser $botUser;
+
+    private ExternalMessageDto $dto;
+
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->text = 'Тестовое сообщение';
+        Queue::fake();
 
+        $this->text = 'Тестовое сообщение';
         $this->source = config('testing.external.source');
         $this->external_id = config('testing.external.external_id');
+
+        $this->dto = ExternalMessageDtoMock::getDto();
+
+        $this->botUser = (new BotUser())->getExternalBotUser($this->dto);
     }
 
     protected function getMessageParams(): array
@@ -38,101 +49,20 @@ class ExternalMessageServiceTest extends TestCase
         ];
     }
 
-    protected function sendNewMessage(array $dataMessage): ExternalMessageAnswerDto
+    public function test_send_message(): void
     {
-        return (new ExternalTrafficService())->store(ExternalMessageDto::from($dataMessage));
-    }
+        // отправляем сообщение
+        (new ExternalMessageService($this->dto))->handleUpdate();
 
-    public function test_send_external_message(): void
-    {
-        $dataMessage = $this->getMessageParams();
-        $response = $this->sendNewMessage($dataMessage);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendExternalTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $response);
-        $this->assertInstanceOf(ExternalMessageResponseDto::class, $response->result);
-    }
+        $job = $pushed[0]['job'];
 
-    public function test_delete_external_message(): void
-    {
-        $dataMessage = $this->getMessageParams();
-        $responseSend = $this->sendNewMessage($dataMessage);
-
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
-        ])->first();
-
-        $this->assertNotEmpty($messageData->from_id);
-
-        $dataMessage['message_id'] = $messageData->from_id;
-
-        $responseDelete = (new DeleteMessage())->execute(ExternalMessageDto::from($dataMessage));
-
-        $this->assertNotEmpty($responseDelete->status);
-        $this->assertIsBool($responseDelete->status);
-    }
-
-    public function test_not_delete_external_message(): void
-    {
-        // Arrange: подготавливаем данные с некорректным message_id
-        $dataMessage = $this->getMessageParams();
-        $invalidMessageData = array_merge($dataMessage, [
-            'message_id' => 0,
-        ]);
-
-        // Act: выполняем операцию удаления
-        $responseDelete = (new DeleteMessage())->execute(
-            ExternalMessageDto::from($invalidMessageData)
-        );
-
-        // Assert: проверяем, что операция завершилась неудачей
-        $this->assertFalse($responseDelete->status, 'Status should be false when message_id is invalid');
-        $this->assertIsBool($responseDelete->status, 'Status should be boolean type');
-
-        // Дополнительные проверки (опционально)
-        if (property_exists($responseDelete, 'error')) {
-            $this->assertNotEmpty($responseDelete->error, 'Error message should be provided');
-        }
-    }
-
-    public function test_edit_external_message(): void
-    {
-        $newText = 'Изменил сообщение!';
-
-        $dataMessage = $this->getMessageParams();
-        $responseSend = $this->sendNewMessage($dataMessage);
-
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
-        ])->first();
-
-        $this->assertNotEmpty($messageData->from_id);
-
-        $responseUpdate = (new ExternalTrafficService())->update(ExternalMessageDto::from(array_merge($dataMessage, [
-            'message_id' => $messageData->from_id,
-            'text' => $newText,
-        ])));
-
-        $this->assertNotEmpty($responseUpdate->status);
-        $this->assertIsBool($responseUpdate->status);
-    }
-
-    public function test_list_external_message(): void
-    {
-        $dataMessage = $this->getMessageParams();
-        $this->sendNewMessage($dataMessage);
-
-        $responseListMessage = (new ExternalTrafficService())->list(ExternalListMessageDto::from($dataMessage));
-
-        $this->assertNotEmpty($responseListMessage);
-        $this->assertTrue($responseListMessage['status']);
-
-        $this->assertArrayHasKey('source', $responseListMessage);
-        $this->assertIsString($responseListMessage['source']);
-
-        $this->assertArrayHasKey('external_id', $responseListMessage);
-        $this->assertIsString($responseListMessage['external_id']);
-
-        $this->assertArrayHasKey('messages', $responseListMessage);
-        $this->assertIsArray($responseListMessage['messages']);
+        $this->assertEquals($this->botUser->id, $job->botUserId);
+        $this->assertEquals('sendMessage', $job->queryParams->methodQuery, );
+        $this->assertEquals('private', $job->queryParams->typeSource, );
+        $this->assertEquals($job->queryParams->message_thread_id, $this->botUser->topic_id);
     }
 }

@@ -5,7 +5,6 @@ namespace Tests\Traits;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 
 trait HasGettersForHasTemplate
 {
@@ -32,11 +31,6 @@ trait HasGettersForHasTemplate
     public function getMessageParamsDTO(): TGTextMessageDto
     {
         return $this->messageParamsDTO;
-    }
-
-    public function getTgTopicService(): TgTopicService
-    {
-        return $this->tgTopicService;
     }
 
     public function getTelegramAnswerDto(): TelegramAnswerDto

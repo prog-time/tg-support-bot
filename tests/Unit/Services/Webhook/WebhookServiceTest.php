@@ -2,44 +2,26 @@
 
 namespace Tests\Unit\Services\Webhook;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
-use App\DTOs\External\ExternalMessageResponseDto;
 use App\Services\Webhook\WebhookService;
+use Tests\Mocks\External\ExternalMessageAnswerDtoMock;
 use Tests\TestCase;
 
 class WebhookServiceTest extends TestCase
 {
-    private WebhookService $service;
-
     private string $externalId;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->externalId = 'EXQFuJE91JY2';
-
-        $this->service = new WebhookService();
+        $this->externalId = config('testing.external.external_id');
     }
 
     public function testWebhookService(): void
     {
-        $url = config('app.url') . ':3001/push-message';
+        $url = 'https://node.tg-support-bot.ru/push-message';
 
-        $saveMessageData = ExternalMessageAnswerDto::from([
-            'status' => true,
-            'result' => ExternalMessageResponseDto::from([
-                'message_type' => 'outgoing',
-                'to_id' => time(),
-                'from_id' => time(),
-                'text' => 'Тестовое сообщение',
-                'date' => date('d.m.Y H:i:s'),
-                'content_type' => 'text' ,
-                'file_id' => null,
-                'file_url' => null,
-                'file_type' => null,
-            ]),
-        ]);
+        $saveMessageData = ExternalMessageAnswerDtoMock::getDto();
 
         $dataMessage = [
             'type_query' => 'send_message',
@@ -47,6 +29,7 @@ class WebhookServiceTest extends TestCase
             'message' => $saveMessageData->result->toArray(),
         ];
 
-        $this->service->sendMessage($url, $dataMessage);
+        $result = (new WebhookService())->sendMessage($url, $dataMessage);
+        $this->assertNotEmpty($result);
     }
 }

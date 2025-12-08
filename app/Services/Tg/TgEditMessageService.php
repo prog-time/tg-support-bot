@@ -3,11 +3,12 @@
 namespace App\Services\Tg;
 
 use App\Actions\Telegram\ConversionMessageText;
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
+use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Edit\FromTgEditService;
+use phpDocumentor\Reflection\Exception;
 
 class TgEditMessageService extends FromTgEditService
 {
@@ -18,10 +19,16 @@ class TgEditMessageService extends FromTgEditService
 
     /**
      * @return void
+     *
+     * @throws \Exception
      */
     public function handleUpdate(): void
     {
-        if ($this->update->typeQuery === 'edited_message') {
+        try {
+            if ($this->update->typeQuery !== 'edited_message') {
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+            }
+
             if (!empty($this->update->rawData['edited_message']['photo']) ||
                 !empty($this->update->rawData['edited_message']['document'])) {
                 $this->editMessageCaption();
@@ -29,16 +36,25 @@ class TgEditMessageService extends FromTgEditService
                 $this->editMessageText();
             }
 
-        } else {
-            throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+            SendTelegramMessageJob::dispatch(
+                $this->botUser->id,
+                $this->update,
+                $this->messageParamsDTO,
+                $this->typeMessage,
+            );
+        } catch (Exception $e) {
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
      * Edit message
-     * @return TelegramAnswerDto|null
+     *
+     * @return void
+     *
+     * @throws \Exception
      */
-    protected function editMessageText(): ?TelegramAnswerDto
+    protected function editMessageText(): void
     {
         $this->messageParamsDTO->methodQuery = 'editMessageText';
 
@@ -55,18 +71,20 @@ class TgEditMessageService extends FromTgEditService
 
         $toIdMessage = $messageData->to_id ?? null;
         if (empty($toIdMessage)) {
-            throw new \Exception('Сообщение не найдено!');
+            throw new \Exception('Сообщение не найдено!', 1);
         }
 
         $this->messageParamsDTO->message_id = $toIdMessage;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
 
     /**
      * Edit message with photo or document
-     * @return TelegramAnswerDto|null
+     *
+     * @return void
+     *
+     * @throws \Exception
      */
-    protected function editMessageCaption(): ?TelegramAnswerDto
+    protected function editMessageCaption(): void
     {
         $this->messageParamsDTO->methodQuery = 'editMessageCaption';
 
@@ -83,11 +101,9 @@ class TgEditMessageService extends FromTgEditService
 
         $toIdMessage = $messageData->to_id ?? null;
         if (empty($toIdMessage)) {
-            throw new \Exception('Сообщение не найдено!');
+            throw new \Exception('Сообщение не найдено!', 1);
         }
 
         $this->messageParamsDTO->message_id = $toIdMessage;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
     }
-
 }

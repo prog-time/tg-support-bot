@@ -9,53 +9,39 @@ class FromTgMessageServiceStub extends FromTgMessageService
 {
     use HasGettersForHasTemplate;
 
-    public function handleUpdate(): mixed
+    public function handleUpdate(): void
     {
-        return null;
     }
 
-    protected function sendPhoto(): mixed
+    protected function sendPhoto(): void
     {
-        return null;
     }
 
-    protected function sendDocument(): mixed
+    protected function sendDocument(): void
     {
-        return null;
     }
 
-    protected function sendLocation(): mixed
+    protected function sendLocation(): void
     {
-        return null;
     }
 
-    protected function sendVoice(): mixed
+    protected function sendVoice(): void
     {
-        return null;
     }
 
-    protected function sendSticker(): mixed
+    protected function sendSticker(): void
     {
-        return null;
     }
 
-    protected function sendVideoNote(): mixed
+    protected function sendVideoNote(): void
     {
-        return null;
     }
 
-    protected function sendContact(): mixed
+    protected function sendContact(): void
     {
-        return null;
     }
 
-    protected function sendMessage(): mixed
+    protected function sendMessage(): void
     {
-        return null;
-    }
-
-    protected function saveMessage($resultQuery): mixed
-    {
-        return null;
     }
 }

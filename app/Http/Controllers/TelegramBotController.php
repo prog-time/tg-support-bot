@@ -7,12 +7,13 @@ use App\Actions\Telegram\SendAiAnswerMessage;
 use App\Actions\Telegram\SendContactMessage;
 use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
 use App\Services\Tg\TgEditMessageService;
 use App\Services\Tg\TgMessageService;
 use App\Services\TgExternal\TgExternalEditService;
 use App\Services\TgExternal\TgExternalMessageService;
-use App\Services\TgTopicService;
 use App\Services\TgVk\TgVkEditService;
 use App\Services\TgVk\TgVkMessageService;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class TelegramBotController
 
         if ($this->dataHook->typeSource === 'private') {
             $this->platform = 'telegram';
-        } else if (!empty($this->dataHook->messageThreadId)) {
+        } elseif (!empty($this->dataHook->messageThreadId)) {
             $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
         } else {
             $this->platform = 'ignore';
@@ -86,7 +87,11 @@ class TelegramBotController
             }
         } else {
             if ($this->dataHook->editedTopicStatus) {
-                TgTopicService::deleteNoteInTopic($this->dataHook->messageId);
+                SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+                    'methodQuery' => 'deleteMessage',
+                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                    'message_id' => $this->dataHook->messageId,
+                ]));
             }
         }
     }

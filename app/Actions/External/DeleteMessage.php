@@ -2,8 +2,8 @@
 
 namespace App\Actions\External;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
@@ -20,9 +20,9 @@ class DeleteMessage
      *
      * @param ExternalMessageDto $updateData
      *
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public static function execute(ExternalMessageDto $updateData): ExternalMessageAnswerDto
+    public static function execute(ExternalMessageDto $updateData): void
     {
         try {
             $externalUser = ExternalUser::where([
@@ -58,16 +58,8 @@ class DeleteMessage
             ]);
 
             Message::where($whereParamsMessage)->delete();
-
-            return ExternalMessageAnswerDto::from([
-                'status' => true,
-                'message_id' => $messageData->from_id,
-            ]);
         } catch (Exception $e) {
-            return ExternalMessageAnswerDto::from([
-                'status' => false,
-                'error' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка обработки запроса!',
-            ]);
+            (new LokiLogger())->logException($e);
         }
     }
 }

@@ -2,17 +2,26 @@
 
 set -e
 
-# проверка наличия тестов
-echo "🔍 [1/4] Проверка наличия тестов..."
-bash scripts/check_scripts/find_test.sh commit
+echo "🐳 Checking Dockerfiles with Hadolint..."
+bash scripts/check_scripts/ssh_start_hadolint.sh
 echo
 
-# исправления стиля кода
-echo "🎨 [2/3] Исправление стиля кода (Pint)..."
+echo "🐚 Checking shell scripts with ShellCheck..."
+bash scripts/check_scripts/ssh_start_shellcheck.sh
+echo
+
+echo "🎨 Fixing code style with Pint..."
 bash scripts/check_scripts/check_pint.sh commit
 echo
 
-# проверка на наличие ошибок
-echo "🧪 [3/3] Проверка типизации (PHPStan)..."
+echo "🧪 Running type checks with PHPStan..."
 bash scripts/check_scripts/check_phpstan.sh commit
+echo
+
+echo "🔍 Checking for the presence of tests..."
+bash scripts/check_scripts/find_test.sh commit
+echo
+
+echo "🧑🏻‍💻 Running tests..."
+bash scripts/check_scripts/ssh_start_tests.sh commit
 echo

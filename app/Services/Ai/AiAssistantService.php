@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services\Ai;
 
-use App\Logging\LokiLogger;
+use App\Contracts\Ai\AiProviderInterface;
 use App\DTOs\Ai\AiRequestDto;
 use App\DTOs\Ai\AiResponseDto;
+use App\Logging\LokiLogger;
 use Illuminate\Support\Facades\Cache;
-use App\Contracts\Ai\AiProviderInterface;
 
 class AiAssistantService
 {
     private AiProviderInterface $provider;
+
     private array $providers = [];
 
     public function __construct()
@@ -25,6 +26,7 @@ class AiAssistantService
      * Обработать сообщение пользователя через AI-помощника.
      *
      * @param AiRequestDto $request DTO с данными запроса
+     *
      * @return AiResponseDto|null DTO с ответом AI
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto
@@ -69,12 +71,14 @@ class AiAssistantService
     {
         $this->providers['openai'] = new OpenAiProvider();
         $this->providers['deepseek'] = new DeepSeekProvider();
+        $this->providers['gigachat'] = new GigaChatProvider();
     }
 
     /**
      * Получить провайдера по умолчанию.
      *
      * @return AiProviderInterface
+     *
      * @throws \Exception
      */
     private function getDefaultProvider(): AiProviderInterface
@@ -98,8 +102,9 @@ class AiAssistantService
     /**
      * Получить контекст беседы пользователя.
      *
-     * @param int $userId ID пользователя
+     * @param int    $userId   ID пользователя
      * @param string $platform Платформа
+     *
      * @return array
      */
     private function getUserContext(int $userId, string $platform): array
@@ -114,10 +119,10 @@ class AiAssistantService
     /**
      * Обновить контекст беседы пользователя.
      *
-     * @param int $userId ID пользователя
-     * @param string $platform Платформа
-     * @param string $userMessage Сообщение пользователя
-     * @param AiResponseDto $response Ответ AI
+     * @param int           $userId      ID пользователя
+     * @param string        $platform    Платформа
+     * @param string        $userMessage Сообщение пользователя
+     * @param AiResponseDto $response    Ответ AI
      */
     private function updateUserContext(int $userId, string $platform, string $userMessage, AiResponseDto $response): void
     {

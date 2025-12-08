@@ -2,12 +2,11 @@
 
 namespace App\Actions\Ai;
 
-use App\Actions\Telegram\SendMessage;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Models\BotUser;
-use App\TelegramBot\TelegramMethods;
 use phpDocumentor\Reflection\Exception;
 
 class AiAcceptMessage extends AiAction
@@ -17,9 +16,9 @@ class AiAcceptMessage extends AiAction
      *
      * @param TelegramUpdateDto $update
      *
-     * @return bool
+     * @return void
      */
-    public function execute(TelegramUpdateDto $update): bool
+    public function execute(TelegramUpdateDto $update): void
     {
         try {
             if (empty(config('traffic_source.settings.telegram_ai.token'))) {
@@ -36,27 +35,36 @@ class AiAcceptMessage extends AiAction
                 throw new Exception('Сообщение не найдено в БД!', 1);
             }
 
-            SendMessage::execute($botUser, TGTextMessageDto::from([
-                'token' => config('traffic_source.settings.telegram_ai.token'),
-                'methodQuery' => 'editMessageText',
-                'typeSource' => 'supergroup',
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
-                'message_id' => $messageData->message_id,
-                'message_thread_id' => $update->messageThreadId,
-                'text' => $messageData->text_ai,
-                'parse_mode' => 'html',
-            ]));
+            SendTelegramMessageJob::dispatch(
+                $botUser->id,
+                $update,
+                TGTextMessageDto::from([
+                    'token' => config('traffic_source.settings.telegram_ai.token'),
+                    'methodQuery' => 'editMessageText',
+                    'typeSource' => 'supergroup',
+                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                    'message_id' => $messageData->message_id,
+                    'message_thread_id' => $update->messageThreadId,
+                    'text' => $messageData->text_ai,
+                    'parse_mode' => 'html',
+                ]),
+                'incoming',
+            );
 
-            TelegramMethods::sendQueryTelegram('sendMessage', [
-                'chat_id' => $botUser->chat_id,
-                'text' => $messageData->text_ai,
-                'parse_mode' => 'html',
-            ]);
-
-            return true;
+            SendTelegramMessageJob::dispatch(
+                $botUser->id,
+                $update,
+                TGTextMessageDto::from([
+                    'methodQuery' => 'sendMessage',
+                    'typeSource' => 'private',
+                    'chat_id' => $botUser->chat_id,
+                    'text' => $messageData->text_ai,
+                    'parse_mode' => 'html',
+                ]),
+                'outgoing',
+            );
         } catch (\Exception $e) {
-            (new LokiLogger())->log('ai_error', json_encode($e->getMessage()));
-            return false;
+            (new LokiLogger())->log('ai_error', $e->getMessage());
         }
     }
 }

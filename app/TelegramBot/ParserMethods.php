@@ -2,6 +2,7 @@
 
 namespace App\TelegramBot;
 
+use App\Logging\LokiLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -30,8 +31,10 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
+                'response_code' => 500,
                 'result' => 'Ошибка отправки запроса',
             ];
         }
@@ -62,8 +65,10 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
+                'response_code' => 500,
                 'result' => 'Ошибка отправки запроса',
             ];
         }
@@ -89,6 +94,10 @@ class ParserMethods
                 throw new Exception('Файл слишком большой для Telegram (макс. 50 МБ)', 1);
             }
 
+            if ($attachData->getSize() === 0) {
+                throw new Exception('Файл пустой и не может быть отправлен', 1);
+            }
+
             // Проверка валидности файла
             if (!$attachData->isValid()) {
                 throw new Exception('Файл невалиден', 1);
@@ -108,7 +117,7 @@ class ParserMethods
             // Отправка файла в Telegram
             $response = Http::attach(
                 $attachType,
-                file_get_contents($tempPath), // Используем временный файл
+                fopen($tempPath, 'r'),
                 $safeName
             )->post($urlQuery, $queryParams);
 
@@ -120,8 +129,10 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
+                'response_code' => 500,
                 'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
             ];
         }

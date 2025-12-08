@@ -7,28 +7,30 @@ use Spatie\LaravelData\Data;
 /**
  * TelegramTopicDto
  *
- * @property int|string $message_thread_id,
- * @property ?string $name,
- * @property ?string $icon_color,
- * @property ?string $icon_custom_emoji_id
+ * @property null|int|string $message_thread_id,
+ * @property null|string     $name,
+ * @property null|string     $icon_color,
+ * @property null|string     $icon_custom_emoji_id
  */
 class TelegramTopicDto extends Data
 {
     /**
-     * @param int|string $message_thread_id,
-     * @param?string $name,
-     * @param?string $icon_color,
-     * @param?string $icon_custom_emoji_id
+     * @param null|int|string $message_thread_id,
+     * @param null|string     $name,
+     * @param null|string     $icon_color,
+     * @param null|string     $icon_custom_emoji_id
      */
     public function __construct(
-        public int|string $message_thread_id,
-        public ?string $name,
-        public ?string $icon_color,
-        public ?string $icon_custom_emoji_id
-    ) {}
+        public null|int|string $message_thread_id,
+        public null|string $name,
+        public null|string $icon_color,
+        public null|string $icon_custom_emoji_id
+    ) {
+    }
 
     /**
      * @param array $dataTopic
+     *
      * @return self
      */
     public static function fromData(array $dataTopic): self
@@ -46,11 +48,11 @@ class TelegramTopicDto extends Data
      */
     public function toArray(): array
     {
-        $dataMessage = array_filter(parent::toArray(), fn($value) => !is_null($value));
+        $dataMessage = array_filter(parent::toArray(), fn ($value) => !is_null($value));
         unset($dataMessage['methodQuery']);
 
         $jsonParams = [
-            'reply_markup'
+            'reply_markup',
         ];
         foreach ($jsonParams as $jsonParam) {
             if (!empty($dataMessage[$jsonParam])) {

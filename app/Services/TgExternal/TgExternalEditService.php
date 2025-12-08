@@ -5,10 +5,12 @@ namespace App\Services\TgExternal;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\Redis\WebhookMessageDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
 use App\Helpers\TelegramHelper;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\SendWebhookMessage;
+use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Edit\FromTgEditService;
 
@@ -20,20 +22,23 @@ class TgExternalEditService extends FromTgEditService
     {
         parent::__construct($update);
 
-        $this->messageData = Message::where([
+        $message = Message::where([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->externalUser->source,
             'message_type' => 'outgoing',
             'from_id' => $this->update->messageId,
         ])->first();
 
-        $this->messageData->externalMessage->text = $this->update->text;
+        $message->externalMessage->text = $this->update->text;
+        $message->save();
+
+        $this->messageData = $message;
     }
 
     /**
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function handleUpdate(): ExternalMessageAnswerDto
+    public function handleUpdate(): void
     {
         try {
             if ($this->update->typeQuery !== 'edited_message') {
@@ -47,7 +52,9 @@ class TgExternalEditService extends FromTgEditService
             ];
 
             if (!empty($this->update->rawData['edited_message']['photo']) || !empty($this->update->rawData['edited_message']['document'])) {
-                $resultData = array_merge($resultData, $this->editMessageCaption());
+                $resultData = array_merge($resultData, [
+                    'file_path' => TelegramHelper::getFilePublicPath($this->update->fileId),
+                ]);
             }
 
             $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
@@ -63,42 +70,31 @@ class TgExternalEditService extends FromTgEditService
                 ]);
             }
 
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+            SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+                'methodQuery' => 'editForumTopic',
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
-
-            return $saveMessageData;
         } catch (\Exception $e) {
-            return ExternalMessageAnswerDto::from([
-                'status' => false,
-                'error' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка обработки запроса!',
-            ]);
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return array
+     * @return void
      */
-    protected function editMessageText(): array
+    protected function editMessageText(): void
     {
-        return [
-            'text' => $this->update->text ?? '',
-        ];
+        //
     }
 
     /**
-     * @return array
+     * @return void
      */
-    protected function editMessageCaption(): array
+    protected function editMessageCaption(): void
     {
-        try {
-            return [
-                'file_path' => TelegramHelper::getFilePublicPath($this->update->fileId),
-            ];
-        } catch (\Exception $e) {
-            return [];
-        }
+        //
     }
 
     /**

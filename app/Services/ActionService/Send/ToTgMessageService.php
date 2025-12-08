@@ -2,10 +2,8 @@
 
 namespace App\Services\ActionService\Send;
 
-use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -24,13 +22,10 @@ abstract class ToTgMessageService extends TemplateMessageService
 
     protected TGTextMessageDto $messageParamsDTO;
 
-    protected TgTopicService $tgTopicService;
-
     public function __construct(mixed $update)
     {
         try {
             $this->update = $update;
-            $this->tgTopicService = new TgTopicService();
 
             $this->typeMessage = 'incoming';
 
@@ -53,74 +48,63 @@ abstract class ToTgMessageService extends TemplateMessageService
     }
 
     /**
-     * @return mixed
-     *
-     * @throws \Exception
+     * @return void
      */
-    abstract public function handleUpdate(): mixed;
+    abstract public function handleUpdate(): void;
 
     /**
      * Отправка изображения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendPhoto(): TelegramAnswerDto;
+    abstract protected function sendPhoto(): void;
 
     /**
      * Отправка документа
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendDocument(): TelegramAnswerDto;
+    abstract protected function sendDocument(): void;
 
     /**
      * Отправка геолокации
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendLocation(): TelegramAnswerDto;
+    abstract protected function sendLocation(): void;
 
     /**
      * Отправка голосового сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendVoice(): TelegramAnswerDto;
+    abstract protected function sendVoice(): void;
 
     /**
      * Отправка стикеров
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendSticker(): TelegramAnswerDto;
+    abstract protected function sendSticker(): void;
 
     /**
      * Отправка видео-сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendVideoNote(): TelegramAnswerDto;
+    abstract protected function sendVideoNote(): void;
 
     /**
      * Отправка контакта
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendContact(): TelegramAnswerDto;
+    abstract protected function sendContact(): void;
 
     /**
      * Отправка текстового сообщения
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    abstract protected function sendMessage(): TelegramAnswerDto;
-
-    /**
-     * Сохранения сообщения
-     *
-     * @param TelegramAnswerDto $resultQuery
-     *
-     * @return mixed
-     */
-    abstract protected function saveMessage(mixed $resultQuery): mixed;
+    abstract protected function sendMessage(): void;
 }

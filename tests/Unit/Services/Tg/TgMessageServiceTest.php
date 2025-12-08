@@ -2,74 +2,84 @@
 
 namespace Tests\Unit\Services\Tg;
 
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramUpdateDto;
+use App\Jobs\SendMessage\SendTelegramMessageJob;
+use App\Models\BotUser;
 use App\Services\Tg\TgMessageService;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class TgMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
+    private BotUser $botUser;
+
     private array $basicPayload;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->basicPayload = [
-            'update_id' => time(),
-            'message' => [
-                'message_id' => time(),
-                'from' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'is_bot' => false,
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'language_code' => 'ru',
+        Queue::fake();
+
+        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
+
+        $payload = TelegramUpdateDtoMock::getDtoParams();
+        $payload['message']['message_thread_id'] = $this->botUser->topic_id;
+        $this->basicPayload = $payload;
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => time(),
+                    'from' => [
+                        'id' => time(),
+                        'is_bot' => true,
+                        'first_name' => 'Prog-Time |Администратор сайта',
+                        'username' => 'prog_time_bot',
+                    ],
+                    'chat' => [
+                        'id' => config('testing.tg_private.chat_id'),
+                        'first_name' => config('testing.tg_private.first_name'),
+                        'last_name' => config('testing.tg_private.last_name'),
+                        'username' => config('testing.tg_private.username'),
+                        'type' => 'private',
+                    ],
+                    'date' => time(),
+                    'text' => 'Тестовое сообщение',
                 ],
-                'chat' => [
-                    'id' => config('testing.tg_private.chat_id'),
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
-                    'type' => 'private',
-                ],
-                'date' => time(),
-                'text' => 'Тестовое сообщение',
-            ],
-        ];
-    }
-
-    public function sendTestQuery(array $payload): TelegramAnswerDto
-    {
-        $request = Request::create('api/telegram/bot', 'POST', $payload);
-        $dto = TelegramUpdateDto::fromRequest($request);
-
-        $resultQuery = (new TgMessageService($dto))->handleUpdate();
-
-        $this->assertTrue($resultQuery->ok);
-        $this->assertEquals($resultQuery->response_code, 200);
-
-        return $resultQuery;
+            ]),
+        ]);
     }
 
     public function test_send_text_message(): void
     {
-        $payload = $this->basicPayload;
-        $payload['message']['text'] = 'Тестовое сообщение';
+        $dto = TelegramUpdateDtoMock::getDto($this->basicPayload);
 
-        $this->sendTestQuery($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_photo(): void
     {
-        $fileId = config('testing.tg_file.photo');
-
         $payload = $this->basicPayload;
         $payload['message']['photo'] = [
             [
-                'file_id' => $fileId,
+                'file_id' => config('testing.tg_file.photo'),
                 'file_unique_id' => 'AQAD854DoEp9',
                 'file_size' => 59609,
                 'width' => 684,
@@ -77,37 +87,57 @@ class TgMessageServiceTest extends TestCase
             ],
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
 
-        $this->assertTrue(!empty($resultQuery->fileId));
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendPhoto', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_document(): void
     {
-        $fileId = config('testing.tg_file.document');
-
         $payload = $this->basicPayload;
         $payload['message']['document'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.document'),
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
 
-        $this->assertTrue(!empty($resultQuery->fileId));
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendDocument', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_sticker(): void
     {
-        $fileId = config('testing.tg_file.sticker');
-
         $payload = $this->basicPayload;
         $payload['message']['sticker'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.sticker'),
         ];
 
-        $resultQuery = $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
 
-        $this->assertTrue(!empty($resultQuery->fileId));
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendSticker', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_location(): void
@@ -118,51 +148,79 @@ class TgMessageServiceTest extends TestCase
             'longitude' => 37.611953,
         ];
 
-        $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendLocation', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_video_note(): void
     {
-        $fileId = config('testing.tg_file.video_note');
-
         $payload = $this->basicPayload;
         $payload['message']['video_note'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.video_note'),
         ];
 
-        $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendVideoNote', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_voice(): void
     {
-        $fileId = config('testing.tg_file.voice');
-
         $payload = $this->basicPayload;
         $payload['message']['voice'] = [
-            'file_id' => $fileId,
+            'file_id' => config('testing.tg_file.voice'),
         ];
 
-        $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendVoice', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
     public function test_send_contact(): void
     {
-        $phone = '79999999999';
-        $firstName = 'Тестовый';
-        $lastName = 'Тест';
-
-        $validMessage = "Контакт: \nИмя: {$firstName}\nТелефон: {$phone}";
-
         $payload = $this->basicPayload;
         $payload['message']['contact'] = [
-            'phone_number' => $phone,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
+            'phone_number' => '79999999999',
+            'first_name' => 'Тестовый',
+            'last_name' => 'Тест',
             'user_id' => config('testing.tg_private.chat_id'),
         ];
 
-        $result = $this->sendTestQuery($payload);
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
 
-        $this->assertEquals($result->text, $validMessage);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        // Проверяем первую джобу (создание)
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 }

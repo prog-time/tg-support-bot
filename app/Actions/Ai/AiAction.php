@@ -36,7 +36,7 @@ abstract class AiAction
     /**
      * @param TelegramUpdateDto $update
      *
-     * @return bool
+     * @return void
      */
-    abstract public function execute(TelegramUpdateDto $update): bool;
+    abstract public function execute(TelegramUpdateDto $update): void;
 }

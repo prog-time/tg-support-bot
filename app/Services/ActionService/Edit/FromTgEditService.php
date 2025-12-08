@@ -4,7 +4,6 @@ namespace App\Services\ActionService\Edit;
 
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -15,7 +14,6 @@ abstract class FromTgEditService extends TemplateEditService
     public function __construct(mixed $update)
     {
         $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
         $this->botUser = BotUser::getTelegramUserData($this->update);
 
         if (empty($this->botUser)) {
@@ -52,14 +50,14 @@ abstract class FromTgEditService extends TemplateEditService
     /**
      * Редактирование сообщения
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageText(): mixed;
+    abstract protected function editMessageText(): void;
 
     /**
      * Редактирование сообщения с фото или документом
      *
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageCaption(): mixed;
+    abstract protected function editMessageCaption(): void;
 }

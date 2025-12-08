@@ -35,6 +35,15 @@ return [
             'max_tokens' => env('DEEPSEEK_MAX_TOKENS', 1000),
             'temperature' => env('DEEPSEEK_TEMPERATURE', 0.7),
         ],
+        'gigachat' => [
+            'client_id' => env('GIGACHAT_CLIENT_ID'),
+            'client_secret' => env('GIGACHAT_CLIENT_SECRET'),
+            'base_url' => env('GIGACHAT_BASE_URL', 'https://gigachat.devices.sberbank.ru/api/v1'),
+            'model' => env('GIGACHAT_MODEL', 'GigaChat-2-Max'),
+            'max_tokens' => env('GIGACHAT_MAX_TOKENS', 1000),
+            'temperature' => env('GIGACHAT_TEMPERATURE', 0.7),
+            'path_cert' => env('GIGACHAT_CERT_PATH', ''),
+        ],
     ],
 
     /*

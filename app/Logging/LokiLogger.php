@@ -2,6 +2,7 @@
 
 namespace App\Logging;
 
+use Exception;
 use GuzzleHttp\Client;
 use Throwable;
 
@@ -53,7 +54,49 @@ class LokiLogger
                         'values' => [
                             [
                                 (string) (int) (microtime(true) * 1e9),
-                                json_encode($message),
+                                is_string($message) ? $message : json_encode($message, JSON_UNESCAPED_UNICODE),
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            $this->client->post($this->url, [
+                'json' => $payload,
+            ]);
+
+            return true;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * @param Exception $e
+     *
+     * @return bool
+     */
+    public function logException(Exception $e): bool
+    {
+        try {
+            $level = $e->getCode() === 1 ? 'warning' : 'error';
+
+            $payload = [
+                'streams' => [
+                    [
+                        'stream' => [
+                            'app' => config('app.name'),
+                            'env' => config('app.env'),
+                            'level' => $level,
+                        ],
+                        'values' => [
+                            [
+                                (string) (int) (microtime(true) * 1e9),
+                                json_encode([
+                                    'file' => $e->getFile(),
+                                    'line' => $e->getLine(),
+                                    'message' => $e->getMessage(),
+                                ]),
                             ],
                         ],
                     ],

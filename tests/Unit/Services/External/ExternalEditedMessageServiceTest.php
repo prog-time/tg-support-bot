@@ -2,37 +2,49 @@
 
 namespace Tests\Unit\Services\External;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\External\ExternalMessageResponseDto;
+use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
+use App\Models\BotUser;
+use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Services\External\ExternalTrafficService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ExternalEditedMessageServiceTest extends TestCase
 {
-    public string $source = 'live_chat';
+    use RefreshDatabase;
 
-    public string $external_id = 'wPsYu0HOXsuK';
+    public string $source;
+
+    public string $external_id;
 
     public string $text = 'Тестовое сообщение';
 
     public int $messageId = 0;
 
+    private BotUser $botUser;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $responseSend = (new ExternalTrafficService())->store(ExternalMessageDto::from([
-            'source' => $this->source,
-            'external_id' => $this->external_id,
-            'text' => $this->text,
-        ]));
+        Message::truncate();
+        Queue::fake();
 
-        $messageData = Message::where([
-            'to_id' => $responseSend->result->to_id,
-        ])->first();
-        $this->messageId = $messageData->from_id;
+        $this->source = config('testing.external.source');
+        $this->external_id = config('testing.external.external_id');
+
+        $externalUser = ExternalUser::firstOrCreate([
+            'external_id' => $this->external_id,
+            'source' => $this->source,
+        ]);
+
+        $this->botUser = BotUser::firstOrCreate([
+            'chat_id' => $externalUser->id,
+            'platform' => $this->source,
+        ]);
     }
 
     protected function getMessageParams(): array
@@ -44,19 +56,48 @@ class ExternalEditedMessageServiceTest extends TestCase
         ];
     }
 
+    public function createMessage(): Message
+    {
+        // Сохраняем сообщения в БД
+        $whereMessageParams = [
+            'bot_user_id' => $this->botUser->id,
+            'message_type' => 'incoming',
+            'platform' => $this->source,
+            'from_id' => rand(),
+            'to_id' => rand(),
+        ];
+        $createdMessage = Message::where($whereMessageParams)->firstOrCreate($whereMessageParams);
+
+        $createdMessage->externalMessage()->create([
+            'text' => 'Тестовое сообщение',
+            'file_id' => null,
+        ]);
+
+        return $createdMessage;
+    }
+
     public function test_edit_external_message(): void
     {
+        // создание сообщения
+        $message = $this->createMessage();
         $dataMessage = $this->getMessageParams();
-        $responseUpdate = (new ExternalTrafficService())->update(ExternalMessageDto::from(array_merge($dataMessage, [
-            'message_id' => $this->messageId,
+
+        // отправляем сообщение
+        $dataUpdateMessage = array_merge($dataMessage, [
+            'message_id' => $message->from_id,
             'text' => 'Изменил сообщение!',
-        ])));
+        ]);
+        (new ExternalTrafficService())->update(ExternalMessageDto::from($dataUpdateMessage));
 
-        $this->assertInstanceOf(ExternalMessageAnswerDto::class, $responseUpdate);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendExternalTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-        $this->assertNotEmpty($responseUpdate->status);
-        $this->assertIsBool($responseUpdate->status);
+        $job = $pushed[0]['job'];
 
-        $this->assertInstanceOf(ExternalMessageResponseDto::class, $responseUpdate->result);
+        $this->assertEquals($this->botUser->id, $job->botUserId);
+        $this->assertEquals('editMessageText', $job->queryParams->methodQuery);
+        $this->assertEquals('private', $job->queryParams->typeSource);
+        $this->assertEquals($job->queryParams->message_thread_id, $this->botUser->topic_id);
     }
 }

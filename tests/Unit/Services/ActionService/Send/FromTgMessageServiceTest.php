@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services\ActionService\Send;
 
 use App\DTOs\TelegramUpdateDto;
-use App\Models\BotUser;
 use Illuminate\Support\Facades\Request;
 use Tests\Stubs\Services\ActionService\Send\FromTgMessageServiceStub;
 use Tests\TestCase;
@@ -45,7 +44,6 @@ class FromTgMessageServiceTest extends TestCase
     {
         $request = Request::create('api/telegram/bot', 'POST', $this->basicPayload);
         $dto = TelegramUpdateDto::fromRequest($request);
-        $botUser = BotUser::where('chat_id', config('testing.tg_private.chat_id'))->first();
 
         $service = new FromTgMessageServiceStub($dto);
 

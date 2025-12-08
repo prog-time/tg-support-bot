@@ -2,15 +2,12 @@
 
 namespace App\Services\VK;
 
-use App\Actions\Telegram\SendMessage;
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
+use App\Jobs\SendMessage\SendVkTelegramMessageJob;
+use App\Logging\LokiLogger;
 use App\Models\BotUser;
-use App\Models\Message;
 use App\Services\ActionService\Send\ToTgMessageService;
-use App\Services\TgTopicService;
 
 class VkMessageService extends ToTgMessageService
 {
@@ -24,8 +21,6 @@ class VkMessageService extends ToTgMessageService
 
     protected TGTextMessageDto $messageParamsDTO;
 
-    protected TgTopicService $tgTopicService;
-
     public function __construct(VkUpdateDto $update)
     {
         parent::__construct($update);
@@ -38,134 +33,109 @@ class VkMessageService extends ToTgMessageService
      */
     public function handleUpdate(): void
     {
-        if ($this->update->type === 'message_new') {
+        try {
+            if ($this->update->type !== 'message_new') {
+                throw new \Exception('Неизвестный тип события', 1);
+            }
+
             if (!empty($this->update->listFileUrl)) {
-                $resultQuery = $this->sendDocument();
+                $this->sendDocument();
             } elseif (!empty($this->update->text)) {
-                $resultQuery = $this->sendMessage();
+                $this->sendMessage();
             } elseif (!empty($this->update->geo)) {
-                $resultQuery = $this->sendLocation();
+                $this->sendLocation();
             }
-
-            if (empty($resultQuery->ok)) {
-                throw new \Exception('Ошибка отправки запроса!');
-            }
-
-            $this->saveMessage($resultQuery);
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                'message_thread_id' => $this->botUser->topic_id,
-                'icon_custom_emoji_id' => __('icons.incoming'),
-            ]));
 
             echo 'ok';
+        } catch (\Exception $e) {
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendDocument(): TelegramAnswerDto
+    protected function sendDocument(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendDocument';
         $this->messageParamsDTO->document = $this->update->listFileUrl[0];
 
         $this->messageParamsDTO->caption = $this->update->text ?? '';
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+
+        SendVkTelegramMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            $this->messageParamsDTO,
+        );
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendLocation(): TelegramAnswerDto
+    protected function sendLocation(): void
     {
         $this->messageParamsDTO->methodQuery = 'sendLocation';
         $this->messageParamsDTO->latitude = $this->update->geo['coordinates']['latitude'];
         $this->messageParamsDTO->longitude = $this->update->geo['coordinates']['longitude'];
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+
+        SendVkTelegramMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            $this->messageParamsDTO,
+        );
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendMessage(): TelegramAnswerDto
+    protected function sendMessage(): void
     {
         $this->messageParamsDTO->text = $this->update->text;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+
+        SendVkTelegramMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            $this->messageParamsDTO,
+        );
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendPhoto(): TelegramAnswerDto
+    protected function sendPhoto(): void
     {
-        return TelegramAnswerDto::fromData([
-            'ok' => false,
-            'response_code' => 500,
-            'result' => 'Метод sendPhoto не поддерживается!',
-        ]);
+        //
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendSticker(): TelegramAnswerDto
+    protected function sendSticker(): void
     {
-        return TelegramAnswerDto::fromData([
-            'ok' => false,
-            'response_code' => 500,
-            'result' => 'Метод sendSticker не поддерживается!',
-        ]);
+        //
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendContact(): TelegramAnswerDto
+    protected function sendContact(): void
     {
-        return TelegramAnswerDto::fromData([
-            'ok' => false,
-            'response_code' => 500,
-            'result' => 'Метод sendContact не поддерживается!',
-        ]);
+        //
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVideoNote(): TelegramAnswerDto
+    protected function sendVideoNote(): void
     {
-        return TelegramAnswerDto::fromData([
-            'ok' => false,
-            'response_code' => 500,
-            'result' => 'Метод sendVideoNote не поддерживается!',
-        ]);
+        //
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVoice(): TelegramAnswerDto
+    protected function sendVoice(): void
     {
-        return TelegramAnswerDto::fromData([
-            'ok' => false,
-            'response_code' => 500,
-            'result' => 'Метод sendVoice не поддерживается!',
-        ]);
-    }
-
-    /**
-     * @param TelegramAnswerDto $resultQuery
-     *
-     * @return Message
-     */
-    protected function saveMessage(mixed $resultQuery): Message
-    {
-        return Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->source,
-            'message_type' => $this->typeMessage,
-            'from_id' => $this->update->id,
-            'to_id' => $resultQuery->message_id,
-        ]);
+        //
     }
 }

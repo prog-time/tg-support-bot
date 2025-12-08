@@ -5,13 +5,14 @@ namespace App\Services\TgExternal;
 use App\DTOs\External\ExternalMessageAnswerDto;
 use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\Redis\WebhookMessageDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
+use App\DTOs\TGTextMessageDto;
 use App\Helpers\TelegramHelper;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\SendWebhookMessage;
+use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
-use phpDocumentor\Reflection\Exception;
 
 class TgExternalMessageService extends FromTgMessageService
 {
@@ -21,9 +22,9 @@ class TgExternalMessageService extends FromTgMessageService
     }
 
     /**
-     * @return ExternalMessageAnswerDto
+     * @return void
      */
-    public function handleUpdate(): ExternalMessageAnswerDto
+    public function handleUpdate(): void
     {
         try {
             if ($this->update->typeQuery !== 'message') {
@@ -47,11 +48,37 @@ class TgExternalMessageService extends FromTgMessageService
             ];
 
             if (!empty($this->update->fileId)) {
-                $resultData['message'] = array_merge($resultData['message'], $this->sendDocument());
+                if (!empty($this->update->rawData['message']['photo'])) {
+                    $fileType = 'photo';
+                } else {
+                    $fileType = 'document';
+                }
+
+                $resultData['message'] = array_merge($resultData['message'], [
+                    'content_type' => 'file',
+                    'file_id' => $this->update->fileId,
+                    'file_url' => TelegramHelper::getFilePublicPath($this->update->fileId),
+                    'file_type' => $fileType,
+                ]);
             } elseif (!empty($this->update->rawData['message']['location'])) {
-                $resultData['message'] = array_merge($resultData['message'], $this->sendLocation());
+                $resultData['message'] = array_merge($resultData['message'], [
+                    'location' => $this->update->location,
+                ]);
             } elseif (!empty($this->update->rawData['message']['contact'])) {
-                $resultData['message'] = array_merge($resultData['message'], $this->sendContact());
+                $contactData = $this->update->rawData['message']['contact'];
+
+                $textMessage = "Контакт: \n";
+                if (!empty($contactData['first_name'])) {
+                    $textMessage .= "Имя: {$contactData['first_name']}\n";
+                }
+
+                if (!empty($contactData['phone_number'])) {
+                    $textMessage .= "Телефон: {$contactData['phone_number']}\n";
+                }
+
+                $resultData['message'] = array_merge($resultData['message'], [
+                    'text' => $textMessage,
+                ]);
             }
 
             $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
@@ -65,117 +92,79 @@ class TgExternalMessageService extends FromTgMessageService
                 ]);
             }
 
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
+            SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+                'methodQuery' => 'editForumTopic',
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
-
-            return $saveMessageData;
         } catch (\Exception $e) {
-            dump($e->getMessage());
-            return ExternalMessageAnswerDto::from([
-                'status' => false,
-                'error' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка обработки запроса!',
-            ]);
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return array
+     * @return void
      */
-    protected function sendPhoto(): array
+    protected function sendPhoto(): void
     {
-        return [];
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function sendSticker(): mixed
+    protected function sendSticker(): void
     {
-        return null;
+        //
     }
 
     /**
-     * @return array
+     * @return void
      */
-    protected function sendLocation(): array
+    protected function sendLocation(): void
     {
-        return [
-            'location' => $this->update->location,
-        ];
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function sendMessage(): mixed
+    protected function sendMessage(): void
     {
-        return null;
+        //
     }
 
     /**
-     * @return string[]
+     * @return void
      */
-    protected function sendContact(): array
+    protected function sendContact(): void
     {
-        $contactData = $this->update->rawData['message']['contact'];
-
-        $textMessage = "Контакт: \n";
-        if (!empty($contactData['first_name'])) {
-            $textMessage .= "Имя: {$contactData['first_name']}\n";
-        }
-
-        if (!empty($contactData['phone_number'])) {
-            $textMessage .= "Телефон: {$contactData['phone_number']}\n";
-        }
-
-        return [
-            'text' => $textMessage,
-        ];
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function sendDocument(): mixed
+    protected function sendDocument(): void
     {
-        try {
-            if (empty($this->update->fileId)) {
-                throw new Exception('Параметр fileId не найден!');
-            }
-
-            if (!empty($this->update->rawData['message']['photo'])) {
-                $fileType = 'photo';
-            } else {
-                $fileType = 'document';
-            }
-
-            return [
-                'content_type' => 'file',
-                'file_id' => $this->update->fileId,
-                'file_url' => TelegramHelper::getFilePublicPath($this->update->fileId),
-                'file_type' => $fileType,
-            ];
-        } catch (\Exception $e) {
-            return [];
-        }
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function sendVideoNote(): mixed
+    protected function sendVideoNote(): void
     {
-        return null;
+        //
     }
 
     /**
-     * @return mixed
+     * @return void
      */
-    protected function sendVoice(): mixed
+    protected function sendVoice(): void
     {
-        return null;
+        //
     }
 
     /**

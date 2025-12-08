@@ -4,7 +4,6 @@ namespace App\Services\ActionService\Edit;
 
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 
 /**
  * Class TemplateEditService
@@ -21,22 +20,18 @@ abstract class TemplateEditService
 
     protected TGTextMessageDto $messageParamsDTO;
 
-    protected TgTopicService $tgTopicService;
+    /**
+     * @return void
+     */
+    abstract public function handleUpdate(): void;
 
     /**
-     * @return mixed
-     *
-     * @throws \Exception
+     * @return void
      */
-    abstract public function handleUpdate(): mixed;
+    abstract protected function editMessageText(): void;
 
     /**
-     * @return mixed
+     * @return void
      */
-    abstract protected function editMessageText(): mixed;
-
-    /**
-     * @return mixed
-     */
-    abstract protected function editMessageCaption(): mixed;
+    abstract protected function editMessageCaption(): void;
 }

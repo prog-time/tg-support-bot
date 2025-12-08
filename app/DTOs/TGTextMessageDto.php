@@ -8,86 +8,63 @@ use Spatie\LaravelData\Data;
 /**
  * Отправка сообщения в TG
  *
- * @property string $methodQuery
+ * @property string      $methodQuery
  * @property string|null $typeSource
- * @property int $chat_id
- * @property int|null $message_id
- * @property int|null $message_thread_id
+ * @property int         $chat_id
+ * @property int|null    $message_id
+ * @property int|null    $message_thread_id
  * @property string|null $text
  * @property string|null $caption
  * @property string|null $parse_mode
- * @property array|null $reply_markup
- * @property array|null $reply_parameters
- * @property array|null $contact
+ * @property array|null  $reply_markup
+ * @property array|null  $reply_parameters
+ * @property array|null  $contact
  * @property string|null $file_id
  * @property string|null $photo
  * @property string|null $document
  * @property string|null $voice
  * @property string|null $sticker
  * @property string|null $video_note
- * @property array|null $media
- * @property float|null $latitude
- * @property float|null $longitude
+ * @property array|null  $media
+ * @property float|null  $latitude
+ * @property float|null  $longitude
  */
 class TGTextMessageDto extends Data
 {
-    /**
-     * @param string $methodQuery
-     * @param string|null $typeSource
-     * @param int $chat_id
-     * @param int|null $message_id
-     * @param int|null $message_thread_id
-     * @param string|null $text
-     * @param string|null $caption
-     * @param string|null $parse_mode
-     * @param array|null $reply_markup
-     * @param array|null $reply_parameters
-     * @param array|null $contact
-     * @param string|null $file_id
-     * @param string|null $photo
-     * @param string|null $document
-     * @param string|null $voice
-     * @param string|null $sticker
-     * @param string|null $video_note
-     * @param array|null $media
-     * @param float|null $latitude
-     * @param float|null $longitude
-     */
     public function __construct(
-        public string   $methodQuery,
-        public ?string  $token,
-        public ?string  $typeSource,
-        public int      $chat_id,
-        public ?int     $message_id,
-        public ?int     $message_thread_id,
-        public ?string  $text,
-        public ?string  $caption,
-        public ?string  $parse_mode = 'html',
-        public ?array   $reply_markup,
-        public ?array   $reply_parameters,
-
-        public ?array   $contact,
-
-        public ?string  $file_id,
-        public ?string  $photo,
-        public ?string  $document,
-        public ?UploadedFile $uploaded_file,
-        public ?string  $voice,
-        public ?string  $sticker,
-        public ?string  $video_note,
-
-        public ?array  $media,
-
-        public ?float  $latitude,
-        public ?float  $longitude,
-    ) {}
+        public string         $methodQuery,
+        public ?string        $token,
+        public ?string        $typeSource,
+        public int            $chat_id,
+        public ?int           $message_id,
+        public ?int           $message_thread_id,
+        public ?string        $text,
+        public ?string        $caption,
+        public ?string        $parse_mode = 'html',
+        public ?array         $reply_markup = null,
+        public ?array         $reply_parameters = null,
+        public ?array         $contact = null,
+        public ?string        $file_id = null,
+        public ?string        $photo = null,
+        public ?string        $document = null,
+        public ?UploadedFile  $uploaded_file = null,
+        public ?string        $uploaded_file_path = null,
+        public ?string        $voice = null,
+        public ?string        $sticker = null,
+        public ?string        $video_note = null,
+        public ?array         $media = null,
+        public ?float         $latitude = null,
+        public ?float         $longitude = null,
+        public int|string|null         $icon_custom_emoji_id = null,
+    ) {
+    }
 
     /**
      * @return array
      */
     public function toArray(): array
     {
-        $dataMessage = array_filter(parent::toArray(), fn($value) => !is_null($value));
+        $dataMessage = array_filter(parent::toArray(), fn ($value) => !is_null($value));
         unset($dataMessage['methodQuery']);
 
         if (!empty($dataMessage['typeSource'])) {
@@ -103,7 +80,7 @@ class TGTextMessageDto extends Data
         }
 
         $jsonParams = [
-            'reply_markup'
+            'reply_markup',
         ];
         foreach ($jsonParams as $jsonParam) {
             if (!empty($dataMessage[$jsonParam])) {
@@ -118,6 +95,7 @@ class TGTextMessageDto extends Data
 
     /**
      * @param array $media
+     *
      * @return array
      */
     private function prepareMedia(array $media): array
@@ -125,10 +103,10 @@ class TGTextMessageDto extends Data
         $mediaData = [];
         if (!empty($media)) {
             foreach ($media as $key => $item) {
-                $fileCode = 'file'. $key;
+                $fileCode = 'file' . $key;
                 $mediaData['media'][] = [
                     'type' => 'document',
-                    'media' => 'attach://' . $fileCode
+                    'media' => 'attach://' . $fileCode,
                 ];
                 $mediaData[$fileCode] = new \CURLFile($item['file']);
             }

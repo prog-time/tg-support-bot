@@ -3,19 +3,15 @@
 namespace App\Services\TgVk;
 
 use App\Actions\Telegram\GetFile;
-use App\Actions\Telegram\SendMessage;
 use App\Actions\Vk\GetMessagesUploadServerVk;
 use App\Actions\Vk\SaveFileVk;
-use App\Actions\Vk\SendMessageVk;
-use App\Actions\Vk\SendQueryVk;
 use App\Actions\Vk\UploadFileVk;
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramTopicDto;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\Helpers\TelegramHelper;
-use App\Models\Message;
+use App\Jobs\SendMessage\SendVkMessageJob;
+use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
 
 class TgVkMessageService extends FromTgMessageService
@@ -26,54 +22,43 @@ class TgVkMessageService extends FromTgMessageService
     }
 
     /**
-     * @return VkAnswerDto|null
+     * @return void
      */
-    public function handleUpdate(): ?VkAnswerDto
+    public function handleUpdate(): void
     {
         try {
             if ($this->update->typeQuery !== 'message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['message']['photo'])) {
-                $resultQuery = $this->sendPhoto();
+                $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
-                $resultQuery = $this->sendDocument();
+                $this->sendDocument();
             } elseif (!empty($this->update->rawData['message']['sticker'])) {
-                $resultQuery = $this->sendSticker();
+                $this->sendSticker();
             } elseif (!empty($this->update->rawData['message']['contact'])) {
-                $resultQuery = $this->sendContact();
+                $this->sendContact();
             } elseif (!empty($this->update->text)) {
-                $resultQuery = $this->sendMessage();
+                $this->sendMessage();
             }
-
-            if (empty($resultQuery) || !empty($resultQuery->error)) {
-                throw new \Exception('Ошибка отправки запроса!');
-            }
-
-            $this->saveMessage($resultQuery);
-
-            $this->tgTopicService->editTgTopic(TelegramTopicDto::fromData([
-                'message_thread_id' => $this->botUser->topic_id,
-                'icon_custom_emoji_id' => __('icons.outgoing'),
-            ]));
 
             echo 'ok';
-
-            return $resultQuery;
         } catch (\Exception $e) {
-            return null;
+            (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * @return VkAnswerDto
+     * @return void
+     *
+     * @throws \Exception
      */
-    protected function sendPhoto(): VkAnswerDto
+    protected function sendPhoto(): void
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'photo', 'photos');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!');
+            throw new \Exception('Ошибка загрузки файла!', 1);
         }
         $attachment = "photo{$fileData->response[0]['owner_id']}_{$fileData->response[0]['id']}";
 
@@ -82,17 +67,24 @@ class TgVkMessageService extends FromTgMessageService
             'peer_id' => $this->botUser->chat_id,
             'attachment' => $attachment,
         ];
-        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
+
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
-     * @return VkAnswerDto
+     * @return void
+     *
+     * @throws \Exception
      */
-    protected function sendDocument(): VkAnswerDto
+    protected function sendDocument(): void
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'doc', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!');
+            throw new \Exception('Ошибка загрузки файла!', 1);
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -101,28 +93,32 @@ class TgVkMessageService extends FromTgMessageService
             'peer_id' => $this->botUser->chat_id,
             'attachment' => $attachment,
         ];
-        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
+
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendLocation(): TelegramAnswerDto
+    protected function sendLocation(): void
     {
-        $this->messageParamsDTO->methodQuery = 'sendLocation';
-        $this->messageParamsDTO->latitude = $this->update->location['latitude'];
-        $this->messageParamsDTO->longitude = $this->update->location['longitude'];
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        //
     }
 
     /**
-     * @return VkAnswerDto
+     * @return void
+     *
+     * @throws \Exception
      */
-    protected function sendVoice(): VkAnswerDto
+    protected function sendVoice(): void
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'audio_message', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!');
+            throw new \Exception('Ошибка загрузки файла!', 1);
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -131,36 +127,44 @@ class TgVkMessageService extends FromTgMessageService
             'peer_id' => $this->botUser->chat_id,
             'attachment' => $attachment,
         ];
-        return SendQueryVk::execute(VkTextMessageDto::from($queryParams));
+
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
-     * @return VkAnswerDto
+     * @return void
      */
-    protected function sendSticker(): VkAnswerDto
+    protected function sendSticker(): void
     {
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->botUser->chat_id,
             'message' => $this->update->rawData['message']['sticker']['emoji'],
         ];
-        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
+
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
-     * @return TelegramAnswerDto
+     * @return void
      */
-    protected function sendVideoNote(): TelegramAnswerDto
+    protected function sendVideoNote(): void
     {
-        $this->messageParamsDTO->methodQuery = 'sendVideoNote';
-        $this->messageParamsDTO->video_note = $this->update->fileId;
-        return SendMessage::execute($this->botUser, $this->messageParamsDTO);
+        //
     }
 
     /**
-     * @return VkAnswerDto
+     * @return void
      */
-    protected function sendContact(): VkAnswerDto
+    protected function sendContact(): void
     {
         $contactData = $this->update->rawData['message']['contact'];
 
@@ -175,36 +179,30 @@ class TgVkMessageService extends FromTgMessageService
             'peer_id' => $this->botUser->chat_id,
             'message' => $textMessage,
         ];
-        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
+
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**
-     * @return null|VkAnswerDto
+     * @return void
      */
-    protected function sendMessage(): ?VkAnswerDto
+    protected function sendMessage(): void
     {
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->botUser->chat_id,
             'message' => $this->update->text,
         ];
-        return SendMessageVk::execute(VkTextMessageDto::from($queryParams));
-    }
 
-    /**
-     * @param mixed $resultQuery
-     *
-     * @return Message
-     */
-    protected function saveMessage(mixed $resultQuery): Message
-    {
-        return Message::create([
-            'bot_user_id' => $this->botUser->id,
-            'platform' => $this->source,
-            'message_type' => $this->typeMessage,
-            'from_id' => $this->update->messageId,
-            'to_id' => $resultQuery->response,
-        ]);
+        SendVkMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            VkTextMessageDto::from($queryParams),
+        );
     }
 
     /**

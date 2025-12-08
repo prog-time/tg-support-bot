@@ -4,7 +4,6 @@ namespace App\Services\ActionService\Edit;
 
 use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\TgTopicService;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -22,12 +21,9 @@ abstract class ToTgEditService extends TemplateEditService
 
     protected TGTextMessageDto $messageParamsDTO;
 
-    protected TgTopicService $tgTopicService;
-
     public function __construct(mixed $update)
     {
         $this->update = $update;
-        $this->tgTopicService = new TgTopicService();
 
         $chatId = $this->update->chatId ?? $this->update->from_id;
         $this->botUser = BotUser::getUserByChatId($chatId, $this->source);
