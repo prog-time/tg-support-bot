@@ -6,7 +6,7 @@ set -e
 # -----------------------------------------
 SERVER_USER="root"
 SERVER_HOST="45.80.69.244"
-REMOTE_SCRIPT="/home/multichat/scripts/check_scripts/check_shell_scripts.sh"
+REMOTE_SCRIPT="/home/multichat/scripts/check_scripts/check_shellcheck.sh"
 # -----------------------------------------
 
 # Connect to server and run the remote script
