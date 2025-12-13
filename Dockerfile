@@ -18,25 +18,32 @@ COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# WORKDIR ставим до COPY проекта
+# WORKDIR до COPY проекта
 WORKDIR /var/www
 
 # Копируем проект
 COPY . .
 
-# Права доступа
+# Права доступа на storage и bootstrap/cache
 RUN mkdir -p storage/logs \
     storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache && \
-    chown -R www-data:www-data storage && \
-    find storage -type d -exec chmod 775 {} + && \
-    find storage -type f -exec chmod 664 {} +
+    chown -R www-data:www-data storage bootstrap/cache && \
+    find storage bootstrap/cache -type d -exec chmod 775 {} + && \
+    find storage bootstrap/cache -type f -exec chmod 664 {} +
 
-# Установка PHP и Node зависимостей
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader && \
-    npm ci && npm run build
+# Отключаем получение git commit info для Laravel/npm
+ENV LARAVEL_GIT_COMMIT=false
 
+# Установка PHP зависимостей
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+# Установка Node.js зависимостей и сборка фронтенда
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && \
+    npm run build
+
+# Меняем пользователя на www-data
 USER www-data
 
 EXPOSE 9000
