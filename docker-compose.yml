@@ -2,7 +2,6 @@ services:
     app:
         build: .
         container_name: pet
-        image: docker_template:latest
         user: root
         depends_on:
             - pgdb
@@ -107,7 +106,6 @@ services:
 
     queue:
         build: .
-        image: docker_template:latest
         container_name: laravel_queue
         restart: always
         depends_on:
