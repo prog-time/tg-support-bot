@@ -68,7 +68,13 @@ class TelegramBotController
     public function bot_query(): void
     {
         $this->checkBotQuery();
-        if (!$this->dataHook->isBot) {
+        if ($this->dataHook->editedTopicStatus && $this->dataHook->typeSource === 'supergroup') {
+            SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+                'methodQuery' => 'deleteMessage',
+                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'message_id' => $this->dataHook->messageId,
+            ]));
+        } elseif (!$this->dataHook->isBot) {
             switch ($this->platform) {
                 case 'telegram':
                     $this->controllerPlatformTg();
@@ -84,14 +90,6 @@ class TelegramBotController
                 default:
                     $this->controllerExternalPlatform();
                     break;
-            }
-        } else {
-            if ($this->dataHook->editedTopicStatus) {
-                SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
-                    'methodQuery' => 'deleteMessage',
-                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
-                    'message_id' => $this->dataHook->messageId,
-                ]));
             }
         }
     }
