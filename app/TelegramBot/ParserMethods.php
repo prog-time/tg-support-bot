@@ -6,7 +6,7 @@ use App\Logging\LokiLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use phpDocumentor\Reflection\Exception;
+use phpDocumentor\Reflection\Exception as phpDocumentorException;
 
 class ParserMethods
 {
@@ -22,20 +22,22 @@ class ParserMethods
     public static function postQuery(string $urlQuery, array|string $queryParams = [], array $queryHeading = []): array
     {
         try {
-            $response = Http::withHeaders($queryHeading)->post($urlQuery, $queryParams);
-            $resultQuery = $response->json();
+            $resultQuery = Http::withHeaders($queryHeading)
+                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                ->post($urlQuery, $queryParams)
+                ->json();
 
             if (empty($resultQuery)) {
-                throw new \Exception('Запрос вызвал ошибку');
+                throw new \RuntimeException('Запрос вызвал ошибку');
             }
 
             return $resultQuery;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => 'Ошибка отправки запроса',
+                'result' => $e->getMessage(),
             ];
         }
     }
@@ -53,23 +55,26 @@ class ParserMethods
     {
         try {
             if (!empty($queryParams)) {
-                $urlQuery = $urlQuery . '?' . http_build_query($queryParams);
+                $urlQuery .= '?' . http_build_query($queryParams);
             }
 
-            $response = Http::withHeaders($queryHeading)->withoutVerifying()->get($urlQuery);
-            $resultQuery = $response->json();
+            $resultQuery = Http::withHeaders($queryHeading)
+                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                ->withoutVerifying()
+                ->get($urlQuery)
+                ->json();
 
             if (empty($resultQuery)) {
-                throw new \Exception('Запрос вызвал ошибку');
+                throw new \RuntimeException('Запрос вызвал ошибку');
             }
 
             return $resultQuery;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => 'Ошибка отправки запроса',
+                'result' => $e->getMessage(),
             ];
         }
     }
@@ -82,7 +87,7 @@ class ParserMethods
             }
 
             if (empty($queryParams['uploaded_file']) || !$queryParams['uploaded_file'] instanceof UploadedFile) {
-                throw new Exception('Файл не передан!', 1);
+                throw new phpDocumentorException('Файл не передан!');
             }
 
             /** @var UploadedFile $attachData */
@@ -91,23 +96,23 @@ class ParserMethods
 
             // Проверка размера файла (макс. 50 МБ для Telegram)
             if ($attachData->getSize() > 50 * 1024 * 1024) {
-                throw new Exception('Файл слишком большой для Telegram (макс. 50 МБ)', 1);
+                throw new phpDocumentorException('Файл слишком большой для Telegram (макс. 50 МБ)');
             }
 
             if ($attachData->getSize() === 0) {
-                throw new Exception('Файл пустой и не может быть отправлен', 1);
+                throw new phpDocumentorException('Файл пустой и не может быть отправлен');
             }
 
             // Проверка валидности файла
             if (!$attachData->isValid()) {
-                throw new Exception('Файл невалиден', 1);
+                throw new phpDocumentorException('Файл невалиден');
             }
 
             // Получение пути к временному файлу
             $tempPath = $attachData->getRealPath();
 
             if (!$tempPath || !file_exists($tempPath) || !is_readable($tempPath)) {
-                throw new Exception('Временный файл не существует или недоступен для чтения', 1);
+                throw new phpDocumentorException('Временный файл не существует или недоступен для чтения');
             }
 
             // Генерация уникального имени с UUID
@@ -115,25 +120,26 @@ class ParserMethods
             $safeName = Str::uuid() . ($extension ? '.' . $extension : '');
 
             // Отправка файла в Telegram
-            $response = Http::attach(
+            $resultQuery = Http::attach(
                 $attachType,
-                fopen($tempPath, 'r'),
+                fopen($tempPath, 'rb'),
                 $safeName
-            )->post($urlQuery, $queryParams);
-
-            $resultQuery = $response->json();
+            )
+                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                ->post($urlQuery, $queryParams)
+                ->json();
 
             if (empty($resultQuery)) {
-                throw new \Exception('Запрос вызвал ошибку', 1);
+                throw new \RuntimeException('Запрос вызвал ошибку');
             }
 
             return $resultQuery;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+                'result' => $e->getMessage()
             ];
         }
     }
