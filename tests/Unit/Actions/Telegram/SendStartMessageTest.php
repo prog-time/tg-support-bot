@@ -27,7 +27,7 @@ class SendStartMessageTest extends TestCase
 
         // Вызываем фабрику DTO
         $dto = TelegramUpdateDtoMock::getDto($dtoUpdateParams);
-        $botUser = BotUser::getTelegramUserData($dto);
+        $botUser = BotUser::getOrCreateByTelegramUpdate($dto);
 
         // Act
         (new SendStartMessage())->execute($dto);

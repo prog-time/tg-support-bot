@@ -30,7 +30,7 @@ class SendTelegramMessageJobTest extends TestCase
         Message::truncate();
 
         $this->dto = TelegramUpdateDtoMock::getDto();
-        $this->botUser = BotUser::getTelegramUserData($this->dto);
+        $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->dto);
 
         $jobTopicCreate = new TopicCreateJob(
             $this->botUser->id,
