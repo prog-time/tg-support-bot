@@ -25,7 +25,7 @@ class AiAcceptMessage extends AiAction
                 throw new Exception('Токен от AI бота не указан!', 1);
             }
 
-            $botUser = BotUser::getTelegramUserData($update);
+            $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
                 throw new Exception('Пользователь не найден', 1);
             }
