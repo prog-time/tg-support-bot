@@ -36,7 +36,7 @@ class SendStartMessage
                 'parse_mode' => 'html',
             ]);
 
-            $botUser = BotUser::getTelegramUserData($update);
+            $botUser = BotUser::getOrCreateByTelegramUpdate($update);
 
             SendTelegramMessageJob::dispatch(
                 $botUser->id,
