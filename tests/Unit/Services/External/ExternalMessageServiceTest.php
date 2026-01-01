@@ -37,7 +37,7 @@ class ExternalMessageServiceTest extends TestCase
 
         $this->dto = ExternalMessageDtoMock::getDto();
 
-        $this->botUser = (new BotUser())->getExternalBotUser($this->dto);
+        $this->botUser = (new BotUser())->getOrCreateExternalBotUser($this->dto);
     }
 
     protected function getMessageParams(): array

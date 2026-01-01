@@ -23,7 +23,7 @@ abstract class ExternalService
     {
         $this->update = $update;
 
-        $this->botUser = (new BotUser())->getExternalBotUser($this->update);
+        $this->botUser = (new BotUser())->getOrCreateExternalBotUser($this->update);
 
         if (empty($this->botUser)) {
             throw new \Exception('Пользователя не существует!');
