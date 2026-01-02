@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTOs\External\ExternalListMessageDto;
 use App\DTOs\External\ExternalMessageDto;
+use App\Models\BotUser;
 use App\Services\External\ExternalTrafficService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,13 @@ class ExternalTrafficController
         $this->dataHook = !empty($dataMessage) ? $dataMessage : die();
 
         $this->externalTrafficService = new ExternalTrafficService();
+
+        $botUser = (new BotUser())->getExternalBotUser($this->dataHook->external_id, $this->dataHook->source);
+        if (!empty($botUser)) {
+            if ($botUser->isBanned()) {
+                die();
+            }
+        }
     }
 
     /**
