@@ -63,7 +63,7 @@ class TopicCreateJob implements ShouldQueue
                 $this->botUser->topic_id = $response->message_thread_id;
                 $this->botUser->save();
 
-                (new SendContactMessage())->executeByBotUser($this->botUser);
+                (new SendContactMessage())->execute($this->botUser);
                 return;
             }
 
