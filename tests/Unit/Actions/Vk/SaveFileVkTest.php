@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Actions\VK;
+namespace Tests\Unit\Actions\Vk;
 
 use App\Actions\Vk\SaveFileVk;
 use Tests\TestCase;
