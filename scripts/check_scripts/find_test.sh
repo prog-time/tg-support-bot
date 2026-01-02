@@ -11,7 +11,7 @@ EXCLUDE_PATTERNS=(
     "*Test" "*Search" "*Controller*" "*Console*" "*Jobs*"
     "*Models*" "*Resources*" "*Requests*" "*DTO*" "*Dtos*"
     "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
-    "*Enum*" "*Exception*" "*Migration*" "*Seeder*"
+    "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
     "*MockDto*" "*api*" "*Providers*" "*Abstract*"
 )
 
