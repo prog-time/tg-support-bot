@@ -17,7 +17,7 @@ class TelegramUpdateDto_ExternalMock
     public static function getDtoParams(?BotUser $botUser = null): array
     {
         if (!$botUser) {
-            $botUser = (new BotUser())->getExternalBotUser(ExternalMessageDto::from([
+            $botUser = (new BotUser())->getOrCreateExternalBotUser(ExternalMessageDto::from([
                 'source' => config('testing.external.source'),
                 'external_id' => config('testing.external.external_id'),
                 'message_id' => time(),
