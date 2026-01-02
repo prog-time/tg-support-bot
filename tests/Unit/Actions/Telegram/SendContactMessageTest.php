@@ -31,8 +31,6 @@ class SendContactMessageTest extends TestCase
 
         $job = $pushed[0]['job'];
 
-        dump($job);
-
         // Assert
         $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $job->queryParams->chat_id);
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
