@@ -1,38 +1,63 @@
-name: CI - Docker Compose
+name: Laravel CI
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
-    branches: [ main ]
+    branches: [ "main", "develop" ]
+  pull_request:
 
 jobs:
-  build-and-test:
+  laravel-ci:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy .env
-        run: cp .env.example .env
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, pdo_mysql, bcmath
+          tools: composer
+          coverage: none
 
-      - name: Build & start Docker Compose
-        run: docker-compose up -d --build
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
 
-      - name: Wait for PostgreSQL
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare Laravel
         run: |
-          echo "Waiting for Postgres..."
-          until docker exec pgdb pg_isready -U $DB_USERNAME; do sleep 2; done
+          cp .env.example .env
+          php artisan key:generate
 
-      - name: Generate Laravel key
-        run: docker-compose exec app php artisan key:generate
+      - name: Run Pint (code style)
+        run: ./vendor/bin/pint --test
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse
 
       - name: Run migrations
-        run: docker-compose exec app php artisan migrate --force
+        run: php artisan migrate --force
 
       - name: Run tests
-        run: docker-compose exec app vendor/bin/phpunit --configuration phpunit.xml
-
-      - name: Shutdown Docker Compose
-        run: docker-compose down
+        run: php artisan test
