@@ -3,7 +3,9 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\SendContactMessage;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SendContactMessageTest extends TestCase
@@ -14,18 +16,25 @@ class SendContactMessageTest extends TestCase
     {
         parent::setUp();
 
+        Queue::fake();
+
         $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
     }
 
-    public function test_create_contact_message(): void
+    public function test_send_contact_message(): void
     {
-        $currentTextMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
-        $currentTextMessage .= "Источник: {$this->botUser->platform} \n";
-        $currentTextMessage .= "ID: {$this->botUser->chat_id} \n";
-        $currentTextMessage .= "Ссылка: https://telegram.me/iliyalyachuk \n";
+        (new SendContactMessage())->execute($this->botUser);
 
-        $textMessage = (new SendContactMessage())->createContactMessage($this->botUser);
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];
+        $this->assertCount(1, $pushed);
 
-        $this->assertEquals($currentTextMessage, $textMessage);
+        $job = $pushed[0]['job'];
+
+        dump($job);
+
+        // Assert
+        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $job->queryParams->chat_id);
+        $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
     }
 }
