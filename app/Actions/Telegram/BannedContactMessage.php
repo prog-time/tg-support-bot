@@ -2,7 +2,6 @@
 
 namespace App\Actions\Telegram;
 
-use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
 
@@ -25,16 +24,16 @@ class BannedContactMessage
         $queryParams = (new SendContactMessage())->getQueryParams($botUser);
 
         if ($botUser->isBanned()) {
-            $queryParams['text'] = "<b>🚫 ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН 🚫</b> \n\n" . $queryParams['text'];
+            $queryParams->text = "<b>🚫 ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН 🚫</b> \n\n" . $queryParams->text;
         }
 
         if ($messageId !== null) {
-            $queryParams['message_id'] = $messageId;
-            $queryParams['methodQuery'] = 'editMessageText';
+            $queryParams->message_id = $messageId;
+            $queryParams->methodQuery = 'editMessageText';
         } else {
-            $queryParams['methodQuery'] = 'sendMessage';
+            $queryParams->methodQuery = 'sendMessage';
         }
 
-        SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from($queryParams));
+        SendTelegramSimpleQueryJob::dispatch($queryParams);
     }
 }
