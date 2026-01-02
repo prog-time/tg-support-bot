@@ -1,7 +1,7 @@
 (function () {
     const socketUrl = import.meta.env.VITE_APP_URL;
 
-    // Генерация уникального ключа пользователя
+    // Generate user key
     function generateUniqueKey() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         const bytes = crypto.getRandomValues(new Uint8Array(12));
@@ -31,7 +31,6 @@
 
     if (document.getElementById(widgetId)) return;
 
-    // Создаём кнопку виджета
     const butWidget = document.createElement('div');
     butWidget.setAttribute('class', 'ptw-butWidget');
     butWidget.innerHTML = `
@@ -43,7 +42,7 @@
     `;
     document.body.appendChild(butWidget);
 
-    // Создаём контейнер чата
+    // Create chat container
     const container = document.createElement('div');
     container.id = widgetId;
     container.setAttribute('role', 'region');
@@ -92,7 +91,7 @@
     `;
     document.body.appendChild(container);
 
-    // Подключаем Socket.IO
+    // Socket.IO connection
     const socket = io(socketUrl, {
         query: { externalId }
     });
@@ -104,7 +103,7 @@
         return new Date(year, month - 1, day, hour, minute, second);
     }
 
-    // Функция создания сообщения в DOM
+    // Create message in DOM
     function createMessageBlock(messageData) {
         const messagesContainer = container.querySelector('#ptw_messages');
         const messageEl = document.createElement('section');
@@ -155,11 +154,31 @@
         }
     }
 
-    // Отправка сообщения
+    // Send message
     function sendTextMessage() {
         const input = container.querySelector('#ptw_text_field');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text) {
+            return;
+        }
+
+        let messageData = {
+            message_type: 'incoming',
+            content_type: 'text',
+            text: text,
+            date: new Date().toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(',', '')
+        }
+
+        createMessageBlock(messageData);
+
+        scrollBottom()
 
         socket.emit('send_message', { text });
         input.value = '';
@@ -192,7 +211,6 @@
         } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
             return "Вчера";
         } else {
-            // Форматируем день.месяц.год с ведущими нулями
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы с 0
             const year = date.getFullYear();
@@ -201,11 +219,10 @@
     }
 
     socket.on("connect", () => {
-        // Запрос истории сообщений
         socket.emit("get_history");
     });
 
-    // Получение сообщений от сервера
+    // Get message
     socket.on("history_messages", (messagesList) => {
         let statusChangeDate = false
         let prevDate = null
@@ -223,18 +240,15 @@
         }
     });
 
-    // Получение ответа от Laravel API
     socket.on("receive_message", (messageData) => {
         createMessageBlock(messageData);
         scrollBottom()
     });
 
-    // Получение ответа от Laravel API
     socket.on("edit_message", (messageData) => {
         editMessageBlock(messageData);
     });
 
-    // Обработчики UI
     butWidget.addEventListener('click', () => {
         butWidget.style.display = 'none';
         container.style.display = 'flex';
@@ -263,5 +277,4 @@
             container.querySelector('.ptw_send_but').disabled = true;
         }
     });
-
 })();
