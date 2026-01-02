@@ -37,7 +37,7 @@ class TgExternalMessageServiceTest extends TestCase
         $this->external_id = config('testing.external.external_id');
         $this->url = config('testing.external.hook_url');
 
-        $this->botUser = (new BotUser())->getExternalBotUser(ExternalMessageDto::from([
+        $this->botUser = (new BotUser())->getOrCreateExternalBotUser(ExternalMessageDto::from([
             'source' => config('testing.external.source'),
             'external_id' => config('testing.external.external_id'),
             'message_id' => time(),
