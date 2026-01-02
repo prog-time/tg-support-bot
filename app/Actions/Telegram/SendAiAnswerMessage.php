@@ -24,7 +24,7 @@ class SendAiAnswerMessage
                 throw new Exception('Неуказан токен для AI бота!');
             }
 
-            $botUser = BotUser::getTelegramUserData($update);
+            $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
                 throw new Exception('Пользователь не найден!', 1);
             }

@@ -30,7 +30,7 @@ class SendExternalTelegramMessageJobTest extends TestCase
         Message::truncate();
 
         $this->dto = ExternalMessageDtoMock::getDto();
-        $this->botUser = (new BotUser())->getExternalBotUser($this->dto);
+        $this->botUser = (new BotUser())->getOrCreateExternalBotUser($this->dto);
 
         $jobTopicCreate = new TopicCreateJob(
             $this->botUser->id,

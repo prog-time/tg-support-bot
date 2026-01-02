@@ -19,6 +19,7 @@ use phpDocumentor\Reflection\Exception;
  * @property mixed             $aiCondition
  * @property mixed             $lastMessageManager
  * @property ExternalUser|null $externalUser
+ * @property bool              $is_banned
  */
 class BotUser extends Model
 {
@@ -30,6 +31,8 @@ class BotUser extends Model
         'chat_id',
         'topic_id',
         'platform',
+        'is_banned',
+        'banned_at',
     ];
 
     /**
@@ -123,7 +126,7 @@ class BotUser extends Model
      *
      * @return BotUser|null
      */
-    public static function getTelegramUserData(TelegramUpdateDto $update): ?BotUser
+    public static function getOrCreateByTelegramUpdate(TelegramUpdateDto $update): ?BotUser
     {
         try {
             if ($update->typeSource === 'supergroup' && !empty($update->messageThreadId)) {
@@ -143,6 +146,23 @@ class BotUser extends Model
 
             return $botUser ?? null;
         } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param int $messageThreadId
+     *
+     * @return BotUser|null
+     */
+    public static function getByTopicId(int $messageThreadId): ?BotUser
+    {
+        try {
+            return self::where('topic_id', $messageThreadId)
+                ->with('externalUser')
+                ->orderByDesc('id')
+                ->first();
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -171,7 +191,7 @@ class BotUser extends Model
      *
      * @return BotUser|null
      */
-    public function getExternalBotUser(ExternalMessageDto $updateData): ?BotUser
+    public function getOrCreateExternalBotUser(ExternalMessageDto $updateData): ?BotUser
     {
         try {
             $this->externalUser = ExternalUser::firstOrCreate([
@@ -190,5 +210,40 @@ class BotUser extends Model
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * @param string $external_id
+     * @param string $source
+     *
+     * @return BotUser|null
+     */
+    public function getExternalBotUser(string $external_id, string $source): ?BotUser
+    {
+        try {
+            $this->externalUser = ExternalUser::where([
+                'external_id' => $external_id,
+                'source' => $source,
+            ])->first();
+
+            if (empty($this->externalUser)) {
+                throw new Exception('External user not found!');
+            }
+
+            return BotUser::where([
+                'chat_id' => $this->externalUser->id,
+                'platform' => $this->externalUser->source,
+            ])->first();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBanned(): bool
+    {
+        return $this->is_banned ?? false;
     }
 }

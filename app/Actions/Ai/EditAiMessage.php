@@ -27,7 +27,7 @@ class EditAiMessage
                 throw new Exception('Токен от AI бота не указан!', 1);
             }
 
-            $botUser = BotUser::getTelegramUserData($update);
+            $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
                 throw new \Exception('Bot user not found');
             }

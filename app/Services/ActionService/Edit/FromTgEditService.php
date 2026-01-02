@@ -14,7 +14,7 @@ abstract class FromTgEditService extends TemplateEditService
     public function __construct(mixed $update)
     {
         $this->update = $update;
-        $this->botUser = BotUser::getTelegramUserData($this->update);
+        $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->update);
 
         if (empty($this->botUser)) {
             throw new Exception('Пользователя не существует!');

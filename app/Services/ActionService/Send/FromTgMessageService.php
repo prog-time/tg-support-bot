@@ -16,7 +16,7 @@ abstract class FromTgMessageService extends TemplateMessageService
     public function __construct(TelegramUpdateDto $update)
     {
         $this->update = $update;
-        $this->botUser = BotUser::getTelegramUserData($this->update);
+        $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->update);
 
         if (empty($this->botUser)) {
             throw new Exception('Пользователя не существует!');

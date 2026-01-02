@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Ai\EditAiMessage;
+use App\Actions\Telegram\BannedContactMessage;
 use App\Actions\Telegram\SendAiAnswerMessage;
+use App\Actions\Telegram\SendBannedMessage;
 use App\Actions\Telegram\SendContactMessage;
 use App\Actions\Telegram\SendStartMessage;
 use App\DTOs\TelegramUpdateDto;
@@ -24,17 +26,23 @@ class TelegramBotController
 
     protected ?string $platform;
 
+    private ?BotUser $botUser;
+
     public function __construct(Request $request)
     {
         $dataHook = TelegramUpdateDto::fromRequest($request);
         $this->dataHook = !empty($dataHook) ? $dataHook : die();
 
         if ($this->dataHook->typeSource === 'private') {
+            $this->botUser = (new BotUser())->getUserByChatId($this->dataHook->chatId, 'telegram');
             $this->platform = 'telegram';
-        } elseif (!empty($this->dataHook->messageThreadId)) {
-            $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
         } else {
-            $this->platform = 'ignore';
+            $this->botUser = (new BotUser())->getByTopicId($this->dataHook->messageThreadId);
+            $this->platform = $this->botUser->platform ?? null;
+        }
+
+        if (empty($this->platform)) {
+            die();
         }
     }
 
@@ -58,6 +66,15 @@ class TelegramBotController
         if ($this->dataHook->pinnedMessageStatus) {
             die();
         }
+
+        if ($this->dataHook->typeQuery === 'callback_query') {
+            if (str_contains($this->dataHook->callbackData, 'topic_user_ban_')) {
+                $banStatus = $this->dataHook->callbackData === 'topic_user_ban_true';
+                (new BannedContactMessage())->execute($this->botUser, $banStatus, $this->dataHook->messageId);
+            }
+
+            die();
+        }
     }
 
     /**
@@ -75,6 +92,13 @@ class TelegramBotController
                 'message_id' => $this->dataHook->messageId,
             ]));
         } elseif (!$this->dataHook->isBot) {
+            if ($this->dataHook->typeSource === 'supergroup') {
+                if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
+                    (new SendContactMessage())->execute($this->botUser);
+                    die();
+                }
+            }
+
             switch ($this->platform) {
                 case 'telegram':
                     $this->controllerPlatformTg();
@@ -101,16 +125,17 @@ class TelegramBotController
      */
     private function controllerPlatformTg(): void
     {
-        if ($this->dataHook->aiTechMessage) {
+        if ($this->botUser->isBanned() && $this->dataHook->typeSource === 'private') {
+            (new SendBannedMessage())->execute($this->botUser);
+            die();
+        } elseif ($this->dataHook->aiTechMessage) {
             if (str_contains($this->dataHook->text, 'ai_message_edit_')) {
                 (new EditAiMessage())->execute($this->dataHook);
             }
         } else {
             switch ($this->dataHook->typeQuery) {
                 case 'message':
-                    if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                        (new SendContactMessage())->executeByChatId($this->dataHook->chatId);
-                    } elseif ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
+                    if ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
                         (new SendStartMessage())->execute($this->dataHook);
                     } elseif (str_contains($this->dataHook->text, '/ai_generate') && $this->isSupergroup()) {
                         (new SendAiAnswerMessage())->execute($this->dataHook);

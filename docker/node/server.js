@@ -28,7 +28,6 @@ const io = new Server(server, {
     }
 });
 
-// Проверка подключения клиента по внешнему домену
 io.use((socket, next) => {
     const origin = socket.handshake.headers.origin;
     if (!origin || allowedOrigins.includes(origin)) {

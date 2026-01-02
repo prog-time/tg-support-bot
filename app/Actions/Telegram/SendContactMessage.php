@@ -2,71 +2,64 @@
 
 namespace App\Actions\Telegram;
 
-use App\DTOs\TelegramAnswerDto;
+use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
-use App\TelegramBot\TelegramMethods;
 
 /**
- * Отправка контактной информации
+ * Send contact message
  */
 class SendContactMessage
 {
     /**
-     * Отправка контактной информации
+     * Send contact message
      *
      * @param BotUser $botUser
      *
-     * @return TelegramAnswerDto
+     * @return void
      */
-    private function execute(BotUser $botUser): TelegramAnswerDto
+    public function execute(BotUser $botUser): void
     {
-        return TelegramMethods::sendQueryTelegram('sendMessage', [
+        $queryParams = $this->getQueryParams($botUser);
+        SendTelegramSimpleQueryJob::dispatch($queryParams);
+    }
+
+    /**
+     * @param BotUser $botUser
+     *
+     * @return TGTextMessageDto
+     */
+    public function getQueryParams(BotUser $botUser): TGTextMessageDto
+    {
+        return TGTextMessageDto::from([
+            'methodQuery' => 'sendMessage',
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
-            'text' => $this->createContactMessage($botUser),
+            'text' => $this->createContactMessage($botUser->chat_id, $botUser->platform),
             'parse_mode' => 'html',
+            'reply_markup' => [
+                'inline_keyboard' => $this->getKeyboard($botUser),
+            ],
         ]);
     }
 
     /**
-     * Подготовка сообщения для отправки
+     * Create contact message
      *
-     * @param int $chatId
-     *
-     * @return TelegramAnswerDto
-     */
-    public function executeByChatId(int $chatId): TelegramAnswerDto
-    {
-        $botUser = BotUser::where('chat_id', $chatId)->first();
-        return $this->execute($botUser);
-    }
-
-    /**
-     * @param BotUser $botUser
-     *
-     * @return TelegramAnswerDto
-     */
-    public function executeByBotUser(BotUser $botUser): TelegramAnswerDto
-    {
-        return $this->execute($botUser);
-    }
-
-    /**
-     * Создание сообщения для отправки
-     *
-     * @param BotUser $botUser
+     * @param int    $chatId
+     * @param string $platform
      *
      * @return string
      */
-    public function createContactMessage(BotUser $botUser): string
+    public function createContactMessage(int $chatId, string $platform): string
     {
         try {
             $textMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
-            $textMessage .= "Источник: {$botUser->platform} \n";
-            $textMessage .= "ID: {$botUser->chat_id} \n";
+            $textMessage .= "Источник: {$platform} \n";
+            $textMessage .= "ID: {$chatId} \n";
 
-            if ($botUser->platform === 'telegram') {
-                $chat = GetChat::execute($botUser->chat_id);
+            if ($platform === 'telegram') {
+                $chat = GetChat::execute($chatId);
                 $chatData = $chat->rawData;
                 if (!empty($chatData['result']['username'])) {
                     $link = "https://telegram.me/{$chatData['result']['username']}";
@@ -74,8 +67,34 @@ class SendContactMessage
                 }
             }
             return $textMessage;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return '';
         }
+    }
+
+    /**
+     * @param BotUser $botUser
+     *
+     * @return array
+     */
+    public function getKeyboard(BotUser $botUser): array
+    {
+        if ($botUser->isBanned()) {
+            $banButton = [
+                'text' => '🔓 Разблокировать',
+                'callback_data' => 'topic_user_ban_false',
+            ];
+        } else {
+            $banButton = [
+                'text' => '🚫 Заблокировать',
+                'callback_data' => 'topic_user_ban_true',
+            ];
+        }
+
+        return [
+            [
+                $banButton,
+            ],
+        ];
     }
 }

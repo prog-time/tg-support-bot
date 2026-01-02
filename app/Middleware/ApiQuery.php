@@ -30,7 +30,7 @@ class ApiQuery
             }
 
             $request->merge([
-                'source' => $itemAccessToken->name,
+                'source' => $itemAccessToken->external_source->name,
                 'external_id' => $request->route('external_id') ?? null,
             ]);
 

@@ -2,28 +2,30 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\SendContactMessage;
+use App\Actions\Telegram\BannedContactMessage;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
+use App\Models\Message;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-class SendContactMessageTest extends TestCase
+class BannedContactMessageTest extends TestCase
 {
-    private BotUser $botUser;
+    private ?BotUser $botUser;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 
+        Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'tg');
     }
 
-    public function test_send_contact_message(): void
+    public function test_ban_status_true(): void
     {
-        (new SendContactMessage())->execute($this->botUser);
+        (new BannedContactMessage())->execute($this->botUser, true);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];

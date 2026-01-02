@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Actions\VK;
+namespace Tests\Unit\Actions\Vk;
 
 use App\Actions\Telegram\GetFile;
 use App\Actions\Vk\GetMessagesUploadServerVk;

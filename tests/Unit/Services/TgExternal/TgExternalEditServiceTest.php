@@ -38,7 +38,7 @@ class TgExternalEditServiceTest extends TestCase
     public function test_edit_text_message(): void
     {
         $messageDto = ExternalMessageDtoMock::getDto();
-        $this->botUser = (new BotUser())->getExternalBotUser($messageDto);
+        $this->botUser = (new BotUser())->getOrCreateExternalBotUser($messageDto);
 
         $this->botUser->topic_id = time();
         $this->botUser->save();

@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string $name
+ * @property string         $name
+ * @property ExternalSource $external_source
  */
 class ExternalSourceAccessTokens extends Model
 {
