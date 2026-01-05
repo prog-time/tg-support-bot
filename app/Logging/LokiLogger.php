@@ -72,11 +72,11 @@ class LokiLogger
     }
 
     /**
-     * @param Exception $e
+     * @param Throwable|Exception $e
      *
      * @return bool
      */
-    public function logException(Exception $e): bool
+    public function logException(Throwable|Exception $e): bool
     {
         try {
             $level = $e->getCode() === 1 ? 'warning' : 'error';
