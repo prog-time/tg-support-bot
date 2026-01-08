@@ -18,8 +18,8 @@ class TelegramUpdateDto_ExternalMock
     {
         if (!$botUser) {
             $botUser = (new BotUser())->getOrCreateExternalBotUser(ExternalMessageDto::from([
-                'source' => config('testing.external.source'),
-                'external_id' => config('testing.external.external_id'),
+                'source' => 'live_chat',
+                'external_id' => time(),
                 'message_id' => time(),
                 'text' => 'Тестовое сообщение',
             ]));

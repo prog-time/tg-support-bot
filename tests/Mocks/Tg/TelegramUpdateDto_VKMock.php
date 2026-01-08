@@ -16,7 +16,7 @@ class TelegramUpdateDto_VKMock extends TelegramUpdateDto
     public static function getDtoParams(?BotUser $botUser = null): array
     {
         if (!$botUser) {
-            $botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+            $botUser = BotUser::getUserByChatId(time(), 'vk');
         }
 
         return [
