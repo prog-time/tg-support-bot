@@ -3,6 +3,9 @@
 namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\GetChat;
+use App\DTOs\TelegramAnswerDto;
+use Illuminate\Support\Facades\Http;
+use Mockery;
 use Tests\TestCase;
 
 class GetChatTest extends TestCase
@@ -13,14 +16,42 @@ class GetChatTest extends TestCase
     {
         parent::setUp();
 
-        $this->chatId = config('testing.tg_private.chat_id');
+        $this->chatId = time();
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     public function test_get_chat(): void
     {
+        $data = [
+            'ok' => true,
+            'result' => [
+                'id' => $this->chatId,
+                'type' => 'private',
+                'title' => 'Test Chat',
+                'username' => 'testuser',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+            ],
+        ];
+
+        $expectedDto = TelegramAnswerDto::fromData($data);
+
+        Http::fake([
+            'https://api.telegram.org/*/getChat*' => Http::response($data, 200),
+        ]);
+
         $result = GetChat::execute($this->chatId);
 
+        dump($result);
+
+        $this->assertInstanceOf(TelegramAnswerDto::class, $result);
         $this->assertNotEmpty($result->rawData);
-        $this->assertTrue($result->ok);
+        $this->assertTrue($result->rawData['ok']);
+        $this->assertEquals($this->chatId, $result->rawData['result']['id']);
     }
 }
