@@ -8,13 +8,13 @@ use Tests\TestCase;
 
 class WebhookServiceTest extends TestCase
 {
-    private string $externalId;
+    private int $externalId;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->externalId = config('testing.external.external_id');
+        $this->externalId = time();
     }
 
     public function testWebhookService(): void
