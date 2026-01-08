@@ -39,8 +39,6 @@ class GetChatTest extends TestCase
             ],
         ];
 
-        $expectedDto = TelegramAnswerDto::fromData($data);
-
         Http::fake([
             'https://api.telegram.org/*/getChat*' => Http::response($data, 200),
         ]);
