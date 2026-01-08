@@ -13,7 +13,7 @@ class TelegramMethodsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->chatId = config('testing.tg_private.chat_id');
+        $this->chatId = time();
     }
 
     protected function getMessageParams(): array
@@ -39,10 +39,10 @@ class TelegramMethodsTest extends TestCase
                         'username' => 'prog_time_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_private.chat_id'),
-                        'first_name' => config('testing.tg_private.first_name'),
-                        'last_name' => config('testing.tg_private.last_name'),
-                        'username' => config('testing.tg_private.username'),
+                        'id' => time(),
+                        'first_name' => 'Test',
+                        'last_name' => 'test_file_id',
+                        'username' => 'usertest',
                         'type' => 'private',
                     ],
                     'date' => time(),
@@ -79,10 +79,10 @@ class TelegramMethodsTest extends TestCase
                         'username' => 'prog_time_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_private.chat_id'),
-                        'first_name' => config('testing.tg_private.first_name'),
-                        'last_name' => config('testing.tg_private.last_name'),
-                        'username' => config('testing.tg_private.username'),
+                        'id' => time(),
+                        'first_name' => 'Test',
+                        'last_name' => 'test_file_id',
+                        'username' => 'usertest',
                         'type' => 'private',
                     ],
                     'date' => time(),
@@ -90,20 +90,20 @@ class TelegramMethodsTest extends TestCase
                         'file_name' => '119f98712538b4d27f0290c798d1f011.png',
                         'mime_type' => 'image/png',
                         'thumbnail' => [
-                            'file_id' => config('testing.tg_file.document'),
+                            'file_id' => 'test_file_id',
                             'file_unique_id' => 'AQADVoQAAi678Uly',
                             'file_size' => 13279,
                             'width' => 320,
                             'height' => 210,
                         ],
                         'thumb' => [
-                            'file_id' => config('testing.tg_file.document'),
+                            'file_id' => 'test_file_id',
                             'file_unique_id' => 'AQADVoQAAi678Uly',
                             'file_size' => 13279,
                             'width' => 320,
                             'height' => 210,
                         ],
-                        'file_id' => config('testing.tg_file.document'),
+                        'file_id' => 'test_file_id',
                         'file_unique_id' => 'AgADVoQAAi678Uk',
                         'file_size' => 1052715,
                     ],
@@ -141,37 +141,37 @@ class TelegramMethodsTest extends TestCase
                         'username' => 'prog_time_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_private.chat_id'),
-                        'first_name' => config('testing.tg_private.first_name'),
-                        'last_name' => config('testing.tg_private.last_name'),
+                        'id' => time(),
+                        'first_name' => 'Тестовый',
+                        'last_name' => 'test_file_id',
                         'username' => config('testing.tg_private.username'),
                         'type' => 'private',
                     ],
                     'date' => time(),
                     'photo' => [
                         [
-                            'file_id' => config('testing.tg_file.photo'),
+                            'file_id' => time(),
                             'file_unique_id' => 'AQADcPoxGy67-Ul4',
                             'file_size' => 899,
                             'width' => 90,
                             'height' => 58,
                         ],
                         [
-                            'file_id' => config('testing.tg_file.photo'),
+                            'file_id' => 'test_file_id',
                             'file_unique_id' => 'AQADcPoxGy67-Uly',
                             'file_size' => 12933,
                             'width' => 320,
                             'height' => 208,
                         ],
                         [
-                            'file_id' => config('testing.tg_file.photo'),
+                            'file_id' => 'test_file_id',
                             'file_unique_id' => 'AQADcPoxGy67-Ul9',
                             'file_size' => 56681,
                             'width' => 800,
                             'height' => 521,
                         ],
                         [
-                            'file_id' => config('testing.tg_file.photo'),
+                            'file_id' => 'test_file_id',
                             'file_unique_id' => 'AQADcPoxGy67-Ul-',
                             'file_size' => 83643,
                             'width' => 1280,
