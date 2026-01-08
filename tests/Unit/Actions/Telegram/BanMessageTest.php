@@ -18,10 +18,11 @@ class BanMessageTest extends TestCase
     {
         parent::setUp();
 
+        BotUser::truncate();
         Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
     }
 
     public function test_send_ban_message_with_correct_text(): void
