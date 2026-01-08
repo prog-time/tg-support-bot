@@ -30,11 +30,12 @@ class ExternalTrafficServiceTest extends TestCase
     {
         parent::setUp();
 
+        BotUser::truncate();
         Message::truncate();
         Queue::fake();
 
-        $this->source = config('testing.external.source');
-        $this->external_id = config('testing.external.external_id');
+        $this->source = 'live_chat';
+        $this->external_id = time();
 
         $externalUser = ExternalUser::firstOrCreate([
             'external_id' => $this->external_id,
@@ -142,10 +143,12 @@ class ExternalTrafficServiceTest extends TestCase
     {
         $message = $this->createMessage();
 
-        $payload = ExternalMessageDtoMock::getDtoParams();
-        $payload['message_id'] = $message->from_id;
+        $payload = [
+            'source' => $this->source,
+            'external_id' => $this->external_id,
+            'message_id' => $message->from_id,
+        ];
 
-        // удаляем сообщение
         $deleteDto = ExternalMessageDtoMock::getDto($payload);
 
         (new ExternalTrafficService())->destroy($deleteDto);

@@ -30,8 +30,8 @@ class ExternalFileServiceTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        $this->source = config('testing.external.source');
-        $this->external_id = config('testing.external.external_id');
+        $this->source = 'live_chat';
+        $this->external_id = time();
 
         $externalUser = ExternalUser::firstOrCreate([
             'external_id' => $this->external_id,

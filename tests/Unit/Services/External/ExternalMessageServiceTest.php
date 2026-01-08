@@ -17,7 +17,7 @@ class ExternalMessageServiceTest extends TestCase
 
     public string $source;
 
-    public string $external_id;
+    public int $external_id;
 
     public string $text;
 
@@ -32,21 +32,10 @@ class ExternalMessageServiceTest extends TestCase
         Queue::fake();
 
         $this->text = 'Тестовое сообщение';
-        $this->source = config('testing.external.source');
-        $this->external_id = config('testing.external.external_id');
 
         $this->dto = ExternalMessageDtoMock::getDto();
 
         $this->botUser = (new BotUser())->getOrCreateExternalBotUser($this->dto);
-    }
-
-    protected function getMessageParams(): array
-    {
-        return [
-            'source' => $this->source,
-            'external_id' => $this->external_id,
-            'text' => $this->text,
-        ];
     }
 
     public function test_send_message(): void
