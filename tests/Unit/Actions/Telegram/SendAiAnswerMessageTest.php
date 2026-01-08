@@ -23,7 +23,7 @@ class SendAiAnswerMessageTest extends TestCase
 
         config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
     }

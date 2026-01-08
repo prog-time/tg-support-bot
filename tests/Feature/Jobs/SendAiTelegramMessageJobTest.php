@@ -21,6 +21,10 @@ class SendAiTelegramMessageJobTest extends TestCase
 
     private string $provider;
 
+    private string $telegramAiToken;
+
+    private int $groupId;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -29,7 +33,13 @@ class SendAiTelegramMessageJobTest extends TestCase
 
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->groupId = time();
+        config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
+
+        $this->telegramAiToken = 'test_ai_token';
+        config(['traffic_source.settings.telegram_ai.token' => $this->telegramAiToken]);
+
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
         $this->provider = 'gigachat';
         $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
@@ -118,12 +128,12 @@ class SendAiTelegramMessageJobTest extends TestCase
         $jobData = $pushed[0]['job'];
         $this->assertEquals($this->botUser->id, $jobData->botUserId);
         $this->assertEquals('editMessageText', $jobData->queryParams->methodQuery);
-        $this->assertEquals(config('traffic_source.settings.telegram_ai.token'), $jobData->queryParams->token);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $jobData->queryParams->chat_id);
+        $this->assertEquals($this->telegramAiToken, $jobData->queryParams->token);
+        $this->assertEquals($this->groupId, $jobData->queryParams->chat_id);
 
         $jobData = $pushed[1]['job'];
         $this->assertEquals($this->botUser->id, $jobData->botUserId);
         $this->assertEquals('deleteMessage', $jobData->queryParams->methodQuery);
-        $this->assertEquals(config('testing.tg_private.chat_id'), $jobData->queryParams->chat_id);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->chat_id);
     }
 }

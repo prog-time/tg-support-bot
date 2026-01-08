@@ -19,6 +19,8 @@ class EditAiMessageTest extends TestCase
 
     private BotUser $botUser;
 
+    private int $groupId;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -26,9 +28,12 @@ class EditAiMessageTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+        $this->groupId = time();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+        config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
+
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
     }
@@ -74,12 +79,12 @@ class EditAiMessageTest extends TestCase
 
         $firstJob = $pushed[0]['job'];
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $firstJob->queryParams->chat_id);
+        $this->assertEquals($this->groupId, $firstJob->queryParams->chat_id);
         $this->assertEquals('editMessageText', $firstJob->queryParams->methodQuery);
 
         $secondJob = $pushed[1]['job'];
         $this->assertEquals($this->botUser->id, $secondJob->botUserId);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $secondJob->queryParams->chat_id);
+        $this->assertEquals($this->groupId, $secondJob->queryParams->chat_id);
         $this->assertEquals('deleteMessage', $secondJob->queryParams->methodQuery);
     }
 }
