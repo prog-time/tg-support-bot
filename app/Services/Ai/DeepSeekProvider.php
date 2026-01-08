@@ -58,7 +58,6 @@ class DeepSeekProvider extends BaseAiProvider
      */
     public function isAvailable(): bool
     {
-        dump($this->config);
         return !empty($this->config['client_secret']) &&
                !empty($this->config['base_url']);
     }
