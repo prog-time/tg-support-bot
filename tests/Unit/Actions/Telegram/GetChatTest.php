@@ -47,8 +47,6 @@ class GetChatTest extends TestCase
 
         $result = GetChat::execute($this->chatId);
 
-        dump($result);
-
         $this->assertInstanceOf(TelegramAnswerDto::class, $result);
         $this->assertNotEmpty($result->rawData);
         $this->assertTrue($result->rawData['ok']);
