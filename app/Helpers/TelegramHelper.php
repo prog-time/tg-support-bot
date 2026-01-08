@@ -34,18 +34,20 @@ class TelegramHelper
     }
 
     /**
-     * @param string $fileId
+     * @param string           $fileId
+     * @param FileService|null $fileService
      *
      * @return string|null
      */
-    public static function getFileTelegramPath(string $fileId): ?string
+    public static function getFileTelegramPath(string $fileId, ?FileService $fileService = null): ?string
     {
-        try {
-            $botToken = config('traffic_source.settings.telegram.token');
+        $botToken = config('traffic_source.settings.telegram.token');
+        $fileService = $fileService ?? new FileService();
 
-            $tgFileData = (new FileService())->getTelegramFile($fileId);
+        try {
+            $tgFileData = $fileService->getTelegramFile($fileId);
             if (empty($tgFileData['result']['file_path'])) {
-                throw new Exception('Файд не найден');
+                throw new Exception('Файл не найден');
             }
 
             $tgFilePath = $tgFileData['result']['file_path'];
