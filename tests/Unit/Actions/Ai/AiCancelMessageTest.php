@@ -18,23 +18,28 @@ class AiCancelMessageTest extends TestCase
 
     private BotUser $botUser;
 
+    private int $groupId;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        BotUser::truncate();
         Message::truncate();
         Queue::fake();
 
-        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+        $this->groupId = time();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
+        config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
+
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
     }
 
     public function test_cancel_ai_message(): void
     {
-        config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
         $aiTextMessage = 'Тестовое сообщение от AI';
         $managerTextMessage = 'Сообщение от менеджера';
 
@@ -67,7 +72,7 @@ class AiCancelMessageTest extends TestCase
         $firstJob = $pushed[0]['job'];
 
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $firstJob->queryParams->chat_id);
+        $this->assertEquals($this->groupId, $firstJob->queryParams->chat_id);
         $this->assertEquals('deleteMessage', $firstJob->queryParams->methodQuery);
     }
 }
