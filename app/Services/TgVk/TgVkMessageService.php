@@ -2,7 +2,6 @@
 
 namespace App\Services\TgVk;
 
-use App\Actions\Telegram\GetFile;
 use App\Actions\Vk\GetMessagesUploadServerVk;
 use App\Actions\Vk\SaveFileVk;
 use App\Actions\Vk\UploadFileVk;
@@ -215,12 +214,10 @@ class TgVkMessageService extends FromTgMessageService
     protected function uploadFileVk(string $fileId, string $typeFile, string $typeMethod): VkAnswerDto
     {
         try {
-            // get telegram file data
-            $fileData = GetFile::execute($fileId);
-            if (empty($fileData->rawData['result']['file_path'])) {
+            $fullFilePath = TelegramHelper::getFileTelegramPath($this->update->fileId);
+            if (empty($fullFilePath)) {
                 throw new \Exception('Ошибка получения данных файла!', 1);
             }
-            $fullFilePath = TelegramHelper::getFileTelegramPath($this->update->fileId);
 
             // get upload server data
             $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
