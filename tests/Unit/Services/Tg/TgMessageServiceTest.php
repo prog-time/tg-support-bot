@@ -25,7 +25,9 @@ class TgMessageServiceTest extends TestCase
 
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $tgChatId = time();
+
+        $this->botUser = BotUser::getUserByChatId($tgChatId, 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
 
@@ -45,10 +47,10 @@ class TgMessageServiceTest extends TestCase
                         'username' => 'prog_time_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_private.chat_id'),
-                        'first_name' => config('testing.tg_private.first_name'),
-                        'last_name' => config('testing.tg_private.last_name'),
-                        'username' => config('testing.tg_private.username'),
+                        'id' => $tgChatId,
+                        'first_name' => 'Test',
+                        'last_name' => 'Testov',
+                        'username' => 'usertest',
                         'type' => 'private',
                     ],
                     'date' => time(),
@@ -79,7 +81,7 @@ class TgMessageServiceTest extends TestCase
         $payload = $this->basicPayload;
         $payload['message']['photo'] = [
             [
-                'file_id' => config('testing.tg_file.photo'),
+                'file_id' => 'test_file_id',
                 'file_unique_id' => 'AQAD854DoEp9',
                 'file_size' => 59609,
                 'width' => 684,
@@ -104,7 +106,7 @@ class TgMessageServiceTest extends TestCase
     {
         $payload = $this->basicPayload;
         $payload['message']['document'] = [
-            'file_id' => config('testing.tg_file.document'),
+            'file_id' => 'test_file_id',
         ];
 
         $dto = TelegramUpdateDtoMock::getDto($payload);
@@ -124,7 +126,7 @@ class TgMessageServiceTest extends TestCase
     {
         $payload = $this->basicPayload;
         $payload['message']['sticker'] = [
-            'file_id' => config('testing.tg_file.sticker'),
+            'file_id' => 'test_file_id',
         ];
 
         $dto = TelegramUpdateDtoMock::getDto($payload);
@@ -165,7 +167,7 @@ class TgMessageServiceTest extends TestCase
     {
         $payload = $this->basicPayload;
         $payload['message']['video_note'] = [
-            'file_id' => config('testing.tg_file.video_note'),
+            'file_id' => 'test_file_id',
         ];
 
         $dto = TelegramUpdateDtoMock::getDto($payload);
@@ -185,7 +187,7 @@ class TgMessageServiceTest extends TestCase
     {
         $payload = $this->basicPayload;
         $payload['message']['voice'] = [
-            'file_id' => config('testing.tg_file.voice'),
+            'file_id' => 'test_file_id',
         ];
 
         $dto = TelegramUpdateDtoMock::getDto($payload);
@@ -208,7 +210,7 @@ class TgMessageServiceTest extends TestCase
             'phone_number' => '79999999999',
             'first_name' => 'Тестовый',
             'last_name' => 'Тест',
-            'user_id' => config('testing.tg_private.chat_id'),
+            'user_id' => time(),
         ];
 
         $dto = TelegramUpdateDtoMock::getDto($payload);
