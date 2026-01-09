@@ -28,7 +28,8 @@ class VkMessageServiceTest extends TestCase
 
         $this->groupChatId = config('traffic_source.settings.telegram.group_id');
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'vk');
 
         $payload = VkUpdateDtoMock::getDtoParams();
         $this->basicPayload = $payload;
