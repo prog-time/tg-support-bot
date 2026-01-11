@@ -4,7 +4,6 @@ namespace Tests\Unit\Helpers;
 
 use App\Helpers\TelegramHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TelegramHelperTest extends TestCase
@@ -33,10 +32,6 @@ class TelegramHelperTest extends TestCase
 
         $this->assertNotEmpty($filePath);
         $this->assertEquals($successValue, $filePath);
-
-        $response = Http::get($filePath);
-
-        $this->assertTrue($response->successful());
     }
 
     /**

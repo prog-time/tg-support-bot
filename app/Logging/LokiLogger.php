@@ -12,9 +12,9 @@ class LokiLogger
 
     protected string $url;
 
-    public function __construct()
+    public function __construct(Client|null $client = null)
     {
-        $this->client = new Client();
+        $this->client = $client ?? new Client();
         $this->url = config('loki_custom.url');
     }
 
@@ -67,6 +67,7 @@ class LokiLogger
 
             return true;
         } catch (Throwable $e) {
+            dump($e->getMessage());
             return false;
         }
     }
