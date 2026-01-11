@@ -14,9 +14,9 @@ ssh "${SERVER_USER}@${SERVER_HOST}" "cd ${PROJECT_PATH} && bash ${REMOTE_SCRIPT}
 exit_code=$?
 
 if [[ $exit_code -eq 0 ]]; then
-    echo -e "\033[0;32m✅ Hadolint passed!\033[0m"
+    echo -e "✅ Hadolint passed!\033[0m"
     exit 0
 else
-    echo -e "\033[0;31m❌ Hadolint found issues. Commit blocked!\033[0m"
+    echo -e "❌ Hadolint found issues. Commit blocked!\033[0m"
     exit 1
 fi

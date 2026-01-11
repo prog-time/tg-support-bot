@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "⏳ Генерация Swagger документации..."
+echo "⏳ Generate Swagger"
 if ! php artisan swagger:generate; then
-  echo "❌ Ошибка генерации Swagger."
+  echo "❌ Error generate Swagger"
   exit 1
 fi
 
-echo "✅ Swagger-документация успешно сгенерирована."
+echo "✅ Swagger documentation has been successfully generated"
