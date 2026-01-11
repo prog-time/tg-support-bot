@@ -13,7 +13,7 @@ EXCLUDE_PATTERNS=(
     "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
     "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
     "*Mock*" "*api*" "*Providers*" "*Abstract*"
-    "*resources*"
+    "*resources*" "*Stubs*" "*TestCase*"
 )
 
 # -----------------------------
