@@ -107,7 +107,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
             } else {
                 $this->telegramResponseHandler($response);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

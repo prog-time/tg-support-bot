@@ -76,7 +76,7 @@ class TgExternalEditService extends FromTgEditService
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

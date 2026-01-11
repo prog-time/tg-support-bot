@@ -99,7 +99,7 @@ class TelegramUpdateDto extends Data
                 location: $data['message']['location'] ?? null,
                 rawData: $data // Сохраняем весь запрос, если вдруг понадобится
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

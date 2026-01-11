@@ -57,7 +57,7 @@ class ExternalListMessageDto extends Data
                 date_start: $data['date_start'] ?? null,
                 date_end: $data['date_end'] ?? null
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

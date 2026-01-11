@@ -52,7 +52,7 @@ class TelegramHelper
 
             $tgFilePath = $tgFileData['result']['file_path'];
             return "https://api.telegram.org/file/bot{$botToken}/{$tgFilePath}";
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

@@ -47,7 +47,7 @@ class SendTelegramSimpleQueryJob implements ShouldQueue
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
             return false;
         }

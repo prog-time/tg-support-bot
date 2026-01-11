@@ -55,7 +55,7 @@ class ExternalMessageDto extends Data
                 uploaded_file: $data['uploaded_file'] ?? null,
                 uploaded_file_path: $uploadedFilePath ?? null,
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

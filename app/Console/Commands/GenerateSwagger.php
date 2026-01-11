@@ -73,7 +73,7 @@ class GenerateSwagger extends Command
             File::put($path, json_encode($swagger, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             $this->info('Генерация завершена успешно!');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->error($e->getMessage());
         }
     }

@@ -79,7 +79,7 @@ class TopicCreateJob implements ShouldQueue
             Log::error('TopicCreateJob: неизвестная ошибка', [
                 'response' => (array)$response,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }
@@ -130,7 +130,7 @@ class TopicCreateJob implements ShouldQueue
             }
 
             return $topicName;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
         }
     }

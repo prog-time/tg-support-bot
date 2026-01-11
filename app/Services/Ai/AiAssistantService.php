@@ -54,7 +54,7 @@ class AiAssistantService
             $this->updateUserContext($request->userId, $request->platform, $request->message, $response);
 
             return $response;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', [
                 'error' => $e->getMessage(),
             ]);

@@ -32,7 +32,7 @@ class FilesController
     {
         try {
             return $this->fileService->streamFile($fileId);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('tg_request', $e->getMessage());
             die();
         }
@@ -49,7 +49,7 @@ class FilesController
     {
         try {
             return $this->fileService->downloadFile($fileId);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('tg_request', $e->getMessage());
             die();
         }

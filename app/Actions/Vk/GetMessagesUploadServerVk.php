@@ -26,7 +26,7 @@ class GetMessagesUploadServerVk
                 'peer_id' => $chat_id,
             ];
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
                 'response_code' => 500,
                 'error_message' => 'System error',

@@ -33,7 +33,7 @@ class SendAiAnswerMessage
                 $botUser->id,
                 $update,
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', $e->getMessage());
         }
     }

@@ -43,7 +43,7 @@ class TgVkMessageService extends FromTgMessageService
             }
 
             echo 'ok';
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }
@@ -234,7 +234,7 @@ class TgVkMessageService extends FromTgMessageService
 
             // save file in VK
             return SaveFileVk::execute($typeMethod, $responseData);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
                 'response_code' => 500,
                 'response' => 0,

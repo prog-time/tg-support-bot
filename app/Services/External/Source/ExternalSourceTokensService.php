@@ -48,7 +48,7 @@ class ExternalSourceTokensService
             } else {
                 $accessTokensItem->update($accessTokenData);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw $e;
         }
     }

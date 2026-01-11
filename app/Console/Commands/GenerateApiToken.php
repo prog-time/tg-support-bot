@@ -81,7 +81,7 @@ class GenerateApiToken extends Command
             });
 
             return 0;
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             if ($exception->getCode() === 1) {
                 $this->error("Не удалось добавить ресурс: {$exception->getMessage()}");
             }

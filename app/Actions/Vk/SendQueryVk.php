@@ -23,7 +23,7 @@ class SendQueryVk
         try {
             $dataQuery = $queryParams->toArray();
             return VkMethods::sendQueryVk($queryParams->methodQuery, $dataQuery);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
