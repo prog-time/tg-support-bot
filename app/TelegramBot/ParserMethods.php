@@ -11,7 +11,7 @@ use phpDocumentor\Reflection\Exception as phpDocumentorException;
 class ParserMethods
 {
     /**
-     * Отправка POST запроса
+     * Send POST
      *
      * @param string       $urlQuery
      * @param array|string $queryParams
@@ -43,7 +43,7 @@ class ParserMethods
     }
 
     /**
-     * Отправка GET запроса
+     * Send GET
      *
      * @param string       $urlQuery
      * @param array|string $queryParams
@@ -139,7 +139,7 @@ class ParserMethods
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => $e->getMessage()
+                'result' => $e->getMessage(),
             ];
         }
     }
