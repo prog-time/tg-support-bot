@@ -29,7 +29,7 @@ class TelegramMethods
             }
 
             return TelegramAnswerDto::fromData($resultQuery);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return TelegramAnswerDto::fromData([
                 'ok' => false,
                 'response_code' => 500,

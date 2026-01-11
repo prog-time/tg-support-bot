@@ -49,7 +49,7 @@ class TgMessageService extends FromTgMessageService
                 $this->messageParamsDTO,
                 $this->typeMessage,
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

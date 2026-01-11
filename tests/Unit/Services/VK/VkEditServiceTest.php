@@ -16,7 +16,7 @@ class VkEditServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $chatId;
+    private int $chatId;
 
     private ?BotUser $botUser;
 
@@ -27,7 +27,7 @@ class VkEditServiceTest extends TestCase
         Queue::fake();
         Message::truncate();
 
-        $this->chatId = config('testing.vk_private.chat_id');
+        $this->chatId = time();
         $this->botUser = BotUser::getUserByChatId($this->chatId, 'vk');
     }
 

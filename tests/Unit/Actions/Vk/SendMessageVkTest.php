@@ -4,6 +4,7 @@ namespace Tests\Unit\Actions\Vk;
 
 use App\Actions\Vk\SendMessageVk;
 use App\DTOs\Vk\VkTextMessageDto;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SendMessageVkTest extends TestCase
@@ -13,11 +14,17 @@ class SendMessageVkTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->chatId = (int)config('testing.vk_private.chat_id');
+        $this->chatId = time();
     }
 
     public function test_send_text_message(): void
     {
+        Http::fake([
+            'https://api.vk.com/method/messages.send' => Http::response([
+                'response' => 12345,
+            ], 200),
+        ]);
+
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->chatId,

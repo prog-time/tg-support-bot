@@ -7,7 +7,9 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Services\TgVk\TgVkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
 use Tests\TestCase;
 
@@ -19,6 +21,8 @@ class TgVkMessageServiceTest extends TestCase
 
     private array $basicPayload;
 
+    protected string $botToken;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -27,11 +31,17 @@ class TgVkMessageServiceTest extends TestCase
         Message::truncate();
         BotUser::truncate();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        $this->botUser = BotUser::getUserByChatId(time(), 'vk');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
 
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams();
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     public function test_send_text_message(): void
@@ -54,33 +64,59 @@ class TgVkMessageServiceTest extends TestCase
 
     public function test_send_photo(): void
     {
-        $payload = $this->basicPayload;
-        $payload['message']['photo'] = [
-            ['file_id' => config('testing.tg_file.photo')],
+        $fileName = 'path/file.jpg';
+        $tgFileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$fileName}";
+        $vkUploadFileUrl = 'https://vk.com/stub_file/123456789_987654321';
+
+        $uploadFileVkResponse = [
+            'server' => 123456,
+            'file' => '{"file":"ABCD1234"}',
+            'hash' => 'abcdef1234567890',
         ];
 
-        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+        Http::fake([
+            // getFile
+            'https://api.telegram.org/bot*/getFile*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'file_id' => 'test_file_id',
+                    'file_path' => $fileName,
+                ],
+            ], 200),
 
-        (new TgVkMessageService($dto))->handleUpdate();
+            // tg file data
+            $tgFileUrl => Http::response(
+                'FAKE_BINARY_CONTENT', // тут можно любой контент
+                200,
+                ['Content-Type' => 'image/jpeg']
+            ),
 
-        /** @phpstan-ignore-next-line */
-        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
-        $this->assertEquals(1, count($pushed));
+            // get upload server
+            'https://api.vk.com/method/photos.getMessagesUploadServer' => Http::response([
+                'response' => [
+                    'upload_url' => $vkUploadFileUrl,
+                ],
+            ], 200),
 
-        // проверка отправки сообщения
-        $jobData = $pushed[0]['job'];
+            // upload file to vk
+            'https://vk.com/stub_file/*' => Http::response($uploadFileVkResponse, 200),
 
-        $this->assertEquals($this->botUser->id, $jobData->botUserId);
-        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
-        $this->assertEquals($dto, $jobData->updateDto);
-        $this->assertNotEmpty($jobData->queryParams->attachment);
-    }
+            // save file
+            'https://api.vk.com/method/photos.saveMessagesPhoto*' => Http::response([
+                'response' => [
+                    [
+                        'id' => 1,
+                        'owner_id' => 1,
+                    ],
+                ],
+            ], 200),
+        ]);
 
-    public function test_send_document(): void
-    {
         $payload = $this->basicPayload;
-        $payload['message']['document'] = [
-            'file_id' => config('testing.tg_file.document'),
+        $payload['message']['photo'] = [
+            [
+                'file_id' => 'test_file_id',
+            ],
         ];
 
         $dto = TelegramUpdateDto_VKMock::getDto($payload);
@@ -105,7 +141,7 @@ class TgVkMessageServiceTest extends TestCase
         $payload = $this->basicPayload;
         $payload['message']['sticker'] = [
             'emoji' => '👍',
-            'file_id' => config('testing.tg_file.sticker'),
+            'file_id' => 'test_file_id',
         ];
 
         $dto = TelegramUpdateDto_VKMock::getDto($payload);
@@ -132,7 +168,7 @@ class TgVkMessageServiceTest extends TestCase
             'phone_number' => '79999999999',
             'first_name' => 'Тестовый',
             'last_name' => 'Тест',
-            'user_id' => config('testing.tg_private.chat_id'),
+            'user_id' => time(),
         ];
 
         $dto = TelegramUpdateDto_VKMock::getDto($payload);

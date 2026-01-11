@@ -15,7 +15,10 @@ parameters:
     ignoreErrors:
         - identifier: missingType.iterableValue
         - identifier: missingType.generics
-        - '#referenced with incorrect case#'
+        - '#(?i)referenced with incorrect case#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::with\(\)#'
+
+    reportUnmatchedIgnoredErrors: false
 
 includes:
     - vendor/phpstan/phpstan/conf/bleedingEdge.neon

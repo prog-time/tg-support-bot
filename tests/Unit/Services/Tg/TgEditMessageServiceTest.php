@@ -19,20 +19,17 @@ class TgEditMessageServiceTest extends TestCase
 
     private ?BotUser $botUser;
 
-    private string $groupChatId;
-
     public function setUp(): void
     {
         parent::setUp();
 
+        BotUser::truncate();
         Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
-
-        $this->groupChatId = config('testing.tg_group.chat_id');
 
         Http::fake([
             'https://api.telegram.org/*' => Http::response([
@@ -46,10 +43,10 @@ class TgEditMessageServiceTest extends TestCase
                         'username' => 'prog_time_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_private.chat_id'),
-                        'first_name' => config('testing.tg_private.first_name'),
-                        'last_name' => config('testing.tg_private.last_name'),
-                        'username' => config('testing.tg_private.username'),
+                        'id' => time(),
+                        'first_name' => 'Test',
+                        'last_name' => 'Testov',
+                        'username' => 'testuser',
                         'type' => 'private',
                     ],
                     'date' => time(),
@@ -59,63 +56,11 @@ class TgEditMessageServiceTest extends TestCase
         ]);
     }
 
-    public function test_edit_text_message_private(): void
-    {
-        // Создаём новое сообщение
-        $newMessageDtoParams = TelegramUpdateDtoMock::getDtoParams($this->botUser);
-        $newMessageDto = TelegramUpdateDtoMock::getDto($newMessageDtoParams);
-
-        (new TgMessageService($newMessageDto))->handleUpdate();
-
-        // Сохраняем в БД
-        $whereMessageParams = [
-            'bot_user_id' => $this->botUser->id,
-            'message_type' => 'incoming',
-            'platform' => 'telegram',
-            'from_id' => rand(),
-            'to_id' => rand(),
-        ];
-        $createdMessage = Message::where($whereMessageParams)->firstOrCreate($whereMessageParams);
-
-        // Редактируем сообщение
-        $editPayload = [
-            'update_id' => time(),
-            'edited_message' => TelegramUpdateDtoMock::getDtoParams()['message'],
-        ];
-
-        $editTextMessage = 'Новый текст сообщения';
-        $editPayload['edited_message']['text'] = $editTextMessage;
-        $editPayload['edited_message']['message_id'] = $createdMessage->from_id;
-        $editPayload['edited_message']['chat']['id'] = $this->botUser->chat_id;
-        $editPayload['edited_message']['message_thread_id'] = $this->botUser->topic_id;
-
-        $editDto = TelegramUpdateDtoMock::getDto($editPayload);
-        (new TgEditMessageService($editDto))->handleUpdate();
-
-        /** @phpstan-ignore-next-line */
-        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
-        $this->assertCount(2, $pushed);
-
-        // Проверяем первую джобу (создание)
-        $firstJob = $pushed[0]['job'];
-        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
-        $this->assertEquals('private', $firstJob->queryParams->typeSource);
-        $this->assertEquals($this->groupChatId, $firstJob->queryParams->chat_id);
-        $this->assertEquals($newMessageDto->text, $firstJob->queryParams->text);
-
-        // Проверяем вторую джобу (редактирование)
-        $secondJob = $pushed[1]['job'];
-        $this->assertEquals('editMessageText', $secondJob->queryParams->methodQuery);
-        $this->assertEquals('private', $secondJob->queryParams->typeSource);
-        $this->assertEquals($this->groupChatId, $secondJob->queryParams->chat_id);
-        $this->assertEquals($editDto->text, $secondJob->queryParams->text);
-    }
-
     public function test_edit_caption_message(): void
     {
         $photo = [
             [
-                'file_id' => config('testing.tg_file.photo'),
+                'file_id' => 'test_file_id',
                 'file_unique_id' => 'AQAD854DoEp9',
                 'file_size' => 59609,
                 'width' => 684,

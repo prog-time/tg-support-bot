@@ -20,11 +20,11 @@ class TelegramUpdate_AiButtonAction extends TelegramUpdateDto
             'callback_query' => [
                 'id' => time(),
                 'from' => [
-                    'id' => config('testing.tg_private.chat_id'),
+                    'id' => time(),
                     'is_bot' => false,
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
+                    'first_name' => 'Test',
+                    'last_name' => 'Testov',
+                    'username' => 'usertest',
                     'language_code' => 'ru',
                 ],
                 'message' => [
@@ -36,7 +36,7 @@ class TelegramUpdate_AiButtonAction extends TelegramUpdateDto
                         'username' => 'prog_time_ai_bot',
                     ],
                     'chat' => [
-                        'id' => config('testing.tg_group.chat_id'),
+                        'id' => time(),
                         'title' => 'Prog-Time | Чаты',
                         'is_forum' => true,
                         'type' => 'supergroup',
@@ -53,7 +53,7 @@ class TelegramUpdate_AiButtonAction extends TelegramUpdateDto
                             'username' => 'prog_time_bot',
                         ],
                         'chat' => [
-                            'id' => config('testing.tg_group.chat_id'),
+                            'id' => time(),
                             'title' => 'Prog-Time | Чаты',
                             'is_forum' => true,
                             'type' => 'supergroup',

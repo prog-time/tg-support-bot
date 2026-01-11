@@ -4,6 +4,9 @@ namespace Tests\Unit\Logging;
 
 use App\Logging\LokiLogger;
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
+use Mockery;
 use Tests\TestCase;
 
 class LokiLoggerTest extends TestCase
@@ -14,7 +17,17 @@ class LokiLoggerTest extends TestCase
     {
         parent::setUp();
 
-        $this->logger = new LokiLogger();
+        config(['loki_custom.url' => 'http://loki-test.com']);
+
+        $clientMock = Mockery::mock(Client::class);
+
+        /** @phpstan-ignore-next-line */
+        $clientMock->shouldReceive('post')
+            ->once()
+            ->andReturn(new Response(204));
+
+        /** @phpstan-ignore-next-line */
+        $this->logger = new LokiLogger($clientMock);
     }
 
     public function testLogReturnsBool(): void

@@ -57,7 +57,7 @@ class SendVkMessageJob extends AbstractSendMessageJob
             }
 
             throw new \Exception('SendVkMessageJob: неизвестная ошибка', 1);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

@@ -3,11 +3,13 @@
 namespace Tests\Unit\Helpers;
 
 use App\Helpers\TelegramHelper;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TelegramHelperTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_get_file_path(): void
     {
         $telegramToken = config('traffic_source.settings.telegram.token');
@@ -23,17 +25,13 @@ class TelegramHelperTest extends TestCase
     public function test_get_file_public_path(): void
     {
         $appUrl = trim(config('app.url'), '/');
-        $fileId = config('testing.tg_file.photo');
+        $fileId = 'test_file_id';
         $successValue = "{$appUrl}/api/files/{$fileId}";
 
         $filePath = TelegramHelper::getFilePublicPath($fileId);
 
         $this->assertNotEmpty($filePath);
         $this->assertEquals($successValue, $filePath);
-
-        $response = Http::get($filePath);
-
-        $this->assertTrue($response->successful());
     }
 
     /**

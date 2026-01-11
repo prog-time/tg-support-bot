@@ -19,7 +19,7 @@ class TgExternalMessageServiceTest extends TestCase
 
     private string $source;
 
-    private string $external_id;
+    private int $external_id;
 
     private string $url;
 
@@ -33,13 +33,13 @@ class TgExternalMessageServiceTest extends TestCase
         Message::truncate();
         BotUser::truncate();
 
-        $this->source = config('testing.external.source');
-        $this->external_id = config('testing.external.external_id');
-        $this->url = config('testing.external.hook_url');
+        $this->source = 'live_chat';
+        $this->external_id = time();
+        $this->url = 'http://test.ru';
 
         $this->botUser = (new BotUser())->getOrCreateExternalBotUser(ExternalMessageDto::from([
-            'source' => config('testing.external.source'),
-            'external_id' => config('testing.external.external_id'),
+            'source' => $this->source,
+            'external_id' => $this->external_id,
             'message_id' => time(),
             'text' => 'Тестовое сообщение',
         ]));

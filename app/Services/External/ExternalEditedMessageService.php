@@ -48,7 +48,7 @@ class ExternalEditedMessageService extends ExternalService
             }
 
             $this->editMessageText();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

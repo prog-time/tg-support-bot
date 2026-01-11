@@ -22,8 +22,14 @@ class UploadFileVk
     {
         try {
             $urlQuery = $upload_url;
-            $stream = file_get_contents($fullFilePath);
 
+            $responseFile = Http::get($fullFilePath);
+
+            if ($responseFile->failed()) {
+                throw new \Exception("Не удалось скачать файл Telegram: {$fullFilePath}");
+            }
+
+            $stream = $responseFile->body();
             $filename = basename(parse_url($fullFilePath, PHP_URL_PATH));
 
             if ($typeFile === 'doc' || $typeFile === 'audio_message') {
@@ -36,7 +42,7 @@ class UploadFileVk
                 $filename
             )->post($urlQuery);
             return $response->json();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

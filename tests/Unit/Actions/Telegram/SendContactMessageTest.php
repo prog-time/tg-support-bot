@@ -5,11 +5,14 @@ namespace Tests\Unit\Actions\Telegram;
 use App\Actions\Telegram\SendContactMessage;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SendContactMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void
@@ -18,7 +21,7 @@ class SendContactMessageTest extends TestCase
 
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
     }
 
     public function test_send_contact_message(): void

@@ -68,7 +68,7 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
                 $managerTextMessage,
                 $aiResponse->response
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

@@ -35,7 +35,7 @@ class SwaggerGenerateService
             }
 
             return $paths;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [];
         }
     }

@@ -23,5 +23,5 @@ bash scripts/check_scripts/find_test.sh commit
 echo
 
 echo "🧑🏻‍💻 Running tests..."
-bash scripts/check_scripts/ssh_start_tests.sh commit
+bash scripts/check_scripts/start_tests.sh commit
 echo

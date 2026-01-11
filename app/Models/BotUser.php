@@ -92,7 +92,7 @@ class BotUser extends Model
                 ->first();
 
             return $botUser ? $botUser->platform : null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->sendBasicLog($e);
             return null;
         }
@@ -113,7 +113,7 @@ class BotUser extends Model
                 ->first();
 
             return $botUser->platform ?? null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->sendBasicLog($e);
             return null;
         }
@@ -145,7 +145,7 @@ class BotUser extends Model
             }
 
             return $botUser ?? null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -181,7 +181,7 @@ class BotUser extends Model
             ], [
                 'platform' => $platform,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -207,7 +207,7 @@ class BotUser extends Model
                 'chat_id' => $this->externalUser->id,
                 'platform' => $this->externalUser->source,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -234,7 +234,7 @@ class BotUser extends Model
                 'chat_id' => $this->externalUser->id,
                 'platform' => $this->externalUser->source,
             ])->first();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

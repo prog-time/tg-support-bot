@@ -13,7 +13,7 @@ class VkUpdateDtoMock
     public static function getDtoParams(): array
     {
         return [
-            'group_id' => config('testing.vk_private.group_id'),
+            'group_id' => time(),
             'type' => 'message_new',
             'event_id' => '23ff3b705c7ee0ac3e762d40fa4016b88ed384a1',
             'v' => '5.199',
@@ -37,7 +37,7 @@ class VkUpdateDtoMock
                 ],
                 'message' => [
                     'date' => time(),
-                    'from_id' => config('testing.vk_private.chat_id'),
+                    'from_id' => time(),
                     'id' => time(),
                     'version' => time(),
                     'out' => 0,
@@ -47,11 +47,11 @@ class VkUpdateDtoMock
                     'attachments' => [],
                     'conversation_message_id' => time(),
                     'text' => 'Test text',
-                    'peer_id' => config('testing.vk_private.chat_id'),
+                    'peer_id' => time(),
                     'random_id' => 0,
                 ],
             ],
-            'secret' => config('testing.vk_private.secret'),
+            'secret' => time(),
         ];
     }
 

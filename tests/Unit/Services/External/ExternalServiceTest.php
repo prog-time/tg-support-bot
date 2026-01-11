@@ -18,8 +18,8 @@ class ExternalServiceTest extends TestCase
     {
         parent::setUp();
 
-        $source = config('testing.external.source');
-        $external_id = config('testing.external.external_id');
+        $source = 'live_chat';
+        $external_id = time();
         $text = 'Тестовое сообщение';
 
         $this->basicPayload = [

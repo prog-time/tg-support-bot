@@ -36,7 +36,7 @@ class SaveFileVk
             }
 
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
                 'response_code' => 500,
                 'response' => 0,

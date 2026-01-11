@@ -5,25 +5,26 @@ namespace Tests\Unit\Actions\Telegram;
 use App\Actions\Telegram\SendAiAnswerMessage;
 use App\Jobs\SendMessage\SendAiResponseMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
 use Tests\TestCase;
 
 class SendAiAnswerMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        Message::truncate();
         Queue::fake();
 
         config(['traffic_source.settings.telegram_ai.token' => 'test_token']);
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
     }

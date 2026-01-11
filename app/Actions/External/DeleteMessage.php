@@ -59,6 +59,7 @@ class DeleteMessage
 
             Message::where($whereParamsMessage)->delete();
         } catch (Exception $e) {
+            dump($e->getMessage());
             (new LokiLogger())->logException($e);
         }
     }

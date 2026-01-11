@@ -26,7 +26,7 @@ class VkQuery
             $this->sendRequestInLoki($request);
 
             return $next($request);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Access is forbidden',
                 'error' => $e->getMessage(),

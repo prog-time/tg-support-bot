@@ -15,7 +15,7 @@ class DeleteForumTopicTest extends TestCase
     {
         parent::setUp();
 
-        $this->chatId = config('testing.tg_private.chat_id');
+        $this->chatId = time();
     }
 
     public function test_it_calls_sendQueryTelegram_with_correct_parameters(): void

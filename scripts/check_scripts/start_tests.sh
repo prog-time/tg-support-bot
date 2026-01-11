@@ -3,14 +3,6 @@
 set -e
 
 # -----------------------------------------
-# SSH + DOCKER SETTINGS
-# -----------------------------------------
-SERVER_USER="root"
-SERVER_HOST="45.80.69.244"
-PROJECT_DIR="/home/multichat"
-# -----------------------------------------
-
-# -----------------------------------------
 # Find the project root
 # -----------------------------------------
 find_project_root() {
@@ -49,19 +41,18 @@ find_test_file_by_class() {
 }
 
 # -----------------------------------------
-# Run a test file on the server via SSH + Docker
+# Run a test file locally
 # -----------------------------------------
 run_test_file() {
     local test_file="$1"
-    # path relative to PROJECT_DIR on the server
     local relative_path="${test_file#$PROJECT_ROOT/}"
 
-    echo -e "ℹ️ Running test on server: $relative_path"
+    echo -e "ℹ️ Running test: $relative_path"
 
-    ssh ${SERVER_USER}@${SERVER_HOST} \
-        "cd ${PROJECT_DIR} && docker compose exec -T app php artisan test $relative_path"
-
+    # Используем Artisan локально
+    php artisan test "$relative_path"
     local exit_code=$?
+
     if [[ $exit_code -eq 0 ]]; then
         echo -e "✅ Test passed: $relative_path"
         return 0
@@ -106,7 +97,6 @@ main() {
     has_failures=0
     declare -a tests_to_run=()
 
-    # Add test to array if not already added
     add_unique_test() {
         local file="$1"
         for f in "${tests_to_run[@]}"; do
@@ -115,21 +105,17 @@ main() {
         tests_to_run+=("$file")
     }
 
-    # Build a unique list of tests
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
 
-        # If this is a test file
         if [[ "$file" == tests/Unit/* || "$file" == tests/Feature/* ]]; then
             local abs_path="$PROJECT_ROOT/$file"
             [[ -f "$abs_path" ]] && add_unique_test "$abs_path"
         fi
 
-        # If this is an app class
         if [[ "$file" == app/* ]]; then
             local classname
             classname=$(path_to_classname "$file")
-
             local test_file
             if test_file=$(find_test_file_by_class "$classname" "$PROJECT_ROOT"); then
                 add_unique_test "$test_file"
@@ -142,7 +128,6 @@ main() {
         exit 0
     fi
 
-    # Run the tests
     for test_file in "${tests_to_run[@]}"; do
         run_test_file "$test_file" || has_failures=1
     done

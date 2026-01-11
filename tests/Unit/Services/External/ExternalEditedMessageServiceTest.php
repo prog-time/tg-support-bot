@@ -18,7 +18,7 @@ class ExternalEditedMessageServiceTest extends TestCase
 
     public string $source;
 
-    public string $external_id;
+    public int $external_id;
 
     public string $text = 'Тестовое сообщение';
 
@@ -33,8 +33,8 @@ class ExternalEditedMessageServiceTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        $this->source = config('testing.external.source');
-        $this->external_id = config('testing.external.external_id');
+        $this->source = 'live_chat';
+        $this->external_id = time();
 
         $externalUser = ExternalUser::firstOrCreate([
             'external_id' => $this->external_id,

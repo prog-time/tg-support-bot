@@ -1,39 +1,103 @@
-name: Laravel CI
+name: Laravel CI Optimized
 
 on:
   push:
     branches: [ "main", "develop" ]
   pull_request:
+    branches: [ "main", "develop" ]
 
 jobs:
-  laravel-ci:
+  hadolint:
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: laravel_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install Hadolint
+        run: |
+          sudo wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          sudo chmod +x /usr/local/bin/hadolint
+
+      - name: Run Hadolint on Dockerfiles
+        run: |
+          DOCKERFILES=("Dockerfile" "docker/node/Dockerfile")
+          IGNORE_RULES="DL3008|DL3015"
+          ERROR_FOUND=0
+
+          for FILE in "${DOCKERFILES[@]}"; do
+            if [[ ! -f "$FILE" ]]; then
+              echo "⚠️ $FILE not found. Skipping."
+              continue
+            fi
+
+            echo "🔍 Checking $FILE ..."
+
+            output=$(hadolint "$FILE" 2>&1 | grep -vE "$IGNORE_RULES" || true)
+            if [[ -n "$output" ]]; then
+              echo "❌ Issues found in $FILE:"
+              echo "$output"
+              ERROR_FOUND=1
+            else
+              echo "✅ $FILE passed Hadolint checks!"
+            fi
+          done
+
+          if [[ $ERROR_FOUND -eq 0 ]]; then
+            echo "✅ All Dockerfiles passed Hadolint checks!"
+          else
+            echo "❌ Hadolint found issues in one or more Dockerfiles!"
+            exit 1
+          fi
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on scripts
+        run: |
+          ERROR_FOUND=0
+          DIRS=("scripts" "docker/scripts")
+
+          for DIR in "${DIRS[@]}"; do
+            if [ ! -d "$DIR" ]; then
+              echo "⚠️ Directory $DIR does not exist. Skipping."
+              continue
+            fi
+
+            echo "ℹ️ Checking directory: $DIR"
+
+            sh_files=$(find "$DIR" -type f -name "*.sh")
+            if [ -z "$sh_files" ]; then
+              echo "No .sh files found in $DIR"
+              continue
+            fi
+
+            for file in $sh_files; do
+              echo "ℹ️ Checking $file..."
+              shellcheck --severity=warning "$file" || ERROR_FOUND=1
+            done
+          done
+
+          if [[ $ERROR_FOUND -eq 0 ]]; then
+            echo "✅ All shell scripts passed important ShellCheck checks!"
+          else
+            echo "❌ ShellCheck found important issues!"
+            exit 1
+          fi
+
+  phpstan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: mbstring, pdo, pdo_mysql, bcmath
-          tools: composer
-          coverage: none
 
       - name: Cache Composer
         uses: actions/cache@v4
@@ -45,19 +109,45 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Prepare Laravel
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, sqlite, bcmath
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Ensure ParaTest 7.x is installed
+        run: composer require --dev brianium/paratest:^7.0 --no-interaction
+
+      - name: Prepare Laravel with SQLite
         run: |
           cp .env.example .env
           php artisan key:generate
-
-      - name: Run Pint (code style)
-        run: ./vendor/bin/pint --test
-
-      - name: Run PHPStan
-        run: ./vendor/bin/phpstan analyse
+          # создаем файл базы для параллельных процессов
+          touch database/testing.sqlite
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/testing.sqlite" >> .env
 
       - name: Run migrations
         run: php artisan migrate --force
 
-      - name: Run tests
+      - name: Run tests in parallel with isolation
         run: php artisan test

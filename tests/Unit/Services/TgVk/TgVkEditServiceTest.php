@@ -27,7 +27,7 @@ class TgVkEditServiceTest extends TestCase
         Message::truncate();
         BotUser::truncate();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+        $this->botUser = BotUser::getUserByChatId(time(), 'vk');
         $this->botUser->topic_id = 123;
         $this->botUser->save();
 

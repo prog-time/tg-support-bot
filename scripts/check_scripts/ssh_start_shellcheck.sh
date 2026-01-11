@@ -14,9 +14,9 @@ ssh "${SERVER_USER}@${SERVER_HOST}" "$REMOTE_SCRIPT"
 exit_code=$?
 
 if [[ $exit_code -eq 0 ]]; then
-    echo -e "\033[0;32m✅ ShellCheck passed!\033[0m"
+    echo -e "✅ ShellCheck passed!\033[0m"
     exit 0
 else
-    echo -e "\033[0;31m❌ ShellCheck found important issues. Commit blocked!\033[0m"
+    echo -e "❌ ShellCheck found important issues. Commit blocked!\033[0m"
     exit 1
 fi

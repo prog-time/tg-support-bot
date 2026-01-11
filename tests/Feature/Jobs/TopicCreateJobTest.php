@@ -34,7 +34,7 @@ class TopicCreateJobTest extends TestCase
     protected function tearDown(): void
     {
         $botUser = BotUser::where([
-            'chat_id' => config('testing.tg_private.chat_id'),
+            'chat_id' => $this->botUser->chat_id,
         ])->first();
         if (isset($botUser->topic_id)) {
             DeleteForumTopic::execute($this->botUser);

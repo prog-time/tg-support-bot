@@ -56,7 +56,7 @@ class ExternalMessageResponseDto extends Data
                 file_url: $data['file_url'] ?? null,
                 file_type: $data['file_type'] ?? null,
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

@@ -13,8 +13,8 @@ class ExternalMessageDtoMock
     public static function getDtoParams(): array
     {
         return [
-            'source' => config('testing.external.source'),
-            'external_id' => config('testing.external.external_id'),
+            'source' => 'live_chat',
+            'external_id' => '123456',
             'message_id' => time(),
             'text' => 'Тестовое сообщение',
             'uploaded_file' => null,

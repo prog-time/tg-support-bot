@@ -6,13 +6,11 @@ use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
-use App\Models\Message;
-use App\TelegramBot\TelegramMethods;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\External\ExternalMessageDtoMock;
-use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
 use Tests\TestCase;
 
 class SendExternalTelegramMessageJobTest extends TestCase
@@ -23,49 +21,52 @@ class SendExternalTelegramMessageJobTest extends TestCase
 
     private ?BotUser $botUser;
 
+    private int $chatId;
+
+    private int $groupId;
+
     public function setUp(): void
     {
         parent::setUp();
 
-        Message::truncate();
+        Queue::fake();
 
-        $this->dto = ExternalMessageDtoMock::getDto();
+        $this->groupId = time();
+        $this->chatId = time();
+
+        $dtoParams = ExternalMessageDtoMock::getDtoParams();
+        $dtoParams['chat_id'] = $this->chatId;
+
+        $this->dto = ExternalMessageDtoMock::getDto($dtoParams);
+
         $this->botUser = (new BotUser())->getOrCreateExternalBotUser($this->dto);
-
-        $jobTopicCreate = new TopicCreateJob(
-            $this->botUser->id,
-        );
-        $jobTopicCreate->handle();
-
-        $this->botUser->refresh();
-    }
-
-    protected function tearDown(): void
-    {
-        if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
-        }
-
-        parent::tearDown();
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
     }
 
     public function test_send_message_for_group(): void
     {
         try {
             $typeMessage = 'incoming';
-
             $textMessage = '👋 Тест из SendExternalTelegramMessageJob @ ' . now();
-            $dtoParams = TelegramAnswerDtoMock::getDtoParams();
 
-            $dtoParams['result']['text'] = $textMessage;
-            $dto = TelegramAnswerDtoMock::getDto($dtoParams);
-
-            $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
-            $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
+            Http::fake([
+                'https://api.telegram.org/bot*/sendMessage' => Http::response([
+                    'ok' => true,
+                    'result' => [
+                        'message_id' => time(),
+                        'chat' => [
+                            'id' => $this->groupId,
+                            'type' => 'private',
+                        ],
+                        'text' => $textMessage,
+                    ],
+                ], 200),
+            ]);
 
             $queryParams = TGTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
-                'chat_id' => config('testing.tg_group.chat_id'),
+                'chat_id' => $this->chatId,
                 'message_thread_id' => $this->botUser->topic_id,
                 'text' => $textMessage,
             ]);
@@ -74,8 +75,7 @@ class SendExternalTelegramMessageJobTest extends TestCase
                 $this->botUser->id,
                 $this->dto,
                 $queryParams,
-                $typeMessage,
-                $mockTelegramMethods
+                $typeMessage
             );
             $job->handle();
 

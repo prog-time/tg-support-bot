@@ -19,7 +19,6 @@ class AiAssistantService
     public function __construct()
     {
         $this->initializeProviders();
-        $this->provider = $this->getDefaultProvider();
     }
 
     /**
@@ -32,6 +31,8 @@ class AiAssistantService
     public function processMessage(AiRequestDto $request): ?AiResponseDto
     {
         try {
+            $this->provider = $this->getDefaultProvider($request->provider);
+
             // Получить контекст пользователя
             $context = $this->getUserContext($request->userId, $request->platform);
 
@@ -53,7 +54,7 @@ class AiAssistantService
             $this->updateUserContext($request->userId, $request->platform, $request->message, $response);
 
             return $response;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', [
                 'error' => $e->getMessage(),
             ]);
@@ -77,13 +78,15 @@ class AiAssistantService
     /**
      * Получить провайдера по умолчанию.
      *
+     * @param string|null $nameProvider
+     *
      * @return AiProviderInterface
      *
      * @throws \Exception
      */
-    private function getDefaultProvider(): AiProviderInterface
+    private function getDefaultProvider(string|null $nameProvider = null): AiProviderInterface
     {
-        $defaultProvider = config('ai.default_provider', 'openai');
+        $defaultProvider = $nameProvider ?? config('ai.default_provider', 'openai');
 
         if (isset($this->providers[$defaultProvider]) && $this->providers[$defaultProvider]->isAvailable()) {
             return $this->providers[$defaultProvider];

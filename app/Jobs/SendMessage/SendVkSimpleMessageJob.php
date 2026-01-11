@@ -41,7 +41,7 @@ class SendVkSimpleMessageJob extends AbstractSendMessageJob
             $this->vkMethods->sendQueryVk($methodQuery, $dataQuery);
 
             throw new \Exception('SendVkMessageJob: неизвестная ошибка', 1);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

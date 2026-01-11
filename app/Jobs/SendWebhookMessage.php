@@ -42,7 +42,7 @@ class SendWebhookMessage implements ShouldQueue
             }
 
             (new WebhookService())->sendMessage($this->url, $this->payload);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
 
             $this->fail($e->getMessage());

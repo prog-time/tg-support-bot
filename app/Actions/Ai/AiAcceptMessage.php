@@ -63,7 +63,7 @@ class AiAcceptMessage extends AiAction
                 ]),
                 'outgoing',
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', $e->getMessage());
         }
     }

@@ -10,22 +10,22 @@ class TelegramUpdateDto_GroupMock extends TelegramUpdateDto
 {
     public static function getDtoParams(): array
     {
-        $botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $botUser = BotUser::getUserByChatId(time(), 'telegram');
 
         return [
             'update_id' => time(),
             'message' => [
                 'message_id' => time(),
                 'from' => [
-                    'id' => config('testing.tg_private.chat_id'),
+                    'id' => time(),
                     'is_bot' => false,
-                    'first_name' => config('testing.tg_private.first_name'),
-                    'last_name' => config('testing.tg_private.last_name'),
-                    'username' => config('testing.tg_private.username'),
+                    'first_name' => 'Test',
+                    'last_name' => 'Testov',
+                    'username' => 'usertest',
                     'language_code' => 'ru',
                 ],
                 'chat' => [
-                    'id' => config('testing.tg_group.chat_id'),
+                    'id' => time(),
                     'title' => 'Prog-Time',
                     'is_forum' => true,
                     'type' => 'supergroup',

@@ -43,7 +43,7 @@ readonly class VkUpdateDto
                 rawData: $data,
                 listFileUrl: self::getListUrlAttachments(self::detectAttachments($data)),
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

@@ -6,11 +6,14 @@ use App\Actions\Telegram\BannedContactMessage;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class BannedContactMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     public function setUp(): void
@@ -20,7 +23,8 @@ class BannedContactMessageTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'tg');
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'tg');
     }
 
     public function test_ban_status_true(): void

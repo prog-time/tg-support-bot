@@ -13,7 +13,6 @@ use phpDocumentor\Reflection\Exception;
 class DeepSeekProvider extends BaseAiProvider
 {
     private ?string $accessToken = null;
-    private ?int $tokenExpiresAt = null;
 
     public function __construct()
     {
@@ -24,6 +23,7 @@ class DeepSeekProvider extends BaseAiProvider
      * Обработать сообщение пользователя через DeepSeek API.
      *
      * @param AiRequestDto $request DTO с данными запроса
+     *
      * @return AiResponseDto|null DTO с ответом AI
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto
@@ -40,7 +40,7 @@ class DeepSeekProvider extends BaseAiProvider
             $response = $this->makeApiCall($request);
 
             return $this->parseApiResponse($response, $request);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', [
                 'error' => $e->getMessage(),
                 'user_id' => $request->userId,
@@ -89,28 +89,23 @@ class DeepSeekProvider extends BaseAiProvider
      */
     private function ensureValidToken(): void
     {
-        if ($this->accessToken && $this->tokenExpiresAt && $this->tokenExpiresAt > time()) {
-            return; // Токен еще действителен
+        if ($this->accessToken > time()) {
+            return;
         }
 
         $this->refreshAccessToken();
     }
 
-    /**
-     * Обновить токен доступа.
-     *
-     * @throws \Exception
-     */
     private function refreshAccessToken(): void
     {
         $this->accessToken = $this->config['client_secret'];
     }
 
     /**
-     * Выполнить API-вызов к DeepSeek.
-     *
      * @param AiRequestDto $request DTO с данными запроса
+     *
      * @return array Ответ от DeepSeek API
+     *
      * @throws \Exception
      */
     private function makeApiCall(AiRequestDto $request): array
@@ -123,8 +118,8 @@ class DeepSeekProvider extends BaseAiProvider
         ])->post($this->config['base_url'], [
             'model' => $this->config['model'] ?? 'deepseek-chat',
             'messages' => $messages,
-            'max_tokens' => (int)$this->config['max_tokens'] ?? 1000,
-            'temperature' => (float)$this->config['temperature'] ?? 0.7,
+            'max_tokens' => (int)$this->config['max_tokens'],
+            'temperature' => (float)$this->config['temperature'],
             'stream' => false,
         ]);
 
@@ -136,9 +131,8 @@ class DeepSeekProvider extends BaseAiProvider
     }
 
     /**
-     * Построить массив сообщений для DeepSeek API.
-     *
      * @param AiRequestDto $request DTO с данными запроса
+     *
      * @return array Массив сообщений в формате DeepSeek
      */
     private function buildMessages(AiRequestDto $request): array
@@ -146,22 +140,22 @@ class DeepSeekProvider extends BaseAiProvider
         $messages = [
             [
                 'role' => 'system',
-                'content' => $this->buildSystemPrompt()
-            ]
+                'content' => $this->buildSystemPrompt(),
+            ],
         ];
 
         // Добавить контекстные сообщения, если доступны
         foreach ($request->context as $contextMessage) {
             $messages[] = [
                 'role' => $contextMessage['role'] ?? 'user',
-                'content' => $contextMessage['content'] ?? ''
+                'content' => $contextMessage['content'] ?? '',
             ];
         }
 
         // Добавить текущее сообщение пользователя
         $messages[] = [
             'role' => 'user',
-            'content' => $request->message
+            'content' => $request->message,
         ];
 
         return $messages;
@@ -170,8 +164,9 @@ class DeepSeekProvider extends BaseAiProvider
     /**
      * Разобрать ответ от DeepSeek API и создать DTO.
      *
-     * @param array $response Ответ от DeepSeek API
-     * @param AiRequestDto $request Исходный запрос
+     * @param array        $response Ответ от DeepSeek API
+     * @param AiRequestDto $request  Исходный запрос
+     *
      * @return AiResponseDto DTO с ответом AI
      */
     private function parseApiResponse(array $response, AiRequestDto $request): AiResponseDto
@@ -205,17 +200,14 @@ class DeepSeekProvider extends BaseAiProvider
      * Разобрать структурированный ответ от AI.
      *
      * @param string $content Текст ответа от AI
+     *
      * @return array Разобранные данные с уверенностью и флагом эскалации
      */
     private function parseStructuredResponse(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return $decoded;
-            }
-        } catch (\Exception $e) {
-            // Продолжить с резервным парсингом
+        $decoded = json_decode($content, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $decoded;
         }
 
         // Резервный вариант: попытаться извлечь информацию об уверенности и эскалации из текста
@@ -236,6 +228,4 @@ class DeepSeekProvider extends BaseAiProvider
             'should_escalate' => $shouldEscalate,
         ];
     }
-
 }
-

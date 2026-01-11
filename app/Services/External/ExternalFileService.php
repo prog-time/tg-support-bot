@@ -36,7 +36,7 @@ class ExternalFileService extends ExternalService
             }
 
             $this->sendDocument();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }

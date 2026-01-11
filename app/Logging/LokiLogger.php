@@ -12,9 +12,9 @@ class LokiLogger
 
     protected string $url;
 
-    public function __construct()
+    public function __construct(Client|null $client = null)
     {
-        $this->client = new Client();
+        $this->client = $client ?? new Client();
         $this->url = config('loki_custom.url');
     }
 
@@ -67,16 +67,17 @@ class LokiLogger
 
             return true;
         } catch (Throwable $e) {
+            dump($e->getMessage());
             return false;
         }
     }
 
     /**
-     * @param Exception $e
+     * @param Throwable|Exception $e
      *
      * @return bool
      */
-    public function logException(Exception $e): bool
+    public function logException(Throwable|Exception $e): bool
     {
         try {
             $level = $e->getCode() === 1 ? 'warning' : 'error';

@@ -30,8 +30,8 @@ class TgExternalEditServiceTest extends TestCase
         Message::truncate();
 
         Artisan::call('app:generate-token', [
-            'source' => config('testing.external.source'),
-            'hook_url' => config('testing.external.hook_url'),
+            'source' => 'live_chat',
+            'hook_url' => 'http://test.ru',
         ]);
     }
 

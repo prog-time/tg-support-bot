@@ -92,7 +92,7 @@ class EditAiMessage
                 ]),
                 'incoming',
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             (new LokiLogger())->log('ai_error', $e->getMessage());
         }
     }

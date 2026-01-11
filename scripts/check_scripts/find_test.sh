@@ -13,33 +13,8 @@ EXCLUDE_PATTERNS=(
     "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
     "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
     "*Mock*" "*api*" "*Providers*" "*Abstract*"
-    "*resources*"
+    "*resources*" "*Stubs*" "*TestCase*"
 )
-
-# -----------------------------
-# Colors
-# -----------------------------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# -----------------------------
-# Output helpers
-# -----------------------------
-info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
-}
-success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-error() {
-    echo -e "${RED}❌ $1${NC}"
-}
 
 # -----------------------------
 # Find project root
@@ -55,7 +30,7 @@ find_project_root() {
         current_dir=$(dirname "$current_dir")
     done
 
-    error "Laravel project root not found (composer.json missing)"
+    echo -e "❌ Laravel project root not found (composer.json missing)"
     exit 1
 }
 
@@ -189,7 +164,7 @@ analyze_coverage() {
     normalized_classname=$(path_to_classname "$app_class")
 
     if ! should_be_tested "$normalized_classname"; then
-        warning "Class does not require testing: $normalized_classname"
+        echo -e "⚠️ Class does not require testing: $normalized_classname"
         echo "---"
         return 0
     fi
@@ -204,11 +179,11 @@ analyze_coverage() {
     done < <(find_test_classes "$project_root")
 
     if has_test "$normalized_classname" "$expected_test" "${test_classes_array[@]}"; then
-        success "Test found: $expected_test"
+        echo -e "✅ Test found: $expected_test"
         echo "---"
         return 0
     else
-        error "Please create test file: $expected_test"
+        ehco -e "❌ Please create test file: $expected_test"
         echo "---"
         return 1
     fi
@@ -231,7 +206,7 @@ main() {
     fi
 
     if [ -z "$ALL_FILES" ]; then
-      warning " [FindTest] No tests required!"
+      echo -e "⚠️ [FindTest] No tests required!"
       exit 0
     fi
 

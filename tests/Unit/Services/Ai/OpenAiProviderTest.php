@@ -5,11 +5,12 @@ namespace Tests\Unit\Services\Ai;
 use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
 use App\Services\Ai\AiAssistantService;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-class GigaChatProviderTest extends TestCase
+class OpenAiProviderTest extends TestCase
 {
     private ?BotUser $botUser;
 
@@ -17,43 +18,46 @@ class GigaChatProviderTest extends TestCase
 
     private string $baseProviderUrl;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         Queue::fake();
 
+        Config::set('ai.default_provider', 'openai');
+        Config::set('ai.providers.openai.api_key', 'test_123');
+
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
-        $this->provider = 'gigachat';
-        $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
+        $this->provider = 'openai';
+        $this->baseProviderUrl = config('ai.providers.openai.base_url');
     }
 
     public function test_successful_process_message(): void
     {
         $managerTextMessage = 'Напиши приветствие';
-        $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot. 123';
+        $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot.';
 
         Http::fake([
             $this->baseProviderUrl . '/chat/completions' => Http::response([
+                'id' => 'chatcmpl-123',
+                'object' => 'chat.completion',
+                'created' => time(),
+                'model' => 'gpt-4o-mini',
                 'choices' => [
                     [
-                        'message' => [
-                            'content' => $answerMessage,
-                            'role' => 'assistant',
-                        ],
                         'index' => 0,
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => $answerMessage,
+                        ],
                         'finish_reason' => 'stop',
                     ],
                 ],
-                'created' => time(),
-                'model' => 'GigaChat-2-Max:2.0.28.2',
-                'object' => 'chat.completion',
                 'usage' => [
-                    'prompt_tokens' => 1303,
-                    'completion_tokens' => 16,
-                    'total_tokens' => 1319,
-                    'precached_prompt_tokens' => 1,
+                    'prompt_tokens' => 42,
+                    'completion_tokens' => 18,
+                    'total_tokens' => 60,
                 ],
             ], 200),
         ]);

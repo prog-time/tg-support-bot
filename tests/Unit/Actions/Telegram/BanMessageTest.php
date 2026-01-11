@@ -5,23 +5,24 @@ namespace Tests\Unit\Actions\Telegram;
 use App\Actions\Telegram\BanMessage;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
 use Tests\TestCase;
 
 class BanMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
     }
 
     public function test_send_ban_message_with_correct_text(): void
