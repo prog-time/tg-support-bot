@@ -51,7 +51,7 @@ class VkUpdateDtoMock
                     'random_id' => 0,
                 ],
             ],
-            'secret' => config('testing.vk_private.secret'),
+            'secret' => time(),
         ];
     }
 

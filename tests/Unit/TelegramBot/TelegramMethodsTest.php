@@ -144,7 +144,7 @@ class TelegramMethodsTest extends TestCase
                         'id' => time(),
                         'first_name' => 'Тестовый',
                         'last_name' => 'test_file_id',
-                        'username' => config('testing.tg_private.username'),
+                        'username' => 'usertest',
                         'type' => 'private',
                     ],
                     'date' => time(),

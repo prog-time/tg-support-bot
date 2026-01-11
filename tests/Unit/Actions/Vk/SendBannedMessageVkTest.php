@@ -24,7 +24,7 @@ class SendBannedMessageVkTest extends TestCase
 
         Queue::fake();
 
-        $this->chatId = (int)config('testing.vk_private.chat_id');
+        $this->chatId = time();
         $this->botUser = BotUser::getUserByChatId($this->chatId, 'vk');
     }
 

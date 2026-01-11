@@ -26,7 +26,8 @@ class SendAiResponseMessageJobTest extends TestCase
 
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'telegram');
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');
 
         $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
     }

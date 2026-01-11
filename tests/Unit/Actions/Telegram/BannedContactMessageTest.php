@@ -23,7 +23,8 @@ class BannedContactMessageTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'tg');
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'tg');
     }
 
     public function test_ban_status_true(): void

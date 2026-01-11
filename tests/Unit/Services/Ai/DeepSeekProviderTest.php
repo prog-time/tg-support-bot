@@ -27,10 +27,8 @@ class DeepSeekProviderTest extends TestCase
         Config::set('ai.default_provider', 'deepseek');
         Config::set('ai.providers.deepseek.client_secret', 'test_123');
 
-        $this->botUser = BotUser::getUserByChatId(
-            config('testing.tg_private.chat_id'),
-            'telegram'
-        );
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');
 
         $this->provider = 'deepseek';
         $this->baseProviderUrl = config('ai.providers.deepseek.base_url');

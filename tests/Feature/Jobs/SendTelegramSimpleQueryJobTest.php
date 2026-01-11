@@ -73,7 +73,7 @@ class SendTelegramSimpleQueryJobTest extends TestCase
         $this->assertTrue($resultQuery);
 
         $botUser = BotUser::where([
-            'chat_id' => config('testing.tg_private.chat_id'),
+            'chat_id' => time(),
         ])->first();
         if (isset($botUser->topic_id)) {
             DeleteForumTopic::execute($this->botUser);

@@ -30,7 +30,9 @@ class SendVkMessageJobTest extends TestCase
         Message::truncate();
 
         $this->dto = TelegramUpdateDto_VKMock::getDto();
-        $this->botUser = BotUser::getUserByChatId(config('testing.vk_private.chat_id'), 'vk');
+
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'vk');
 
         $jobTopicCreate = new TopicCreateJob(
             $this->botUser->id,

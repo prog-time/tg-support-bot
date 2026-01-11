@@ -27,10 +27,7 @@ class OpenAiProviderTest extends TestCase
         Config::set('ai.default_provider', 'openai');
         Config::set('ai.providers.openai.api_key', 'test_123');
 
-        $this->botUser = BotUser::getUserByChatId(
-            config('testing.tg_private.chat_id'),
-            'telegram'
-        );
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
         $this->provider = 'openai';
         $this->baseProviderUrl = config('ai.providers.openai.base_url');

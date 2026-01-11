@@ -21,7 +21,8 @@ class SendBannedMessageTest extends TestCase
 
         Queue::fake();
 
-        $this->botUser = BotUser::getUserByChatId(config('testing.tg_private.chat_id'), 'tg');
+        $chatId = time();
+        $this->botUser = BotUser::getUserByChatId($chatId, 'tg');
     }
 
     public function test_send_ban_message(): void
