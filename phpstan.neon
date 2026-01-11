@@ -16,6 +16,7 @@ parameters:
         - identifier: missingType.iterableValue
         - identifier: missingType.generics
         - '#(?i)referenced with incorrect case#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::with\(\)#'
 
     reportUnmatchedIgnoredErrors: false
 
