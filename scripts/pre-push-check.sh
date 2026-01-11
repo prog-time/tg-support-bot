@@ -27,19 +27,19 @@ else
 fi
 
 # -----------------------------
-# PHPUnit / Autotests
+# Laravel / Artisan tests
 # -----------------------------
-info "🧪 Running PHPUnit tests..."
-PHPUNIT_OUTPUT=$(vendor/bin/phpunit --colors=never 2>&1)
-echo "$PHPUNIT_OUTPUT"
+info "🧪 Running Laravel tests (php artisan test)..."
+php artisan test --no-interaction --stop-on-failure
+TEST_EXIT_CODE=$?
 
-# Check for failures or errors
-if echo "$PHPUNIT_OUTPUT" | grep -E 'FAILURES!|Errors:' >/dev/null; then
+if [ $TEST_EXIT_CODE -ne 0 ]; then
     error "⛔ Push blocked due to failing tests."
     BLOCK=1
 else
     success "All tests passed."
 fi
+
 
 # -----------------------------
 # Block push if needed
@@ -49,5 +49,9 @@ if [ $BLOCK -eq 1 ]; then
 fi
 
 success "🎉 All checks passed. Push allowed."
+
+
+
+
 
 exit 1
