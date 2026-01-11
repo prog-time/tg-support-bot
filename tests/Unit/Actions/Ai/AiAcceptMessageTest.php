@@ -7,12 +7,15 @@ use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdate_AiButtonAction;
 use Tests\TestCase;
 
 class AiAcceptMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void

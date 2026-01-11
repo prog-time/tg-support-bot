@@ -3,11 +3,14 @@
 namespace Tests\Unit\Helpers;
 
 use App\Helpers\TelegramHelper;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TelegramHelperTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_get_file_path(): void
     {
         $telegramToken = config('traffic_source.settings.telegram.token');

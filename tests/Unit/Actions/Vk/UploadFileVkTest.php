@@ -16,15 +16,12 @@ class UploadFileVkTest extends TestCase
 
     private string $photoFileId;
 
-    private string $botToken;
+    protected string $botToken;
 
     public function setUp(): void
     {
         parent::setUp();
         $this->chatId = time();
-
-        $this->botToken = '123:ABC';
-        config(['traffic_source.settings.telegram.token' => $this->botToken]);
 
         $this->photoFileId = 'test_file_id';
     }

@@ -4,11 +4,14 @@ namespace Tests\Unit\Actions\Vk;
 
 use App\Actions\Vk\GetMessagesUploadServerVk;
 use App\Models\BotUser;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GetMessagesUploadServerVkTest extends TestCase
 {
+    use RefreshDatabase;
+
     private int $chatId;
 
     private ?BotUser $botUser;

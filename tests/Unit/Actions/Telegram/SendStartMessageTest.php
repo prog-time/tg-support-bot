@@ -5,18 +5,19 @@ namespace Tests\Unit\Actions\Telegram;
 use App\Actions\Telegram\SendStartMessage;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class SendStartMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function setUp(): void
     {
         parent::setUp();
 
-        Message::truncate();
         Queue::fake();
     }
 

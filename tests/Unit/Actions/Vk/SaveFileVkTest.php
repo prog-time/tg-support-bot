@@ -3,10 +3,13 @@
 namespace Tests\Unit\Actions\Vk;
 
 use App\Actions\Vk\SaveFileVk;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SaveFileVkTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_save_photo(): void
     {
         $responseData = [

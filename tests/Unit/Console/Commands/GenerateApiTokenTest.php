@@ -4,12 +4,15 @@ namespace Tests\Unit\Console\Commands;
 
 use App\Models\ExternalSource;
 use App\Models\ExternalSourceAccessTokens;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GenerateApiTokenTest extends TestCase
 {
+    use RefreshDatabase;
+
     private string $source;
 
     private string $url;

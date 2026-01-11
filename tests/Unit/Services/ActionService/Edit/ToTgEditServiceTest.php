@@ -2,12 +2,15 @@
 
 namespace Tests\Unit\Services\ActionService\Edit;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\Stubs\Services\ActionService\Edit\ToTgEditServiceStub;
 use Tests\TestCase;
 
 class ToTgEditServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function setUp(): void
     {
         parent::setUp();

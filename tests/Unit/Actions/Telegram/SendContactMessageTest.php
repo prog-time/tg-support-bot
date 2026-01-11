@@ -5,11 +5,14 @@ namespace Tests\Unit\Actions\Telegram;
 use App\Actions\Telegram\SendContactMessage;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SendContactMessageTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BotUser $botUser;
 
     protected function setUp(): void

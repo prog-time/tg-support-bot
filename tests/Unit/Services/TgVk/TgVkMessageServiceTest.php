@@ -21,7 +21,7 @@ class TgVkMessageServiceTest extends TestCase
 
     private array $basicPayload;
 
-    private string $botToken;
+    protected string $botToken;
 
     public function setUp(): void
     {
@@ -36,9 +36,6 @@ class TgVkMessageServiceTest extends TestCase
         $this->botUser->save();
 
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams();
-
-        $this->botToken = '123:ABC';
-        config(['traffic_source.settings.telegram.token' => $this->botToken]);
     }
 
     protected function tearDown(): void

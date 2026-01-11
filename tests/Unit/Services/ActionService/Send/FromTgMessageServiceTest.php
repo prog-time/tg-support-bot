@@ -3,12 +3,15 @@
 namespace Tests\Unit\Services\ActionService\Send;
 
 use App\DTOs\TelegramUpdateDto;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Request;
 use Tests\Stubs\Services\ActionService\Send\FromTgMessageServiceStub;
 use Tests\TestCase;
 
 class FromTgMessageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private array $basicPayload;
 
     public function setUp(): void
