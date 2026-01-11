@@ -7,6 +7,61 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Hadolint
+        run: |
+          sudo wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          sudo chmod +x /usr/local/bin/hadolint
+
+      - name: Run Hadolint on Dockerfiles
+        run: |
+          hadolint Dockerfile
+          hadolint docker/node/Dockerfile
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on scripts
+        run: |
+          ERROR_FOUND=0
+          DIRS=("scripts" "docker/scripts")
+
+          for DIR in "${DIRS[@]}"; do
+            if [ ! -d "$DIR" ]; then
+              echo "⚠️ Directory $DIR does not exist. Skipping."
+              continue
+            fi
+
+            echo "ℹ️ Checking directory: $DIR"
+
+            sh_files=$(find "$DIR" -type f -name "*.sh")
+            if [ -z "$sh_files" ]; then
+              echo "No .sh files found in $DIR"
+              continue
+            fi
+
+            for file in $sh_files; do
+              echo "ℹ️ Checking $file..."
+              shellcheck --severity=warning "$file" || ERROR_FOUND=1
+            done
+          done
+
+          if [[ $ERROR_FOUND -eq 0 ]]; then
+            echo "✅ All shell scripts passed important ShellCheck checks!"
+          else
+            echo "❌ ShellCheck found important issues!"
+            exit 1
+          fi
+
   phpstan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
