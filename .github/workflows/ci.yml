@@ -69,4 +69,4 @@ jobs:
         run: php artisan migrate --force
 
       - name: Run tests in parallel with isolation
-        run: php artisan test --parallel --process-isolation
+        run: php artisan test
