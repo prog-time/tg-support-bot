@@ -58,11 +58,13 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+          # создаем файл базы для параллельных процессов
+          touch database/testing.sqlite
           echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=:memory:" >> .env
+          echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/testing.sqlite" >> .env
 
       - name: Run migrations
         run: php artisan migrate --force
 
-      - name: Run tests
-        run: php artisan test --parallel
+      - name: Run tests in parallel with isolation
+        run: php artisan test --parallel --process-isolation
