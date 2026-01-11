@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\TgVk;
 
-use App\DTOs\Vk\VkAnswerDto;
 use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
@@ -22,6 +21,8 @@ class TgVkMessageServiceTest extends TestCase
 
     private array $basicPayload;
 
+    private string $botToken;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -36,26 +37,8 @@ class TgVkMessageServiceTest extends TestCase
 
         $this->basicPayload = TelegramUpdateDto_VKMock::getDtoParams();
 
-        $botToken = '123:ABC';
-        config(['traffic_source.settings.telegram.token' => $botToken]);
-
-        Http::fake([
-            // getFile
-            'https://api.telegram.org/bot123:ABC/getFile*' => Http::response([
-                'ok' => true,
-                'result' => [
-                    'file_id' => 'test_file_id',
-                    'file_path' => 'path/file.jpg',
-                ],
-            ], 200),
-
-            // download file
-            'https://api.telegram.org/file/bot123:ABC/*' => Http::response(
-                'FAKE_BINARY_CONTENT',
-                200,
-                ['Content-Type' => 'image/jpeg']
-            ),
-        ]);
+        $this->botToken = '123:ABC';
+        config(['traffic_source.settings.telegram.token' => $this->botToken]);
     }
 
     protected function tearDown(): void
@@ -85,51 +68,52 @@ class TgVkMessageServiceTest extends TestCase
     public function test_send_photo(): void
     {
         $fileName = 'path/file.jpg';
-
-        Http::fake([
-            'https://api.telegram.org/bot*/getFile*' => Http::response([
-                'ok' => true,
-                'result' => [
-                    'file_id' => 'test_file_id',
-                    'file_path' => 'path/file.jpg',
-                ],
-            ], 200),
-            'https://api.telegram.org/file/bot*/*' => Http::response('FAKE_BINARY_CONTENT', 200, ['Content-Type' => 'image/jpeg']),
-        ]);
-
-        $tgFileUrl = "https://api.telegram.org/file/bot123:ABC/{$fileName}";
+        $tgFileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$fileName}";
         $vkUploadFileUrl = 'https://vk.com/stub_file/123456789_987654321';
-        Mockery::mock('alias:App\Actions\Vk\GetMessagesUploadServerVk')
-            ->shouldReceive('execute')
-            ->with($this->botUser->chat_id, 'photos')
-            ->andReturn(VkAnswerDto::fromData([
-                'response' => [
-                    'upload_url' => $vkUploadFileUrl,
-                ],
-            ]));
 
-        $UploadFileVkResponse = [
+        $uploadFileVkResponse = [
             'server' => 123456,
             'file' => '{"file":"ABCD1234"}',
             'hash' => 'abcdef1234567890',
         ];
-        Mockery::mock('alias:App\Actions\Vk\UploadFileVk')
-            ->shouldReceive('execute')
-            ->with($vkUploadFileUrl, $tgFileUrl, 'photo')
-            ->andReturn($UploadFileVkResponse);
 
-        Mockery::mock('alias:App\Actions\Vk\SaveFileVk')
-            ->shouldReceive('execute')
-            ->andReturn(
-                VkAnswerDto::fromData([
-                    'response' => [
-                        [
-                            'id' => 1,
-                            'owner_id' => 1,
-                        ],
+        Http::fake([
+            // getFile
+            'https://api.telegram.org/bot*/getFile*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'file_id' => 'test_file_id',
+                    'file_path' => $fileName,
+                ],
+            ], 200),
+
+            // tg file data
+            $tgFileUrl => Http::response(
+                'FAKE_BINARY_CONTENT', // тут можно любой контент
+                200,
+                ['Content-Type' => 'image/jpeg']
+            ),
+
+            // get upload server
+            'https://api.vk.com/method/photos.getMessagesUploadServer' => Http::response([
+                'response' => [
+                    'upload_url' => $vkUploadFileUrl,
+                ],
+            ], 200),
+
+            // upload file to vk
+            'https://vk.com/stub_file/*' => Http::response($uploadFileVkResponse, 200),
+
+            // save file
+            'https://api.vk.com/method/photos.saveMessagesPhoto*' => Http::response([
+                'response' => [
+                    [
+                        'id' => 1,
+                        'owner_id' => 1,
                     ],
-                ])
-            );
+                ],
+            ], 200),
+        ]);
 
         $payload = $this->basicPayload;
         $payload['message']['photo'] = [
