@@ -2,10 +2,6 @@
 
 namespace App\Enums;
 
-/**
- * Enum для ошибок Telegram Bot API
- * Поддерживает PHP 8.1+ с backed enum
- */
 enum TelegramError: string
 {
     // Ошибки сообщений
@@ -15,6 +11,7 @@ enum TelegramError: string
 
     // Ошибки тем
     case TOPIC_NOT_FOUND = 'Bad Request: message thread not found';
+    case TOPIC_DELETED = 'Bad Request: TOPIC_DELETED';
 
     // Ошибки чата
     case CHAT_NOT_FOUND = 'Bad Request: chat not found';
@@ -32,7 +29,7 @@ enum TelegramError: string
     case DOCUMENT_NOT_FOUND = 'Bad Request: there is no document in the request';
 
     /**
-     * Получить описание ошибки на русском языке
+     * @return string
      */
     public function getDescription(): string
     {
@@ -58,7 +55,8 @@ enum TelegramError: string
     }
 
     /**
-     * Попытаться определить ошибку по тексту ответа
+     * @param string $description
+     * @return self|null
      */
     public static function fromResponse(string $description): ?self
     {
