@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Ai\EditAiMessage;
 use App\Actions\Telegram\BannedContactMessage;
+use App\Actions\Telegram\CloseTopic;
 use App\Actions\Telegram\SendAiAnswerMessage;
 use App\Actions\Telegram\SendBannedMessage;
 use App\Actions\Telegram\SendContactMessage;
@@ -71,6 +72,8 @@ class TelegramBotController
             if (str_contains($this->dataHook->callbackData, 'topic_user_ban_')) {
                 $banStatus = $this->dataHook->callbackData === 'topic_user_ban_true';
                 (new BannedContactMessage())->execute($this->botUser, $banStatus, $this->dataHook->messageId);
+            } elseif ($this->dataHook->callbackData === 'close_topic') {
+                (new CloseTopic())->execute($this->botUser);
             }
 
             die();
