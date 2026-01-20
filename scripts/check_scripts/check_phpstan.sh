@@ -23,13 +23,16 @@ if [ ${#FILES[@]} -eq 0 ]; then
     exit 0
 fi
 
-echo "[PHPStan] Checking ${#FILES[@]} files (strictness=$STRICTNESS)"
-
 # -----------------------------
 # LOOP THROUGH FILES
 # -----------------------------
 for FILE in "${FILES[@]}"; do
-    # Skip if file does not exist (safety check)
+    # Skip non-PHP files
+    if [[ "$FILE" != *.php ]]; then
+        continue
+    fi
+
+    # Skip if file does not exist
     if [ ! -f "$FILE" ]; then
         echo "File not found, skipping: $FILE"
         continue
