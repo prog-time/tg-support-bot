@@ -4,47 +4,63 @@ set -e
 # -----------------------------------------
 # Configuration
 # -----------------------------------------
-PROJECT_DIR="/home/multichat"
+PROJECT_DIR="."
 
-DOCKERFILES=(
-    "Dockerfile"
-    "docker/node/Dockerfile"
-)
-
-# Ignore rules Hadolint
 IGNORE_RULES="DL3008|DL3015"
+
+# -----------------------------------------
+# Get files from arguments
+# -----------------------------------------
+ALL_FILES=("$@")
+DOCKERFILES=()
+
+for FILE in "${ALL_FILES[@]}"; do
+    if [[ "$(basename "$FILE")" == Dockerfile* ]]; then
+        DOCKERFILES+=("$FILE")
+    fi
+done
+
+if [[ ${#DOCKERFILES[@]} -eq 0 ]]; then
+    echo -e "No Dockerfiles in provided files. Skipping Hadolint."
+    exit 0
+fi
+
+# -----------------------------------------
+# Run Hadolint
+# -----------------------------------------
+cd "$PROJECT_DIR" || {
+  echo -e "Cannot cd to $PROJECT_DIR"
+  exit 1
+}
 
 ERROR_FOUND=0
 
-cd "$PROJECT_DIR" || { echo -e "❌ Cannot cd to $PROJECT_DIR"; exit 1; }
-
 for FILE in "${DOCKERFILES[@]}"; do
-    echo -e "🔍 Checking $FILE ..."
+    FULL_PATH="$PROJECT_DIR/$FILE"
 
-    if [[ ! -f "$PROJECT_DIR/$FILE" ]]; then
-        echo -e "⚠️ File $FILE not found. Skipping."
+    if [[ ! -f "$FULL_PATH" ]]; then
+        echo -e "File $FULL_PATH not found. Skipping."
         continue
     fi
 
     if [[ -n "$IGNORE_RULES" ]]; then
-        output=$(hadolint "$FILE" 2>&1 | grep -vE "$IGNORE_RULES" || true)
+        output=$(hadolint "$FULL_PATH" 2>&1 | grep -vE "$IGNORE_RULES" || true)
     else
-        output=$(hadolint "$FILE" 2>&1 || true)
+        output=$(hadolint "$FULL_PATH" 2>&1 || true)
     fi
 
     if [[ -n "$output" ]]; then
-        echo -e "❌ Issues found in $FILE:"
+        echo -e "Issues found in $FULL_PATH:"
         echo "$output"
         ERROR_FOUND=1
     else
-        echo -e "✅ $FILE passed Hadolint checks!"
+        echo -e "$FULL_PATH passed Hadolint checks!"
     fi
 done
 
 if [[ $ERROR_FOUND -eq 0 ]]; then
-    echo -e "✅ All Dockerfiles passed Hadolint checks!"
+    echo -e "All Dockerfiles passed Hadolint checks!"
 else
-    echo -e "❌ Hadolint found issues in one or more Dockerfiles!"
+    echo -e "Hadolint found issues in one or more Dockerfiles!"
+    exit 1
 fi
-
-exit $ERROR_FOUND

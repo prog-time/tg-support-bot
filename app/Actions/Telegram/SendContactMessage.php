@@ -81,12 +81,12 @@ class SendContactMessage
     {
         if ($botUser->isBanned()) {
             $banButton = [
-                'text' => '🔓 Разблокировать',
+                'text' => __('messages.but_ban_user_false'),
                 'callback_data' => 'topic_user_ban_false',
             ];
         } else {
             $banButton = [
-                'text' => '🚫 Заблокировать',
+                'text' => __('messages.but_ban_user_true'),
                 'callback_data' => 'topic_user_ban_true',
             ];
         }
@@ -94,6 +94,12 @@ class SendContactMessage
         return [
             [
                 $banButton,
+            ],
+            [
+                [
+                    'text' => __('messages.but_close_topic'),
+                    'callback_data' => 'close_topic',
+                ],
             ],
         ];
     }

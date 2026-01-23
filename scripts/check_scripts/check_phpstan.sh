@@ -1,94 +1,87 @@
 #!/bin/bash
 
 # -----------------------------
-# CHECK NEW FILES
+# PARAMETERS
 # -----------------------------
-COMMAND="$1"
+STRICTNESS="$1"
+shift 1
 
-if [ "$COMMAND" = "commit" ]; then
-    # Only new files (status A = Added) ending with .php
-    NEW_FILES=$(git diff --cached --name-only --diff-filter=A | grep '\.php$')
-
-    # Filter out:
-    # - files in the tests/ folder
-    # - files ending with *Test.php
-    FILTERED_FILES=$(echo "$NEW_FILES" | grep -v '/tests/' | grep -v 'Test\.php$')
-
-    if [ -z "$FILTERED_FILES" ]; then
-        echo -e "⚠️ [PHPStan] No new PHP files to check (or all are tests)"
-    else
-        echo "🔍 Found new PHP files. Running PHPStan only on new files (excluding tests)"
-        ./vendor/bin/phpstan analyse --no-progress --error-format=table $FILTERED_FILES
-        if [ $? -ne 0 ]; then
-            echo -e "❌ NEW FILES! PHPStan found type errors (MANDATORY)"
-            exit 1
-        fi
-    fi
-fi
-
-# -----------------------------
-# CHECK MODIFIED FILES
-# -----------------------------
+FILES=("$@")
 BASELINE_FILE=".phpstan-error-count.json"
 BLOCK_COMMIT=0
 
-if [ "$COMMAND" = "commit" ]; then
-    # Added, Copied, or Modified files
-    ALL_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
-elif [ "$COMMAND" = "push" ]; then
-    BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    ALL_FILES=$(git diff --name-only origin/$BRANCH --diff-filter=ACM | grep '\.php$' || true)
-else
-    echo -e "❌ Unknown command: $COMMAND"
-    exit 1
-fi
-
-# Initialize baseline file if missing
+# Initialize baseline if missing
 if [ ! -f "$BASELINE_FILE" ]; then
     echo "{}" > "$BASELINE_FILE"
 fi
 
-if [ -z "$ALL_FILES" ]; then
-  echo -e "⚠️ [PHPStan] No PHP files to check."
-  exit 0
+# -----------------------------
+# CHECK IF FILES EXIST
+# -----------------------------
+if [ ${#FILES[@]} -eq 0 ]; then
+    echo "[PHPStan] No PHP files to check."
+    exit 0
 fi
 
-echo "🔍 [PHPStan] Checking files"
+# -----------------------------
+# LOOP THROUGH FILES
+# -----------------------------
+for FILE in "${FILES[@]}"; do
+    # Skip non-PHP files
+    if [[ "$FILE" != *.php ]]; then
+        continue
+    fi
 
-for FILE in $ALL_FILES; do
-    echo -e "📄 Checking: $FILE"
+    # Skip if file does not exist
+    if [ ! -f "$FILE" ]; then
+        echo "File not found, skipping: $FILE"
+        continue
+    fi
 
-    # Count new errors
+    echo "Checking: $FILE"
+
+    # Count current errors
     ERR_NEW=$(vendor/bin/phpstan analyse --error-format=raw --no-progress "$FILE" 2>/dev/null | grep -c '^')
     ERR_OLD=$(jq -r --arg file "$FILE" '.[$file] // empty' "$BASELINE_FILE")
 
     if [ -z "$ERR_OLD" ]; then
-        echo -e "🆕 File not checked before. It has $ERR_NEW errors."
+        echo "File not checked before. It has $ERR_NEW errors."
         ERR_OLD=$ERR_NEW
     fi
 
-    # Set target: allow at most one new error compared to baseline
-    TARGET=$((ERR_OLD - 1))
-    [ "$TARGET" -lt 0 ] && TARGET=0
-
-    if [ "$ERR_NEW" -le "$TARGET" ]; then
-        echo -e "✅ Improved: was $ERR_OLD, now $ERR_NEW"
-        jq --arg file "$FILE" --argjson errors "$ERR_NEW" '.[$file] = $errors' "$BASELINE_FILE" > "$BASELINE_FILE.tmp" && mv "$BASELINE_FILE.tmp" "$BASELINE_FILE"
+    # Determine target errors
+    if [ "$STRICTNESS" = "strict" ]; then
+        TARGET=0
     else
-        echo -e "❌ Errors: $ERR_NEW (must be ≤ $TARGET)"
+        TARGET=$((ERR_OLD - 1))
+        [ "$TARGET" -lt 0 ] && TARGET=0
+    fi
+
+    # Compare and report
+    if [ "$ERR_NEW" -le "$TARGET" ]; then
+        echo "OK: was $ERR_OLD, now $ERR_NEW"
+        # Update baseline
+        jq --arg file "$FILE" --argjson errors "$ERR_NEW" '.[$file] = $errors' "$BASELINE_FILE" \
+            > "$BASELINE_FILE.tmp" && mv "$BASELINE_FILE.tmp" "$BASELINE_FILE"
+    else
+        echo "Too many errors: $ERR_NEW (must be <= $TARGET)"
         vendor/bin/phpstan analyse --no-progress --error-format=table "$FILE"
-        jq --arg file "$FILE" --argjson errors "$ERR_OLD" '.[$file] = $errors' "$BASELINE_FILE" > "$BASELINE_FILE.tmp" && mv "$BASELINE_FILE.tmp" "$BASELINE_FILE"
+        # Keep old baseline
+        jq --arg file "$FILE" --argjson errors "$ERR_OLD" '.[$file] = $errors' "$BASELINE_FILE" \
+            > "$BASELINE_FILE.tmp" && mv "$BASELINE_FILE.tmp" "$BASELINE_FILE"
         BLOCK_COMMIT=1
     fi
 
     echo "------------------"
 done
 
+# -----------------------------
+# BLOCK COMMIT IF NEEDED
+# -----------------------------
 if [ "$BLOCK_COMMIT" -eq 1 ]; then
-    echo -e "⛔ Commit blocked. Reduce the number of errors compared to the previous version."
+    echo "Commit blocked. Reduce the number of errors according to strictness rules."
     exit 1
 fi
 
-echo "✅ [PHPStan] Check completed successfully."
-
+echo "[PHPStan] Check completed successfully."
 exit 0

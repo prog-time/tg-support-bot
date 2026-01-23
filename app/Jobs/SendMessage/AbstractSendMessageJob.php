@@ -7,6 +7,7 @@ use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
+use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
@@ -88,7 +89,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         }
 
         // ✅ 400 TOPIC_NOT_FOUND
-        if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND') {
+        if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND' || $response->type_error === 'TOPIC_DELETED') {
             Log::warning('TOPIC_NOT_FOUND → создаём новую тему');
 
             if ($this->updateDto instanceof ExternalMessageDto) {
@@ -109,6 +110,14 @@ abstract class AbstractSendMessageJob implements ShouldQueue
                         $this->typeMessage
                     ),
                 ])->dispatch($this->botUserId);
+            } elseif ($this->updateDto instanceof VkUpdateDto) {
+                TopicCreateJob::withChain([
+                    new SendVkTelegramMessageJob(
+                        $this->botUserId,
+                        $this->updateDto,
+                        $this->queryParams,
+                    ),
+                ])->dispatch($this->botUserId);
             }
 
             return;
@@ -122,7 +131,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         }
 
         // ✅ Неизвестная ошибка
-        Log::error('SendVkTelegramMessageJob: неизвестная ошибка', [
+        Log::error('Неизвестная ошибка', [
             'response' => (array)$response,
         ]);
     }

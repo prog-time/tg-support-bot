@@ -48,21 +48,19 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
-            if ($this->typeMessage === 'incoming') {
-                if ($botUser->topic_id) {
-                    $params['message_thread_id'] = $botUser->topic_id;
-                } else {
-                    TopicCreateJob::withChain([
-                        new SendVkTelegramMessageJob(
-                            $this->botUserId,
-                            $this->updateDto,
-                            $this->queryParams,
-                            $this->typeMessage
-                        ),
-                    ])->dispatch($this->botUserId);
+            if ($botUser->topic_id) {
+                $params['message_thread_id'] = $botUser->topic_id;
+            } else {
+                TopicCreateJob::withChain([
+                    new SendVkTelegramMessageJob(
+                        $this->botUserId,
+                        $this->updateDto,
+                        $this->queryParams,
+                        $this->typeMessage
+                    ),
+                ])->dispatch($this->botUserId);
 
-                    return;
-                }
+                return;
             }
 
             $response = $this->telegramMethods->sendQueryTelegram(

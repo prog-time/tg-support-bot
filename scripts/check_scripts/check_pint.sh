@@ -1,41 +1,33 @@
 #!/bin/bash
 
-COMMAND="$1"
-
-# -----------------------------
-# Get list of PHP files to check
-# -----------------------------
-if [ "$COMMAND" = "commit" ]; then
-    ALL_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
-elif [ "$COMMAND" = "push" ]; then
-    BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    ALL_FILES=$(git diff --name-only origin/$BRANCH --diff-filter=ACM | grep '\.php$' || true)
-else
-    echo -e "⚠️ Unknown command: $COMMAND"
-    exit 1
+if [ $# -eq 0 ]; then
+    echo "[Pint] No PHP files to check."
+    exit 0
 fi
 
-# Exit if no PHP files found
-if [ -z "$ALL_FILES" ]; then
-  echo -e "⚠️ [Pint] No PHP files to check."
-  exit 0
+FILES=()
+for f in "$@"; do
+    [[ "$f" == *.php ]] && FILES+=("$f")
+done
+
+if [ ${#FILES[@]} -eq 0 ]; then
+    echo "[Pint] No PHP files to check."
+    exit 0
 fi
 
 # -----------------------------
 # Run Pint in test mode
 # -----------------------------
-vendor/bin/pint --test $ALL_FILES
+vendor/bin/pint --test "${FILES[@]}"
 RESULT=$?
 
 if [ $RESULT -ne 0 ]; then
-  echo -e "❌ Pint found code style issues. Auto-fixing..."
-
-  vendor/bin/pint $ALL_FILES
-  echo "$ALL_FILES" | xargs git add
-
-  echo -e "✅ [Pint] Code style fixed. Please re-run the commit."
-  exit 1
+    echo "Pint found code style issues. Auto-fixing..."
+    vendor/bin/pint "${FILES[@]}"
+    git add "${FILES[@]}"
+    echo "[Pint] Code style fixed automatically."
+else
+    echo "[Pint] All files pass code style."
 fi
 
-echo -e "✅ [Pint] All files pass code style."
 exit 0
