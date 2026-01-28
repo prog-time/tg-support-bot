@@ -151,17 +151,21 @@ class BotUser extends Model
     }
 
     /**
-     * @param int $messageThreadId
+     * @param int|null $messageThreadId
      *
      * @return BotUser|null
      */
-    public static function getByTopicId(int $messageThreadId): ?BotUser
+    public static function getByTopicId(?int $messageThreadId): ?BotUser
     {
         try {
-            return self::where('topic_id', $messageThreadId)
-                ->with('externalUser')
-                ->orderByDesc('id')
-                ->first();
+            if ($messageThreadId) {
+                return self::where('topic_id', $messageThreadId)
+                    ->with('externalUser')
+                    ->orderByDesc('id')
+                    ->first();
+            } else {
+                return null;
+            }
         } catch (\Throwable $e) {
             return null;
         }
