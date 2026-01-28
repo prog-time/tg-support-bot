@@ -10,13 +10,13 @@ use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\TopicCreateJob;
+use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 abstract class AbstractSendMessageJob implements ShouldQueue
 {
@@ -75,49 +75,35 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         // ✅ 429 Too Many Requests
         if ($response->response_code === 429) {
             $retryAfter = $response->parameters->retry_after ?? 3;
-            Log::warning("429 Too Many Requests. Повтор через {$retryAfter} сек.");
+            (new LokiLogger())->log('warning', "429 Too Many Requests. Replay {$retryAfter}");
+            sleep(10);
+            // Job автоматически будет повторён Laravel Queue
             $this->release($retryAfter);
             return;
         }
 
         // ✅ 400 MARKDOWN_ERROR
         if ($response->response_code === 400 && $response->type_error === 'MARKDOWN_ERROR') {
-            Log::warning('MARKDOWN_ERROR → переключаем parse_mode в HTML');
+            (new LokiLogger())->log('warning', "MARKDOWN_ERROR → переключаем parse_mode в HTML");
             $this->queryParams->parse_mode = 'html';
+            // Повторяем отправку с исправленным parse_mode
             $this->release(1);
             return;
         }
 
-        // ✅ 400 TOPIC_NOT_FOUND
-        if ($response->response_code === 400 && $response->type_error === 'TOPIC_NOT_FOUND' || $response->type_error === 'TOPIC_DELETED') {
-            Log::warning('TOPIC_NOT_FOUND → создаём новую тему');
+        // ✅ 400 TOPIC_NOT_FOUND / TOPIC_DELETED
+        if ($response->response_code === 400 && in_array($response->type_error, ['TOPIC_NOT_FOUND', 'TOPIC_DELETED', 'TOPIC_ID_INVALID'])) {
+            (new LokiLogger())->log('warning', "TOPIC_NOT_FOUND/TOPIC_DELETED → создаём новую тему");
 
-            if ($this->updateDto instanceof ExternalMessageDto) {
-                TopicCreateJob::withChain([
-                    new SendExternalTelegramMessageJob(
-                        $this->botUserId,
-                        $this->updateDto,
-                        $this->queryParams,
-                        $this->typeMessage
-                    ),
-                ])->dispatch($this->botUserId);
-            } elseif ($this->updateDto instanceof TelegramUpdateDto) {
-                TopicCreateJob::withChain([
-                    new SendTelegramMessageJob(
-                        $this->botUserId,
-                        $this->updateDto,
-                        $this->queryParams,
-                        $this->typeMessage
-                    ),
-                ])->dispatch($this->botUserId);
-            } elseif ($this->updateDto instanceof VkUpdateDto) {
-                TopicCreateJob::withChain([
-                    new SendVkTelegramMessageJob(
-                        $this->botUserId,
-                        $this->updateDto,
-                        $this->queryParams,
-                    ),
-                ])->dispatch($this->botUserId);
+            $retryJob = $this->getRetryJobInstance();
+            if ($retryJob !== null) {
+                if (!empty($this->botUserId)) {
+                    BotUser::find($this->botUserId)->update([
+                        'topic_id' => null,
+                    ]);
+
+                    TopicCreateJob::withChain([$retryJob])->dispatch($this->botUserId);
+                }
             }
 
             return;
@@ -125,14 +111,50 @@ abstract class AbstractSendMessageJob implements ShouldQueue
 
         // ✅ 403 — пользователь заблокировал бота
         if ($response->response_code === 403) {
-            Log::warning('403 — пользователь заблокировал бота');
+            (new LokiLogger())->log('warning', "403 — пользователь заблокировал бота");
             BanMessage::execute($this->botUserId, $this->updateDto);
             return;
         }
 
         // ✅ Неизвестная ошибка
-        Log::error('Неизвестная ошибка', [
+        (new LokiLogger())->log('error', [
             'response' => (array)$response,
         ]);
+    }
+
+    /**
+     * @return ShouldQueue|null
+     */
+    protected function getRetryJobInstance(): ?ShouldQueue
+    {
+        if (!empty($this->updateDto)) {
+            if ($this->updateDto instanceof ExternalMessageDto) {
+                return new SendExternalTelegramMessageJob(
+                    $this->botUserId,
+                    $this->updateDto,
+                    $this->queryParams,
+                    $this->typeMessage
+                );
+            }
+
+            if ($this->updateDto instanceof TelegramUpdateDto) {
+                return new SendTelegramMessageJob(
+                    $this->botUserId,
+                    $this->updateDto,
+                    $this->queryParams,
+                    $this->typeMessage
+                );
+            }
+
+            if ($this->updateDto instanceof VkUpdateDto) {
+                return new SendVkTelegramMessageJob(
+                    $this->botUserId,
+                    $this->updateDto,
+                    $this->queryParams,
+                );
+            }
+        }
+
+        return null;
     }
 }

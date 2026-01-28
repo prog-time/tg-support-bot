@@ -49,8 +49,27 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
             $params = $this->queryParams->toArray();
 
             if ($botUser->topic_id) {
-                $params['message_thread_id'] = $botUser->topic_id;
-            } else {
+                $response = $this->telegramMethods->sendQueryTelegram(
+                    'editForumTopic',
+                    [
+                        'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                        'message_thread_id' => $botUser->topic_id,
+                        'icon_custom_emoji_id' => __('icons.incoming'),
+                    ]
+                );
+
+                if ($response->isTopicNotFound || $response->type_error === 'TOPIC_NOT_MODIFIED') {
+                    $botUser->update([
+                        'topic_id' => null,
+                    ]);
+
+                    $botUser->refresh();
+                } else {
+                    $params['message_thread_id'] = $botUser->topic_id;
+                }
+            }
+
+            if (!$botUser->topic_id) {
                 TopicCreateJob::withChain([
                     new SendVkTelegramMessageJob(
                         $this->botUserId,
@@ -59,7 +78,6 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
                         $this->typeMessage
                     ),
                 ])->dispatch($this->botUserId);
-
                 return;
             }
 

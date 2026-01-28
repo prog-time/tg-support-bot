@@ -21,15 +21,16 @@ class TelegramAnswerDto
 {
     public function __construct(
         public bool $ok,
-        public ?int $message_id,
-        public ?int $chat_id,
-        public ?int $response_code,
-        public ?int $message_thread_id,
-        public ?int $date,
-        public ?string $message,
-        public ?string $type_error,
-        public ?string $text,
-        public ?string $fileId,
+        public bool $isTopicNotFound = false,
+        public ?int $message_id = null,
+        public ?int $chat_id = null,
+        public ?int $response_code = null,
+        public ?int $message_thread_id = null,
+        public ?int $date = null,
+        public ?string $message = null,
+        public ?string $type_error = null,
+        public ?string $text = null,
+        public ?string $fileId = null,
         public ?array $rawData = null
     ) {
     }
@@ -62,15 +63,19 @@ class TelegramAnswerDto
                 $responseCode = 500;
             }
 
+            $typeError = self::exactTypeError($dataAnswer['description'] ?? '');
+            $isTopicNotFound = in_array($typeError, ['TOPIC_ID_INVALID', 'TOPIC_DELETED', 'TOPIC_NOT_FOUND']) ? true : false;
+
             return new self(
                 ok: $dataAnswer['ok'] ?? false,
+                isTopicNotFound: $isTopicNotFound,
                 message_id: $result['message_id'] ?? null,
                 chat_id: $result['chat']['id'] ?? null,
                 response_code: $responseCode,
                 message_thread_id: $result['message_thread_id'] ?? null,
                 date: $result['date'] ?? null,
                 message: $result['message'] ?? null,
-                type_error: self::exactTypeError($dataAnswer['description'] ?? ''),
+                type_error: $typeError,
                 text: $result['text'] ?? $result['caption'] ?? null,
                 fileId: $methodQuery === 'getChat' ? null : TelegramHelper::extractFileId($dataMessage),
                 rawData: $dataAnswer,

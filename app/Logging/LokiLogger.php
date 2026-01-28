@@ -4,6 +4,7 @@ namespace App\Logging;
 
 use Exception;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class LokiLogger
@@ -67,7 +68,7 @@ class LokiLogger
 
             return true;
         } catch (Throwable $e) {
-            dump($e->getMessage());
+            Log::warning($e->getMessage());
             return false;
         }
     }
@@ -110,6 +111,7 @@ class LokiLogger
 
             return true;
         } catch (Throwable $e) {
+            Log::warning($e->getMessage());
             return false;
         }
     }

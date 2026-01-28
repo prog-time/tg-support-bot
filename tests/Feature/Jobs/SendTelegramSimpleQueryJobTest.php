@@ -59,8 +59,18 @@ class SendTelegramSimpleQueryJobTest extends TestCase
             'icon_custom_emoji_id' => __('icons.outgoing'),
         ]));
 
-        $resultQuery = $job->handle();
-        $this->assertTrue($resultQuery);
+        $job->handle();
+
+        Http::assertSent(function ($request) {
+            if (!str_contains($request->url(), 'editForumTopic')) {
+                return false;
+            }
+            $data = $request->data();
+
+            return ($data['chat_id'] ?? null) == $this->groupId
+                && ($data['message_thread_id'] ?? null) == $this->botUser->topic_id
+                && ($data['icon_custom_emoji_id'] ?? null) == __('icons.outgoing');
+        });
 
         $job = new SendTelegramSimpleQueryJob(TGTextMessageDto::from([
             'methodQuery' => 'editForumTopic',
@@ -69,8 +79,18 @@ class SendTelegramSimpleQueryJobTest extends TestCase
             'icon_custom_emoji_id' => __('icons.incoming'),
         ]));
 
-        $resultQuery = $job->handle();
-        $this->assertTrue($resultQuery);
+        $job->handle();
+
+        Http::assertSent(function ($request) {
+            if (!str_contains($request->url(), 'editForumTopic')) {
+                return false;
+            }
+            $data = $request->data();
+
+            return ($data['chat_id'] ?? null) == config('traffic_source.settings.telegram.group_id')
+                && ($data['message_thread_id'] ?? null) == $this->botUser->topic_id
+                && ($data['icon_custom_emoji_id'] ?? null) == __('icons.incoming');
+        });
 
         $botUser = BotUser::where([
             'chat_id' => time(),
