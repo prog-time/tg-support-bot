@@ -48,7 +48,7 @@ class TopicCreateJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $this->botUser = BotUser::find($this->botUserId); // всегда свежие данные
+            $this->botUser = BotUser::find($this->botUserId);
 
             $topicName = $this->generateNameTopic($this->botUser);
 
