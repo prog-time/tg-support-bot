@@ -35,7 +35,7 @@ find_project_root() {
 should_be_tested() {
     local classname="$1"
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        if [[ "$classname" == $pattern ]]; then
+        if [[ "$classname" == "$pattern" ]]; then
             return 1
         fi
     done
