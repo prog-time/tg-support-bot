@@ -25,6 +25,10 @@ echo "Checking shell scripts with ShellCheck..."
 bash scripts/check_scripts/ssh_start_shellcheck.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
+echo "Checking for tests..."
+bash scripts/check_scripts/find_test.sh "${ALL_FILE_ARRAY[@]}"
+echo "----------"
+
 # -----------------------------
 # Run type checking (PHPStan)
 # -----------------------------

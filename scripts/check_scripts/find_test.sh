@@ -1,7 +1,4 @@
 #!/bin/bash
-
-# Script to check if classes have corresponding tests
-
 set -e
 
 # -----------------------------
@@ -21,7 +18,6 @@ EXCLUDE_PATTERNS=(
 # -----------------------------
 find_project_root() {
     local current_dir="$PWD"
-
     while [[ "$current_dir" != "/" ]]; do
         if [[ -f "$current_dir/composer.json" ]]; then
             echo "$current_dir"
@@ -29,21 +25,8 @@ find_project_root() {
         fi
         current_dir=$(dirname "$current_dir")
     done
-
-    echo -e "❌ Laravel project root not found (composer.json missing)"
+    echo -e 'Laravel project root not found (composer.json missing)\n'
     exit 1
-}
-
-# -----------------------------
-# Path → ClassName
-# -----------------------------
-path_to_classname() {
-    local path="$1"
-    path="${path%.php}"
-    path="${path#app/}"
-    local classname="${path//\//\\}"
-
-    echo "$classname"
 }
 
 # -----------------------------
@@ -51,23 +34,41 @@ path_to_classname() {
 # -----------------------------
 should_be_tested() {
     local classname="$1"
-
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        # shellcheck disable=SC2053
         if [[ "$classname" == $pattern ]]; then
             return 1
         fi
     done
-
     return 0
 }
 
 # -----------------------------
-# Get expected test class name
+# Extract class name with namespace from a PHP file
 # -----------------------------
-get_expected_test_classname() {
-    local classname="$1"
-    echo "Tests\Unit\\${classname}Test"
+extract_classname_from_file() {
+    local file="$1"
+
+    if [[ ! -f "$file" && -n "$PROJECT_ROOT" ]]; then
+        file="$PROJECT_ROOT/$file"
+    fi
+
+    if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+
+    local namespace
+    namespace=$(grep -m1 "^namespace " "$file" | sed 's/namespace \(.*\);/\1/' | tr -d ' ')
+
+    local classname
+    classname=$(grep -m1 "^class " "$file" | sed 's/class \([a-zA-Z0-9_]*\).*/\1/')
+
+    if [[ -n "$classname" ]]; then
+        if [[ -n "$namespace" ]]; then
+            echo -e "$namespace\\$classname"
+        else
+            echo -e "$classname"
+        fi
+    fi
 }
 
 # -----------------------------
@@ -75,154 +76,84 @@ get_expected_test_classname() {
 # -----------------------------
 find_test_classes() {
     local project_root="$1"
-    local test_classes=()
-
-    # Include module tests
-    local test_paths=(
-        "$project_root/tests/Unit"
-        "$project_root/tests/Feature"
-    )
-
-    # Collect test classes
-    for path in "${test_paths[@]}"; do
-        if [[ -d "$path" ]]; then
-            while IFS= read -r -d '' file; do
-                if [[ "$file" == *"Test.php" ]]; then
-                    local classname
-                    classname=$(extract_classname_from_file "$file")
-
-                    if [[ -n "$classname" ]]; then
-                        test_classes+=("$classname")
-                    fi
-                fi
-            done < <(find "$path" -name "*.php" -type f -print0 2>/dev/null)
-        fi
-    done
-
-    # Return unique class names
-    printf '%s\n' "${test_classes[@]}" | sort -u
+    find "$project_root/tests" -type f -name "*Test.php" 2>/dev/null |
+        while IFS= read -r file; do
+            extract_classname_from_file "$file"
+        done | sort -u
 }
 
 # -----------------------------
-# Extract class name from a PHP file
-# -----------------------------
-extract_classname_from_file() {
-    local file="$1"
-
-    if [[ ! -f "$file" ]]; then
-        return 1
-    fi
-
-    local namespace=""
-    namespace=$(grep -m1 "^namespace " "$file" | sed 's/namespace \(.*\);/\1/' | tr -d ' ')
-
-    local classname=""
-    classname=$(grep -m1 "^class " "$file" | sed 's/class \([a-zA-Z0-9_]*\).*/\1/')
-
-    if [[ -n "$namespace" && -n "$classname" ]]; then
-        echo "${namespace}\\${classname}"
-    fi
-}
-
-# -----------------------------
-# Check if a test class exists
-# -----------------------------
-has_test() {
-    local classname="$1"
-    local expected_test="$2"
-    shift 2
-    local test_classes=("$@")
-
-    for test_class in "${test_classes[@]}"; do
-        if [[ "$test_class" == "$expected_test" ]]; then
-            return 0
-        fi
-    done
-
-    return 1
-}
-
-# -----------------------------
-# Get file path of a test class
-# -----------------------------
-get_test_file_path() {
-    local test_classname="$1"
-    local project_root="$2"
-
-    local path="${test_classname//\\//}"
-    echo "${project_root}/${path}.php"
-}
-
-# -----------------------------
-# Analyze if class has a test
+# Analyze coverage for a single class
 # -----------------------------
 analyze_coverage() {
-    local app_class="$1"
-    local project_root="$2"
+    local classname="$1"
+    shift
+    local test_classes=("$@")
 
-    local normalized_classname
-    normalized_classname=$(path_to_classname "$app_class")
+    [[ ! $(should_be_tested "$classname"; echo $?) -eq 0 ]] && return 0
 
-    if ! should_be_tested "$normalized_classname"; then
-        echo -e "⚠️ Class does not require testing: $normalized_classname"
-        echo "---"
-        return 0
-    fi
+    # Remove "App\" prefix from classname for test path
+    local classname_without_app="${classname#App\\}"
+    local expected_test="Tests\\Unit\\${classname_without_app}Test"
+    local found=0
 
-    local expected_test
-    expected_test=$(get_expected_test_classname "$normalized_classname")
-
-    # Load all test classes
-    local test_classes_array=()
-    while IFS= read -r line; do
-        test_classes_array+=("$line")
-    done < <(find_test_classes "$project_root")
-
-    if has_test "$normalized_classname" "$expected_test" "${test_classes_array[@]}"; then
-        echo -e "✅ Test found: $expected_test"
-        echo "---"
-        return 0
-    else
-        ehco -e "❌ Please create test file: $expected_test"
-        echo "---"
-        return 1
-    fi
-}
-
-# -----------------------------
-# Main function
-# -----------------------------
-main() {
-    COMMAND="$1"  # commit или push
-
-    if [ "$COMMAND" = "commit" ]; then
-        ALL_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
-    elif [ "$COMMAND" = "push" ]; then
-        BRANCH=$(git rev-parse --abbrev-ref HEAD)
-        ALL_FILES=$(git diff --name-only origin/$BRANCH --diff-filter=ACM | grep '\.php$' || true)
-    else
-        echo "Unknown command: $COMMAND"
-        exit 1
-    fi
-
-    if [ -z "$ALL_FILES" ]; then
-      echo -e "⚠️ [FindTest] No tests required!"
-      exit 0
-    fi
-
-    local status_analyze=1
-    for app_class in $ALL_FILES; do
-        local project_root
-        project_root=$(find_project_root)
-
-        if ! analyze_coverage "$app_class" "$project_root"; then
-            status_analyze=0
+    for test_class in "${test_classes[@]}"; do
+        test_class="$(echo "$test_class" | tr -d '\r\n')"
+        if [[ "$test_class" == "$expected_test" ]]; then
+            found=1
+            break
         fi
     done
 
-    if [ "$status_analyze" = 0 ]; then
+    if [[ $found -eq 0 ]]; then
+        echo -e "No found $expected_test"
+        return 1
+    fi
+
+    return 0
+}
+
+# -----------------------------
+# Main
+# -----------------------------
+main() {
+    if [[ "$#" -eq 0 ]]; then
+        echo 'No PHP files changed — skipping'
+        exit 0
+    fi
+
+    PROJECT_ROOT=$(find_project_root)
+
+    TEST_CLASSES=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && TEST_CLASSES+=("$line")
+    done < <(find_test_classes "$PROJECT_ROOT")
+
+    HAS_MISSING_TESTS=0
+
+    for file in "$@"; do
+        if [[ -z "$file" ]]; then
+            continue
+        fi
+
+        if [[ "${file##*.}" != "php" ]]; then
+            continue
+        fi
+
+        classname=$(extract_classname_from_file "$file")
+        if [[ -z "$classname" ]]; then
+            continue
+        fi
+
+        analyze_coverage "$classname" "${TEST_CLASSES[@]}" || HAS_MISSING_TESTS=1
+    done
+
+    if [[ $HAS_MISSING_TESTS -eq 1 ]]; then
+        echo -e "Some classes are missing tests! Failing CI."
         exit 1
     fi
+
+    exit 0
 }
 
 main "$@"

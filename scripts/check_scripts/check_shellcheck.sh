@@ -6,6 +6,11 @@ set -e
 # -----------------------------------------
 DOCKER_SERVICE="app"
 PROJECT_DIR="/home/multichat"
+
+# ShellCheck exclusions
+EXCLUDED_RULES=(
+    "SC2053"
+)
 # -----------------------------------------
 
 ALL_FILES=("$@")
@@ -14,6 +19,12 @@ ALL_FILES=("$@")
 # Run ShellCheck
 # -----------------------------------------
 cd "$PROJECT_DIR" || { echo "Cannot cd to $PROJECT_DIR"; exit 1; }
+
+# Build exclude string from array
+EXCLUDE_STRING=""
+if [[ ${#EXCLUDED_RULES[@]} -gt 0 ]]; then
+    EXCLUDE_STRING=$(IFS=,; echo "${EXCLUDED_RULES[*]}")
+fi
 
 ERROR_FOUND=0
 
@@ -29,8 +40,13 @@ for FILE in "${ALL_FILES[@]}"; do
 
     echo "Checking $FILE..."
 
-    output=$(docker compose exec -T "$DOCKER_SERVICE" \
-        shellcheck --severity=warning "$FILE" 2>&1) || rc=$?
+    if [[ -n "$EXCLUDE_STRING" ]]; then
+        output=$(docker compose exec -T "$DOCKER_SERVICE" \
+            shellcheck --severity=warning --exclude="$EXCLUDE_STRING" "$FILE" 2>&1) || rc=$?
+    else
+        output=$(docker compose exec -T "$DOCKER_SERVICE" \
+            shellcheck --severity=warning "$FILE" 2>&1) || rc=$?
+    fi
 
     if [[ -n "$output" ]]; then
         echo "$output"
