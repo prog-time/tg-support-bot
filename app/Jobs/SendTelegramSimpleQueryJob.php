@@ -3,15 +3,16 @@
 namespace App\Jobs;
 
 use App\DTOs\TGTextMessageDto;
+use App\Jobs\SendMessage\AbstractSendMessageJob;
 use App\Logging\LokiLogger;
+use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SendTelegramSimpleQueryJob implements ShouldQueue
+class SendTelegramSimpleQueryJob extends AbstractSendMessageJob
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -22,7 +23,7 @@ class SendTelegramSimpleQueryJob implements ShouldQueue
 
     public int $timeout = 20;
 
-    public TGTextMessageDto $queryParams;
+    public mixed $queryParams;
 
     public function __construct(
         TGTextMessageDto $queryParams,
@@ -30,9 +31,16 @@ class SendTelegramSimpleQueryJob implements ShouldQueue
         $this->queryParams = $queryParams;
     }
 
-    public function handle(): mixed
+    public function handle(): void
     {
         try {
+            if (!empty($this->queryParams->chat_id)) {
+                $botUser = BotUser::where([
+                    'chat_id' => $this->queryParams->chat_id
+                ])->first();
+                $this->botUserId = $botUser->id ?? 0;
+            }
+
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
@@ -43,13 +51,31 @@ class SendTelegramSimpleQueryJob implements ShouldQueue
             );
 
             if (!$response->ok) {
-                throw new \Exception(json_encode($response->rawData), 1);
+                $this->telegramResponseHandler($response);
             }
 
-            return true;
         } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
-            return false;
         }
+    }
+
+    /**
+     * @param BotUser $botUser
+     * @param mixed $resultQuery
+     * @return void
+     */
+    protected function editMessage(BotUser $botUser, mixed $resultQuery): void
+    {
+        //
+    }
+
+    /**
+     * @param BotUser $botUser
+     * @param mixed $resultQuery
+     * @return void
+     */
+    protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
+    {
+        //
     }
 }
