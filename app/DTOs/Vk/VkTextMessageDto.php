@@ -13,7 +13,8 @@ class VkTextMessageDto extends Data
         public ?int $peer_id,
         public ?int $message_id,
         public ?string $message,
-        public ?string $attachment
+        public ?string $attachment,
+        public ?string $keyboard = null,
     ) {
     }
 
