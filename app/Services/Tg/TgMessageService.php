@@ -7,6 +7,8 @@ use App\DTOs\TelegramUpdateDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
+use App\Services\Button\ButtonParser;
+use App\Services\Button\KeyboardBuilder;
 
 class TgMessageService extends FromTgMessageService
 {
@@ -62,9 +64,24 @@ class TgMessageService extends FromTgMessageService
         $this->messageParamsDTO->methodQuery = 'sendPhoto';
         $this->messageParamsDTO->photo = $this->update->fileId;
 
-        $this->messageParamsDTO->caption = $this->update->caption;
+        $caption = $this->update->caption;
+        $keyboard = null;
+
+        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
+        if ($this->update->typeSource === 'supergroup' && $caption) {
+            $buttonParser = new ButtonParser();
+            $keyboardBuilder = new KeyboardBuilder();
+
+            $parsedMessage = $buttonParser->parse($caption);
+            $caption = $parsedMessage->text;
+            $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
+        }
+
+        $this->messageParamsDTO->caption = $caption;
+        $this->messageParamsDTO->reply_markup = $keyboard;
+
         if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
+            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
     }
@@ -77,9 +94,24 @@ class TgMessageService extends FromTgMessageService
         $this->messageParamsDTO->methodQuery = 'sendDocument';
         $this->messageParamsDTO->document = $this->update->fileId;
 
-        $this->messageParamsDTO->caption = $this->update->caption;
+        $caption = $this->update->caption;
+        $keyboard = null;
+
+        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
+        if ($this->update->typeSource === 'supergroup' && $caption) {
+            $buttonParser = new ButtonParser();
+            $keyboardBuilder = new KeyboardBuilder();
+
+            $parsedMessage = $buttonParser->parse($caption);
+            $caption = $parsedMessage->text;
+            $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
+        }
+
+        $this->messageParamsDTO->caption = $caption;
+        $this->messageParamsDTO->reply_markup = $keyboard;
+
         if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
+            $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
     }
@@ -143,9 +175,24 @@ class TgMessageService extends FromTgMessageService
      */
     protected function sendMessage(): void
     {
-        $this->messageParamsDTO->text = $this->update->text;
+        $text = $this->update->text;
+        $keyboard = null;
+
+        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
+        if ($this->update->typeSource === 'supergroup') {
+            $buttonParser = new ButtonParser();
+            $keyboardBuilder = new KeyboardBuilder();
+
+            $parsedMessage = $buttonParser->parse($text);
+            $text = $parsedMessage->text;
+            $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
+        }
+
+        $this->messageParamsDTO->text = $text;
+        $this->messageParamsDTO->reply_markup = $keyboard;
+
         if (!empty($this->update->entities)) {
-            $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
+            $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($text, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
     }
