@@ -12,6 +12,8 @@ use App\Helpers\TelegramHelper;
 use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Logging\LokiLogger;
 use App\Services\ActionService\Send\FromTgMessageService;
+use App\Services\Button\ButtonParser;
+use App\Services\Button\KeyboardBuilder;
 
 class TgVkMessageService extends FromTgMessageService
 {
@@ -191,10 +193,17 @@ class TgVkMessageService extends FromTgMessageService
      */
     protected function sendMessage(): void
     {
+        $buttonParser = new ButtonParser();
+        $keyboardBuilder = new KeyboardBuilder();
+
+        $parsedMessage = $buttonParser->parse($this->update->text);
+        $keyboard = $keyboardBuilder->buildVkKeyboard($parsedMessage);
+
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->botUser->chat_id,
-            'message' => $this->update->text,
+            'message' => $parsedMessage->text,
+            'keyboard' => $keyboard ? json_encode($keyboard) : null,
         ];
 
         SendVkMessageJob::dispatch(
