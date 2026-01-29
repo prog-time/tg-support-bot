@@ -6,6 +6,7 @@ use App\Actions\Telegram\ConversionMessageText;
 use App\DTOs\TelegramUpdateDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Logging\LokiLogger;
+use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
 use App\Services\Button\ButtonParser;
 use App\Services\Button\KeyboardBuilder;
@@ -45,12 +46,42 @@ class TgMessageService extends FromTgMessageService
                 $this->sendMessage();
             }
 
+            $this->setReplyParameters();
+
             SendTelegramMessageJob::dispatch(
                 $this->botUser->id,
                 $this->update,
                 $this->messageParamsDTO,
                 $this->typeMessage,
             );
+        } catch (\Throwable $e) {
+            (new LokiLogger())->logException($e);
+        }
+    }
+
+    /**
+     * Устанавливает reply_parameters если это ответ на сообщение из группы.
+     *
+     * @return void
+     */
+    protected function setReplyParameters(): void
+    {
+        try {
+            if (empty($this->update->replyToMessage['message_id'])) {
+                return;
+            }
+
+            $replyToMessageId = $this->update->replyToMessage['message_id'];
+
+            $originalMessage = Message::where('from_id', $replyToMessageId)
+                ->where('bot_user_id', $this->botUser->id)
+                ->first();
+
+            if ($originalMessage) {
+                $this->messageParamsDTO->reply_parameters = [
+                    'message_id' => $originalMessage->to_id,
+                ];
+            }
         } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
