@@ -4,7 +4,9 @@ namespace Tests\Unit\Services\Tg;
 
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
+use App\Models\Message;
 use App\Services\Tg\TgMessageService;
+use Illuminate\Auth\DatabaseUserProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -315,5 +317,118 @@ class TgMessageServiceTest extends TestCase
         $this->assertEquals('Фото с кнопкой', $firstJob->queryParams->caption);
         $this->assertNotNull($firstJob->queryParams->reply_markup);
         $this->assertArrayHasKey('inline_keyboard', $firstJob->queryParams->reply_markup);
+    }
+
+    public function test_reply_to_message_sets_reply_parameters(): void
+    {
+        // Создаем входящее сообщение в базе (от пользователя в группу)
+        $userMessageId = 12345;
+        $groupMessageId = 67890;
+
+        Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => 'telegram',
+            'message_type' => 'incoming',
+            'to_id' => $userMessageId, // ID сообщения у пользователя
+            'from_id' => $groupMessageId,  // ID сообщения в группе
+        ]);
+
+        // Создаем payload для ответа из группы с reply_to_message
+        $payload = $this->basicPayload;
+        $payload['message']['chat']['type'] = 'supergroup';
+        $payload['message']['chat']['id'] = config('traffic_source.settings.telegram.group_id');
+        $payload['message']['text'] = 'Ответ на ваше сообщение';
+        $payload['message']['reply_to_message'] = [
+            'message_id' => $groupMessageId,
+            'from' => [
+                'id' => 123,
+                'is_bot' => false,
+                'first_name' => 'User',
+            ],
+            'chat' => [
+                'id' => config('traffic_source.settings.telegram.group_id'),
+                'type' => 'supergroup',
+            ],
+            'text' => 'Оригинальное сообщение',
+        ];
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+
+        $this->assertEquals($userMessageId, $firstJob->queryParams->reply_parameters['message_id']);
+    }
+
+    public function test_reply_to_message_without_original_message_in_db(): void
+    {
+        // Создаем payload для ответа из группы, но без записи в базе
+        $payload = $this->basicPayload;
+        $payload['message']['chat']['type'] = 'supergroup';
+        $payload['message']['chat']['id'] = config('traffic_source.settings.telegram.group_id');
+        $payload['message']['text'] = 'Ответ на несуществующее сообщение';
+        $payload['message']['reply_to_message'] = [
+            'message_id' => 99999,
+            'from' => [
+                'id' => 123,
+                'is_bot' => false,
+                'first_name' => 'User',
+            ],
+            'chat' => [
+                'id' => config('traffic_source.settings.telegram.group_id'),
+                'type' => 'supergroup',
+            ],
+            'text' => 'Несуществующее сообщение',
+        ];
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        // reply_parameters должен быть null, если сообщение не найдено
+        $this->assertNull($firstJob->queryParams->reply_parameters);
+    }
+
+    public function test_no_reply_parameters_for_private_messages(): void
+    {
+        // Создаем сообщение в базе
+        $userMessageId = 11111;
+        $groupMessageId = 22222;
+
+        Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => 'telegram',
+            'message_type' => 'incoming',
+            'from_id' => $userMessageId,
+            'to_id' => $groupMessageId,
+        ]);
+
+        // Payload для private (входящее сообщение от пользователя)
+        $payload = $this->basicPayload;
+        $payload['message']['text'] = 'Сообщение от пользователя';
+        $payload['message']['reply_to_message'] = [
+            'message_id' => $groupMessageId,
+            'text' => 'Какое-то сообщение',
+        ];
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        // Для private сообщений reply_parameters не должен устанавливаться
+        $this->assertNull($firstJob->queryParams->reply_parameters);
     }
 }
