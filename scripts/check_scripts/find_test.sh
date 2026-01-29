@@ -5,12 +5,12 @@ set -e
 # CONFIG
 # -----------------------------
 EXCLUDE_PATTERNS=(
-    "*Test" "*Search" "*Controller*" "*Console*" "*Jobs*"
+    "*Search" "*Controller*" "*Console*" "*Jobs*"
     "*Models*" "*Resources*" "*Requests*" "*DTO*" "*Dtos*"
     "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
     "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
     "*Mock*" "*api*" "*Providers*" "*Abstract*"
-    "*resources*" "*Stubs*" "*TestCase*"
+    "*resources*" "*Stubs*" "*TestCase*" "*Test*"
 )
 
 # -----------------------------
@@ -34,8 +34,11 @@ find_project_root() {
 # -----------------------------
 should_be_tested() {
     local classname="$1"
+    # Replace backslash with / for reliable glob matching
+    local classname_normalized="${classname//\\//}"
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        if [[ "$classname" == "$pattern" ]]; then
+        # shellcheck disable=SC2053
+        if [[ "$classname_normalized" == $pattern ]]; then
             return 1
         fi
     done
@@ -89,6 +92,11 @@ analyze_coverage() {
     local classname="$1"
     shift
     local test_classes=("$@")
+
+    # Skip test classes (namespace starts with Tests\)
+    if [[ "$classname" == Tests\\* ]]; then
+        return 0
+    fi
 
     [[ ! $(should_be_tested "$classname"; echo $?) -eq 0 ]] && return 0
 

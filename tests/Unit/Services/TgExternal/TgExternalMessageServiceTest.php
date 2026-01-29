@@ -67,4 +67,48 @@ class TgExternalMessageServiceTest extends TestCase
         $this->assertEquals($this->external_id, $jobData->payload['externalId']);
         $this->assertEquals('send_message', $jobData->payload['type_query']);
     }
+
+    public function test_send_text_message_with_buttons(): void
+    {
+        $dtoParams = TelegramUpdateDto_ExternalMock::getDtoParams($this->botUser);
+        $dtoParams['message']['text'] = "Выберите:\n[[Да|callback:yes]] [[Нет|callback:no]]";
+
+        $dto = TelegramUpdateDto_ExternalMock::getDto($dtoParams);
+
+        (new TgExternalMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendWebhookMessage::class];
+        $this->assertEquals(1, count($pushed));
+
+        $jobData = $pushed[0]['job'];
+        $this->assertEquals($this->external_id, $jobData->payload['externalId']);
+        $this->assertEquals('send_message', $jobData->payload['type_query']);
+
+        $this->assertEquals('Выберите:', $jobData->payload['message']['text']);
+        $this->assertArrayHasKey('buttons', $jobData->payload['message']);
+        $this->assertCount(2, $jobData->payload['message']['buttons']);
+
+        $this->assertEquals('Да', $jobData->payload['message']['buttons'][0]['text']);
+        $this->assertEquals('callback', $jobData->payload['message']['buttons'][0]['type']);
+        $this->assertEquals('yes', $jobData->payload['message']['buttons'][0]['value']);
+    }
+
+    public function test_send_text_message_without_buttons(): void
+    {
+        $dtoParams = TelegramUpdateDto_ExternalMock::getDtoParams($this->botUser);
+        $dtoParams['message']['text'] = 'Простое сообщение без кнопок';
+
+        $dto = TelegramUpdateDto_ExternalMock::getDto($dtoParams);
+
+        (new TgExternalMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendWebhookMessage::class];
+        $this->assertEquals(1, count($pushed));
+
+        $jobData = $pushed[0]['job'];
+        $this->assertEquals('Простое сообщение без кнопок', $jobData->payload['message']['text']);
+        $this->assertArrayNotHasKey('buttons', $jobData->payload['message']);
+    }
 }

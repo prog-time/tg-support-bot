@@ -186,4 +186,49 @@ class TgVkMessageServiceTest extends TestCase
         $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
         $this->assertEquals($dto, $jobData->updateDto);
     }
+
+    public function test_send_text_message_with_buttons(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['text'] = "Выберите вариант:\n[[Да|callback:yes]] [[Нет|callback:no]]\n[[Сайт|url:https://example.com]]";
+
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertEquals('Выберите вариант:', $jobData->queryParams->message);
+        $this->assertNotNull($jobData->queryParams->keyboard);
+
+        $keyboard = json_decode($jobData->queryParams->keyboard, true);
+        $this->assertIsArray($keyboard);
+        $this->assertArrayHasKey('buttons', $keyboard);
+        $this->assertCount(2, $keyboard['buttons']);
+    }
+
+    public function test_send_text_message_without_buttons(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['text'] = 'Обычное сообщение без кнопок';
+
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals('Обычное сообщение без кнопок', $jobData->queryParams->message);
+        $this->assertNull($jobData->queryParams->keyboard);
+    }
 }

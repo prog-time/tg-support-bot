@@ -7,15 +7,16 @@ use Spatie\LaravelData\Data;
 class ExternalMessageResponseDto extends Data
 {
     /**
+     * @param string      $message_type
      * @param int         $to_id
      * @param int         $from_id
-     * @param string      $message_type
+     * @param string|null $text
      * @param string      $date
      * @param string|null $content_type
      * @param string|null $file_id
      * @param string|null $file_url
      * @param string|null $file_type
-     * @param string|null $text
+     * @param array|null  $buttons      Кнопки в формате массива ButtonDto
      */
     public function __construct(
         public string $message_type,
@@ -27,6 +28,7 @@ class ExternalMessageResponseDto extends Data
         public ?string $file_id,
         public ?string $file_url,
         public ?string $file_type,
+        public ?array $buttons = null,
     ) {
     }
 
@@ -55,6 +57,7 @@ class ExternalMessageResponseDto extends Data
                 file_id: $data['file_id'] ?? null,
                 file_url: $data['file_url'] ?? null,
                 file_type: $data['file_type'] ?? null,
+                buttons: $data['buttons'] ?? null,
             );
         } catch (\Throwable $e) {
             return null;

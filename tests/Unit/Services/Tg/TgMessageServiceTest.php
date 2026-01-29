@@ -225,4 +225,95 @@ class TgMessageServiceTest extends TestCase
         $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
+
+    public function test_send_message_with_inline_keyboard_from_supergroup(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['chat']['type'] = 'supergroup';
+        $payload['message']['chat']['id'] = config('traffic_source.settings.telegram.group_id');
+        $payload['message']['text'] = "Выберите действие\n[[Открыть сайт|url:https://example.com]]\n[[Назад|callback:back]]";
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals('Выберите действие', $firstJob->queryParams->text);
+        $this->assertNotNull($firstJob->queryParams->reply_markup);
+        $this->assertArrayHasKey('inline_keyboard', $firstJob->queryParams->reply_markup);
+        $this->assertCount(2, $firstJob->queryParams->reply_markup['inline_keyboard']);
+    }
+
+    public function test_send_message_with_reply_keyboard_from_supergroup(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['chat']['type'] = 'supergroup';
+        $payload['message']['chat']['id'] = config('traffic_source.settings.telegram.group_id');
+        $payload['message']['text'] = "Поделитесь контактом\n[[Отправить номер|phone]]";
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertEquals('Поделитесь контактом', $firstJob->queryParams->text);
+        $this->assertNotNull($firstJob->queryParams->reply_markup);
+        $this->assertArrayHasKey('keyboard', $firstJob->queryParams->reply_markup);
+    }
+
+    public function test_send_message_without_buttons_from_private(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['text'] = 'Текст с кнопками [[Кнопка|callback:test]]';
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        // Для private сообщений кнопки не должны парситься
+        $this->assertEquals('Текст с кнопками [[Кнопка|callback:test]]', $firstJob->queryParams->text);
+        $this->assertNull($firstJob->queryParams->reply_markup);
+    }
+
+    public function test_send_photo_with_keyboard_from_supergroup(): void
+    {
+        $payload = $this->basicPayload;
+        $payload['message']['chat']['type'] = 'supergroup';
+        $payload['message']['chat']['id'] = config('traffic_source.settings.telegram.group_id');
+        $payload['message']['photo'] = [
+            [
+                'file_id' => 'test_file_id',
+                'file_unique_id' => 'AQAD854DoEp9',
+                'file_size' => 59609,
+                'width' => 684,
+                'height' => 777,
+            ],
+        ];
+        $payload['message']['caption'] = "Фото с кнопкой\n[[Подробнее|url:https://example.com]]";
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendPhoto', $firstJob->queryParams->methodQuery);
+        $this->assertEquals('Фото с кнопкой', $firstJob->queryParams->caption);
+        $this->assertNotNull($firstJob->queryParams->reply_markup);
+        $this->assertArrayHasKey('inline_keyboard', $firstJob->queryParams->reply_markup);
+    }
 }

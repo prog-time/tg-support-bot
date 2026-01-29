@@ -13,6 +13,7 @@ use App\Jobs\SendWebhookMessage;
 use App\Logging\LokiLogger;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
+use App\Services\Button\ButtonParser;
 
 class TgExternalMessageService extends FromTgMessageService
 {
@@ -31,6 +32,23 @@ class TgExternalMessageService extends FromTgMessageService
                 throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
             }
 
+            $rawText = $this->update->text ?? $this->update->caption;
+            $buttonParser = new ButtonParser();
+            $parsedMessage = $buttonParser->parse($rawText ?? '');
+
+            $buttons = null;
+            if ($parsedMessage->hasButtons()) {
+                $buttons = array_map(
+                    fn ($button) => [
+                        'text' => $button->text,
+                        'type' => $button->type->value,
+                        'value' => $button->value,
+                        'row' => $button->row,
+                    ],
+                    $parsedMessage->buttons
+                );
+            }
+
             $resultData = [
                 'source' => $this->botUser->externalUser->source,
                 'external_id' => $this->botUser->externalUser->external_id,
@@ -39,11 +57,12 @@ class TgExternalMessageService extends FromTgMessageService
                     'message_type' => 'outgoing',
                     'to_id' => time(),
                     'from_id' => $this->update->messageId,
-                    'text' => $this->update->text ?? $this->update->caption,
+                    'text' => $parsedMessage->text,
                     'date' => date('d.m.Y H:i'),
                     'file_url' => null,
                     'file_id' => null,
                     'file_type' => null,
+                    'buttons' => $buttons,
                 ],
             ];
 
@@ -168,11 +187,11 @@ class TgExternalMessageService extends FromTgMessageService
     }
 
     /**
-     * @param mixed $resultQuery
+     * @param WebhookMessageDto $resultQuery
      *
      * @return ExternalMessageAnswerDto
      */
-    protected function saveMessage(mixed $resultQuery): ExternalMessageAnswerDto
+    protected function saveMessage(WebhookMessageDto $resultQuery): ExternalMessageAnswerDto
     {
         $message = Message::create([
             'bot_user_id' => $this->botUser->id,
@@ -196,10 +215,11 @@ class TgExternalMessageService extends FromTgMessageService
                 'from_id' => $message->from_id,
                 'text' => $message->externalMessage->text,
                 'date' => $message->created_at->format('d.m.Y H:i:s'),
-                'content_type' => $message->file_type ?? 'text' ,
+                'content_type' => $message->file_type ?? 'text',
                 'file_id' => $message->externalMessage->file_id,
                 'file_url' => $message->externalMessage->file_url,
                 'file_type' => $message->externalMessage->file_type,
+                'buttons' => $resultQuery->message->buttons,
             ]),
         ]);
     }
