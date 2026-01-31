@@ -6,12 +6,12 @@ use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Удаление топика
+ * Delete forum topic.
  */
 class DeleteForumTopic
 {
     /**
-     * Удаление сообщения
+     * Delete forum topic.
      *
      * @param BotUser $botUser
      *

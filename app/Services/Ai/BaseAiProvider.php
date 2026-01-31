@@ -27,7 +27,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Проверить, доступен ли провайдер и правильно настроен.
+     * Check if provider is available and properly configured.
      *
      * @return bool
      */
@@ -37,7 +37,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Получить название провайдера.
+     * Get provider name.
      *
      * @return string
      */
@@ -47,7 +47,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Получить название используемой модели.
+     * Get model name.
      *
      * @return string
      */
@@ -57,7 +57,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Получить текущий статус rate limiting.
+     * Get current rate limiting status.
      *
      * @return array
      */
@@ -76,7 +76,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Проверить rate limit для текущего провайдера.
+     * Check rate limit for current provider.
      *
      * @return bool
      */
@@ -95,14 +95,14 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Создать DTO ответа AI.
+     * Create AI response DTO.
      *
-     * @param string $response Текст ответа
-     * @param float $confidenceScore Показатель уверенности
-     * @param bool $shouldEscalate Нужно ли эскалировать
-     * @param int $tokensUsed Количество токенов
-     * @param float $responseTime Время ответа
-     * @param array $metadata Метаданные
+     * @param string $response Response text
+     * @param float $confidenceScore Confidence score
+     * @param bool $shouldEscalate Whether to escalate
+     * @param int $tokensUsed Number of tokens
+     * @param float $responseTime Response time
+     * @param array $metadata Metadata
      * @return AiResponseDto
      */
     protected function createResponse(
@@ -126,9 +126,9 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Определить, нужно ли эскалировать запрос.
+     * Determine if request should be escalated.
      *
-     * @param float $confidenceScore Показатель уверенности
+     * @param float $confidenceScore Confidence score
      * @return bool
      */
     protected function shouldEscalate(float $confidenceScore): bool
@@ -138,7 +138,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Построить системный промпт для AI.
+     * Build system prompt for AI.
      *
      * @return string
      */

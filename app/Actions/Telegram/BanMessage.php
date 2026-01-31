@@ -9,7 +9,7 @@ use App\Models\BotUser;
 class BanMessage
 {
     /**
-     * Сообщение о том, что пользователь заблокировал бота
+     * Send message indicating that user has blocked the bot.
      *
      * @param int   $botUserId
      * @param mixed $update

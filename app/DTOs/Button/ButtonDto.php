@@ -7,7 +7,7 @@ namespace App\DTOs\Button;
 use App\Enums\ButtonType;
 
 /**
- * DTO для кнопки в сообщении
+ * DTO for message button.
  */
 readonly class ButtonDto
 {
@@ -20,11 +20,11 @@ readonly class ButtonDto
     }
 
     /**
-     * Создает кнопку из распарсенного синтаксиса.
+     * Create button from parsed syntax.
      *
-     * @param string      $text    Текст кнопки
-     * @param string|null $command Команда (callback:value, url:link, phone, или null)
-     * @param int         $row     Номер ряда кнопки
+     * @param string      $text    Button text
+     * @param string|null $command Command (callback:value, url:link, phone, or null)
+     * @param int         $row     Button row number
      *
      * @return self
      */
@@ -42,10 +42,10 @@ readonly class ButtonDto
     }
 
     /**
-     * Извлекает значение из команды.
+     * Extract value from command.
      *
-     * @param string|null $command Команда
-     * @param ButtonType  $type    Тип кнопки
+     * @param string|null $command Command
+     * @param ButtonType  $type    Button type
      *
      * @return string|null
      */
@@ -65,7 +65,7 @@ readonly class ButtonDto
     }
 
     /**
-     * Конвертирует кнопку в формат Telegram inline keyboard.
+     * Convert button to Telegram inline keyboard format.
      *
      * @return array<string, string>
      */
@@ -88,7 +88,7 @@ readonly class ButtonDto
     }
 
     /**
-     * Конвертирует кнопку в формат Telegram reply keyboard.
+     * Convert button to Telegram reply keyboard format.
      *
      * @return array<string, mixed>
      */
@@ -106,7 +106,7 @@ readonly class ButtonDto
     }
 
     /**
-     * Конвертирует кнопку в формат VK keyboard.
+     * Convert button to VK keyboard format.
      *
      * @return array<string, mixed>
      */

@@ -7,15 +7,15 @@ namespace App\DTOs\Ai;
 class AiRequestDto
 {
     /**
-     * Конструктор DTO для AI-запроса
-     * 
-     * @param string $message Сообщение пользователя
-     * @param int $userId ID пользователя
-     * @param string $platform Платформа (telegram, vk, etc.)
-     * @param array $context Контекст предыдущих сообщений
-     * @param string $provider AI-провайдер для использования
-     * @param float|null $maxConfidence Максимальная уверенность для автоответа
-     * @param bool $forceEscalation Принудительная эскалация к оператору
+     * AI request DTO constructor.
+     *
+     * @param string $message User message
+     * @param int $userId User ID
+     * @param string $platform Platform (telegram, vk, etc.)
+     * @param array $context Previous messages context
+     * @param string $provider AI provider to use
+     * @param float|null $maxConfidence Maximum confidence for auto-reply
+     * @param bool $forceEscalation Force escalation to operator
      */
     public function __construct(
         public readonly string $message,
@@ -29,9 +29,9 @@ class AiRequestDto
     }
 
     /**
-     * Создать DTO из массива данных
-     * 
-     * @param array $data Массив данных
+     * Create DTO from data array.
+     *
+     * @param array $data Data array
      * @return self
      */
     public static function fromArray(array $data): self
@@ -48,8 +48,8 @@ class AiRequestDto
     }
 
     /**
-     * Преобразовать DTO в массив
-     * 
+     * Convert DTO to array.
+     *
      * @return array
      */
     public function toArray(): array

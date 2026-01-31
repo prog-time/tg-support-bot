@@ -10,36 +10,36 @@ use App\DTOs\Ai\AiResponseDto;
 interface AiProviderInterface
 {
     /**
-     * Обработать сообщение пользователя и сгенерировать AI-ответ.
+     * Process user message and generate AI response.
      *
-     * @param AiRequestDto $request DTO с данными запроса
-     * @return AiResponseDto|null DTO с ответом AI
+     * @param AiRequestDto $request Request DTO
+     * @return AiResponseDto|null AI response DTO
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto;
 
     /**
-     * Проверить, доступен ли провайдер и правильно настроен.
+     * Check if provider is available and properly configured.
      *
      * @return bool
      */
     public function isAvailable(): bool;
 
     /**
-     * Получить название провайдера.
+     * Get provider name.
      *
      * @return string
      */
     public function getProviderName(): string;
 
     /**
-     * Получить название используемой модели.
+     * Get model name.
      *
      * @return string
      */
     public function getModelName(): string;
 
     /**
-     * Получить текущий статус rate limiting.
+     * Get current rate limiting status.
      *
      * @return array
      */

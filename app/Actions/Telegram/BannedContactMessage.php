@@ -24,7 +24,7 @@ class BannedContactMessage
         $queryParams = (new SendContactMessage())->getQueryParams($botUser);
 
         if ($botUser->isBanned()) {
-            $queryParams->text = "<b>🚫 ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН 🚫</b> \n\n" . $queryParams->text;
+            $queryParams->text = "<b>". __('messages.ban_status_message') ."</b> \n\n" . $queryParams->text;
         }
 
         if ($messageId !== null) {

@@ -22,21 +22,19 @@ class AiAssistantService
     }
 
     /**
-     * Обработать сообщение пользователя через AI-помощника.
+     * Process user message through AI assistant.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return AiResponseDto|null DTO с ответом AI
+     * @return AiResponseDto|null AI response DTO
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto
     {
         try {
             $this->provider = $this->getDefaultProvider($request->provider);
 
-            // Получить контекст пользователя
             $context = $this->getUserContext($request->userId, $request->platform);
 
-            // Обновить запрос с контекстом
             $requestWithContext = new AiRequestDto(
                 message: $request->message,
                 userId: $request->userId,
@@ -47,10 +45,8 @@ class AiAssistantService
                 forceEscalation: $request->forceEscalation
             );
 
-            // Обработать через AI-провайдер
             $response = $this->provider->processMessage($requestWithContext);
 
-            // Обновить контекст пользователя
             $this->updateUserContext($request->userId, $request->platform, $request->message, $response);
 
             return $response;
@@ -64,7 +60,7 @@ class AiAssistantService
     }
 
     /**
-     * Инициализировать доступных AI-провайдеров.
+     * Initialize available AI providers.
      *
      * @return void
      */
@@ -76,7 +72,7 @@ class AiAssistantService
     }
 
     /**
-     * Получить провайдера по умолчанию.
+     * Get default provider.
      *
      * @param string|null $nameProvider
      *
@@ -92,7 +88,6 @@ class AiAssistantService
             return $this->providers[$defaultProvider];
         }
 
-        // Резервный вариант - первый доступный провайдер
         foreach ($this->providers as $provider) {
             if ($provider->isAvailable()) {
                 return $provider;
@@ -103,10 +98,10 @@ class AiAssistantService
     }
 
     /**
-     * Получить контекст беседы пользователя.
+     * Get user conversation context.
      *
-     * @param int    $userId   ID пользователя
-     * @param string $platform Платформа
+     * @param int    $userId   User ID
+     * @param string $platform Platform
      *
      * @return array
      */
@@ -120,33 +115,30 @@ class AiAssistantService
     }
 
     /**
-     * Обновить контекст беседы пользователя.
+     * Update user conversation context.
      *
-     * @param int           $userId      ID пользователя
-     * @param string        $platform    Платформа
-     * @param string        $userMessage Сообщение пользователя
-     * @param AiResponseDto $response    Ответ AI
+     * @param int           $userId      User ID
+     * @param string        $platform    Platform
+     * @param string        $userMessage User message
+     * @param AiResponseDto $response    AI response
      */
     private function updateUserContext(int $userId, string $platform, string $userMessage, AiResponseDto $response): void
     {
         $cacheKey = "ai_context_{$platform}_{$userId}";
         $context = Cache::get($cacheKey, []);
 
-        // Добавить сообщение пользователя
         $context[] = [
             'role' => 'user',
             'content' => $userMessage,
             'timestamp' => now()->timestamp,
         ];
 
-        // Добавить ответ AI
         $context[] = [
             'role' => 'assistant',
             'content' => $response->response,
             'timestamp' => now()->timestamp,
         ];
 
-        // Оставить только последние сообщения
         $maxContext = config('ai.max_context_messages', 10);
         $context = array_slice($context, -$maxContext);
 

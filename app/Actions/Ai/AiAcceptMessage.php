@@ -12,7 +12,7 @@ use phpDocumentor\Reflection\Exception;
 class AiAcceptMessage extends AiAction
 {
     /**
-     * Подтверждение отправки ответа от AI
+     * Confirm AI response sending.
      *
      * @param TelegramUpdateDto $update
      *
@@ -22,17 +22,17 @@ class AiAcceptMessage extends AiAction
     {
         try {
             if (empty(config('traffic_source.settings.telegram_ai.token'))) {
-                throw new Exception('Токен от AI бота не указан!', 1);
+                throw new Exception('AI bot token not specified!', 1);
             }
 
             $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
-                throw new Exception('Пользователь не найден', 1);
+                throw new Exception('User not found', 1);
             }
 
             $messageData = $this->getMessageDataByCallbackData($update->callbackData);
             if (empty($messageData)) {
-                throw new Exception('Сообщение не найдено в БД!', 1);
+                throw new Exception('Message not found in database!', 1);
             }
 
             SendTelegramMessageJob::dispatch(
