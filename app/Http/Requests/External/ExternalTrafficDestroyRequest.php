@@ -24,8 +24,8 @@ class ExternalTrafficDestroyRequest extends FormRequest
     public function messages()
     {
         return [
-            'source.required' => 'Поле source обязательно для заполнения',
-            'external_id.required' => 'Поле external_id обязательно для заполнения',
+            'source.required' => 'The source field is required',
+            'external_id.required' => 'The external_id field is required',
         ];
     }
 
