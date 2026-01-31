@@ -16,7 +16,7 @@ class ExternalMessageResponseDto extends Data
      * @param string|null $file_id
      * @param string|null $file_url
      * @param string|null $file_type
-     * @param array|null  $buttons      Кнопки в формате массива ButtonDto
+     * @param array|null  $buttons      Buttons as ButtonDto array
      */
     public function __construct(
         public string $message_type,
