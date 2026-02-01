@@ -811,8 +811,8 @@ $schemaData = [
                         <i class="fas fa-star"></i>
                     </div>
                     <div class="stat-value" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
-                        <span itemprop="ratingValue">120</span>+
-                        <meta itemprop="ratingCount" content="90">
+                        <span itemprop="ratingValue">170</span>+
+                        <meta itemprop="ratingCount" content="170">
                     </div>
                     <div class="stat-label">Звезд</div>
                 </div>
@@ -821,7 +821,7 @@ $schemaData = [
                         <i class="fas fa-code-branch"></i>
                     </div>
                     <div class="stat-value">
-                        19+
+                        37+
                     </div>
                     <div class="stat-label">Форков</div>
                 </div>
