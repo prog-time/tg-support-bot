@@ -22,11 +22,11 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Обработать сообщение пользователя через GigaChat API.
+     * Process user message through GigaChat API.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return AiResponseDto|null DTO с ответом AI
+     * @return AiResponseDto|null AI response DTO
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto
     {
@@ -35,10 +35,8 @@ class GigaChatProvider extends BaseAiProvider
                 throw new Exception('GigaChat rate limit exceeded');
             }
 
-            // Получить или обновить токен доступа
             $this->ensureValidToken();
 
-            // Выполнить API-вызов
             $response = $this->makeApiCall($request);
 
             return $this->parseApiResponse($response, $request);
@@ -54,7 +52,7 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Проверить, доступен ли провайдер и правильно настроен.
+     * Check if provider is available and properly configured.
      *
      * @return bool
      */
@@ -65,7 +63,7 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Получить название провайдера.
+     * Get provider name.
      *
      * @return string
      */
@@ -75,7 +73,7 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Получить название используемой модели.
+     * Get model name.
      *
      * @return string
      */
@@ -85,7 +83,7 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Убедиться, что токен доступа действителен.
+     * Ensure access token is valid.
      *
      * @throws \Exception
      */
@@ -97,7 +95,7 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Обновить токен доступа.
+     * Refresh access token.
      *
      * @throws \Exception
      */
@@ -123,11 +121,11 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Выполнить API-вызов к GigaChat.
+     * Make API call to GigaChat.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return array Ответ от GigaChat API
+     * @return array GigaChat API response
      *
      * @throws \Exception
      */
@@ -157,11 +155,11 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Построить массив сообщений для GigaChat API.
+     * Build messages array for GigaChat API.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return array Массив сообщений в формате GigaChat
+     * @return array Messages array in GigaChat format
      */
     private function buildMessages(AiRequestDto $request): array
     {
@@ -172,7 +170,6 @@ class GigaChatProvider extends BaseAiProvider
             ],
         ];
 
-        // Добавить контекстные сообщения, если доступны
         foreach ($request->context as $contextMessage) {
             $messages[] = [
                 'role' => $contextMessage['role'] ?? 'user',
@@ -180,7 +177,6 @@ class GigaChatProvider extends BaseAiProvider
             ];
         }
 
-        // Добавить текущее сообщение пользователя
         $messages[] = [
             'role' => 'user',
             'content' => $request->message,
@@ -190,19 +186,18 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Разобрать ответ от GigaChat API и создать DTO.
+     * Parse GigaChat API response and create DTO.
      *
-     * @param array        $response Ответ от GigaChat API
-     * @param AiRequestDto $request  Исходный запрос
+     * @param array        $response GigaChat API response
+     * @param AiRequestDto $request  Original request
      *
-     * @return AiResponseDto DTO с ответом AI
+     * @return AiResponseDto AI response DTO
      */
     private function parseApiResponse(array $response, AiRequestDto $request): AiResponseDto
     {
         $content = $response['choices'][0]['message']['content'] ?? '';
         $usage = $response['usage'] ?? [];
 
-        // Попытаться разобрать структурированный ответ
         $parsedContent = $this->parseStructuredResponse($content);
 
         $confidenceScore = $parsedContent['confidence_score'] ?? 0.8;
@@ -225,11 +220,11 @@ class GigaChatProvider extends BaseAiProvider
     }
 
     /**
-     * Разобрать структурированный ответ от AI.
+     * Parse structured response from AI.
      *
-     * @param string $content Текст ответа от AI
+     * @param string $content AI response text
      *
-     * @return array Разобранные данные с уверенностью и флагом эскалации
+     * @return array Parsed data with confidence and escalation flag
      */
     private function parseStructuredResponse(string $content): array
     {
@@ -238,7 +233,6 @@ class GigaChatProvider extends BaseAiProvider
             return $decoded;
         }
 
-        // Резервный вариант: попытаться извлечь информацию об уверенности и эскалации из текста
         $confidenceScore = 0.8;
         $shouldEscalate = false;
 
