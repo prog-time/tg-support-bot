@@ -26,56 +26,56 @@ abstract class TemplateMessageService
     abstract public function handleUpdate(): void;
 
     /**
-     * Отправка изображения
+     * Send photo.
      *
      * @return void
      */
     abstract protected function sendPhoto(): void;
 
     /**
-     * Отправка документа
+     * Send document.
      *
      * @return void
      */
     abstract protected function sendDocument(): void;
 
     /**
-     * Отправка геолокации
+     * Send location.
      *
      * @return void
      */
     abstract protected function sendLocation(): void;
 
     /**
-     * Отправка голосового сообщения
+     * Send voice message.
      *
      * @return void
      */
     abstract protected function sendVoice(): void;
 
     /**
-     * Отправка стикеров
+     * Send sticker.
      *
      * @return void
      */
     abstract protected function sendSticker(): void;
 
     /**
-     * Отправка видео-сообщения
+     * Send video note.
      *
      * @return void
      */
     abstract protected function sendVideoNote(): void;
 
     /**
-     * Отправка контакта
+     * Send contact.
      *
      * @return void
      */
     abstract protected function sendContact(): void;
 
     /**
-     * Отправка текстового сообщения
+     * Send text message.
      *
      * @return void
      */
