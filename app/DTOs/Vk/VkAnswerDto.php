@@ -38,7 +38,7 @@ readonly class VkAnswerDto
     }
 
     /**
-     * Получение кода ошибки
+     * Get error code.
      *
      * @param string $textError
      *
