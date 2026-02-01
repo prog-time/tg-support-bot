@@ -8,14 +8,14 @@ use App\DTOs\Button\ButtonDto;
 use App\DTOs\Button\ParsedMessageDto;
 
 /**
- * Строитель клавиатур для Telegram и VK.
+ * Keyboard builder for Telegram and VK.
  */
 class KeyboardBuilder
 {
     /**
-     * Создает Telegram inline keyboard из распарсенного сообщения.
+     * Create Telegram inline keyboard from parsed message.
      *
-     * @param ParsedMessageDto $parsedMessage Распарсенное сообщение
+     * @param ParsedMessageDto $parsedMessage Parsed message
      *
      * @return array<string, array<int, array<int, array<string, string>>>>|null
      */
@@ -40,11 +40,11 @@ class KeyboardBuilder
     }
 
     /**
-     * Создает Telegram reply keyboard из распарсенного сообщения.
+     * Create Telegram reply keyboard from parsed message.
      *
-     * @param ParsedMessageDto $parsedMessage   Распарсенное сообщение
-     * @param bool             $oneTimeKeyboard Скрыть клавиатуру после использования
-     * @param bool             $resizeKeyboard  Подогнать размер клавиатуры
+     * @param ParsedMessageDto $parsedMessage   Parsed message
+     * @param bool             $oneTimeKeyboard Hide keyboard after use
+     * @param bool             $resizeKeyboard  Resize keyboard to fit
      *
      * @return array<string, mixed>|null
      */
@@ -76,9 +76,9 @@ class KeyboardBuilder
     }
 
     /**
-     * Создает Telegram keyboard (автоматически выбирает inline или reply).
+     * Create Telegram keyboard (automatically selects inline or reply).
      *
-     * @param ParsedMessageDto $parsedMessage Распарсенное сообщение
+     * @param ParsedMessageDto $parsedMessage Parsed message
      *
      * @return array<string, mixed>|null
      */
@@ -88,7 +88,6 @@ class KeyboardBuilder
             return null;
         }
 
-        // Приоритет: inline keyboard
         if ($parsedMessage->hasInlineButtons()) {
             return $this->buildTelegramInlineKeyboard($parsedMessage);
         }
@@ -97,11 +96,11 @@ class KeyboardBuilder
     }
 
     /**
-     * Создает VK keyboard из распарсенного сообщения.
+     * Create VK keyboard from parsed message.
      *
-     * @param ParsedMessageDto $parsedMessage Распарсенное сообщение
-     * @param bool             $inline        Inline клавиатура
-     * @param bool             $oneTime       Одноразовая клавиатура
+     * @param ParsedMessageDto $parsedMessage Parsed message
+     * @param bool             $inline        Inline keyboard
+     * @param bool             $oneTime       One-time keyboard
      *
      * @return array<string, mixed>|null
      */
@@ -133,9 +132,9 @@ class KeyboardBuilder
     }
 
     /**
-     * Группирует кнопки по рядам.
+     * Group buttons by rows.
      *
-     * @param array<ButtonDto> $buttons Массив кнопок
+     * @param array<ButtonDto> $buttons Array of buttons
      *
      * @return array<int, array<ButtonDto>>
      */

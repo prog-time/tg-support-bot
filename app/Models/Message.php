@@ -61,7 +61,7 @@ class Message extends Model
             ])->first();
 
             if (empty($messageData)) {
-                throw new \Exception('Сообщение не найдено!');
+                throw new \Exception('Message not found!');
             }
 
             return $messageData;
