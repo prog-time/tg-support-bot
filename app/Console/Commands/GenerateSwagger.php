@@ -10,7 +10,7 @@ class GenerateSwagger extends Command
 {
     protected $signature = 'swagger:generate';
 
-    protected $description = 'Генерация Swagger документации';
+    protected $description = 'Generate Swagger documentation';
 
     private SwaggerGenerateService $swaggerService;
 
@@ -26,20 +26,20 @@ class GenerateSwagger extends Command
     public function handle(): void
     {
         try {
-            $this->info('Генерация Swagger документации началась...');
+            $this->info('Swagger documentation generation started...');
 
-            $this->info('Сбор всех схем (paths/*.json)');
+            $this->info('Collecting all schemas (paths/*.json)');
             $paths = $this->swaggerService->getSwaggerFragments(resource_path('swagger/paths'));
 
-            $this->info('Сбор всех схем (requests/*.json)');
+            $this->info('Collecting all schemas (requests/*.json)');
             $schemas = $this->swaggerService->getSwaggerFragments(resource_path('swagger/requests'));
 
-            $this->info('Сбор всех схем (responses/*.json)');
+            $this->info('Collecting all schemas (responses/*.json)');
             $responses = $this->swaggerService->getSwaggerFragments(resource_path('swagger/responses'));
 
             $schemas = array_merge($schemas, $responses);
 
-            $this->info('Собираем финальный OpenAPI JSON');
+            $this->info('Building final OpenAPI JSON');
 
             $appUrl = config('app.url');
             $swagger = [
@@ -68,11 +68,11 @@ class GenerateSwagger extends Command
 
             $swagger = $this->swaggerService->replaceLangStrings($swagger);
 
-            $this->info('Сохраняем файл...');
+            $this->info('Saving file...');
             $path = storage_path('app/swagger.json');
             File::put($path, json_encode($swagger, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-            $this->info('Генерация завершена успешно!');
+            $this->info('Generation completed successfully!');
         } catch (\Throwable $e) {
             $this->error($e->getMessage());
         }

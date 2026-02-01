@@ -9,7 +9,7 @@ use phpDocumentor\Reflection\Exception;
 
 /**
  * Class FromTgMessageService
- * Класс для работы с сообщениями из TG в "Источник"
+ * Class for working with messages from TG to "Source".
  */
 abstract class FromTgMessageService extends TemplateMessageService
 {
@@ -19,7 +19,7 @@ abstract class FromTgMessageService extends TemplateMessageService
         $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->update);
 
         if (empty($this->botUser)) {
-            throw new Exception('Пользователя не существует!');
+            throw new Exception('User does not exist!');
         }
 
         switch ($update->typeSource) {
@@ -41,7 +41,7 @@ abstract class FromTgMessageService extends TemplateMessageService
                 break;
 
             default:
-                throw new Exception('Данный тип запроса не поддерживается!');
+                throw new Exception('This request type is not supported!');
         }
 
         $queryParams['methodQuery'] = 'sendMessage';
@@ -57,56 +57,56 @@ abstract class FromTgMessageService extends TemplateMessageService
     abstract public function handleUpdate(): void;
 
     /**
-     * Отправка изображения
+     * Send photo.
      *
      * @return void
      */
     abstract protected function sendPhoto(): void;
 
     /**
-     * Отправка документа
+     * Send document.
      *
      * @return void
      */
     abstract protected function sendDocument(): void;
 
     /**
-     * Отправка геолокации
+     * Send location.
      *
      * @return void
      */
     abstract protected function sendLocation(): void;
 
     /**
-     * Отправка голосового сообщения
+     * Send voice message.
      *
      * @return void
      */
     abstract protected function sendVoice(): void;
 
     /**
-     * Отправка стикеров
+     * Send sticker.
      *
      * @return void
      */
     abstract protected function sendSticker(): void;
 
     /**
-     * Отправка видео-сообщения
+     * Send video note.
      *
      * @return void
      */
     abstract protected function sendVideoNote(): void;
 
     /**
-     * Отправка контакта
+     * Send contact.
      *
      * @return void
      */
     abstract protected function sendContact(): void;
 
     /**
-     * Отправка текстового сообщения
+     * Send text message.
      *
      * @return void
      */
