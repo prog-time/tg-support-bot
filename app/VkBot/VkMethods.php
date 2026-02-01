@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 class VkMethods
 {
     /**
-     * Отправка запроса в VK
+     * Send request to VK.
      *
      * @param string $methodQuery
      * @param array  $params
@@ -42,7 +42,7 @@ class VkMethods
                 'response' => 0,
                 'error_message' => $e->getCode() === 1
                     ? $e->getMessage()
-                    : 'Ошибка отправки запроса',
+                    : 'Request sending error',
             ]);
         }
     }
