@@ -23,7 +23,7 @@ class TgVkEditService extends FromTgEditService
     {
         try {
             if ($this->update->typeQuery !== 'edited_message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['edited_message']['photo']) || !empty($this->update->rawData['edited_message']['document'])) {
@@ -50,7 +50,7 @@ class TgVkEditService extends FromTgEditService
         ])->first();
 
         if (empty($dataMessage)) {
-            throw new \Exception('Сообщение не найдено!', 1);
+            throw new \Exception('Message not found!', 1);
         }
 
         $queryParams = [

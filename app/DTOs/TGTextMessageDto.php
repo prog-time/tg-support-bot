@@ -6,7 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Data;
 
 /**
- * Отправка сообщения в TG
+ * Send message to Telegram.
  *
  * @property string      $methodQuery
  * @property string|null $typeSource

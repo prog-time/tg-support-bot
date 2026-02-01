@@ -29,7 +29,7 @@ class TgVkMessageService extends FromTgMessageService
     {
         try {
             if ($this->update->typeQuery !== 'message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['message']['photo'])) {
@@ -59,7 +59,7 @@ class TgVkMessageService extends FromTgMessageService
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'photo', 'photos');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!', 1);
+            throw new \Exception('File upload error!', 1);
         }
         $attachment = "photo{$fileData->response[0]['owner_id']}_{$fileData->response[0]['id']}";
 
@@ -85,7 +85,7 @@ class TgVkMessageService extends FromTgMessageService
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'doc', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!', 1);
+            throw new \Exception('File upload error!', 1);
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -119,7 +119,7 @@ class TgVkMessageService extends FromTgMessageService
     {
         $fileData = $this->uploadFileVk($this->update->fileId, 'audio_message', 'docs');
         if (empty($fileData->response)) {
-            throw new \Exception('Ошибка загрузки файла!', 1);
+            throw new \Exception('File upload error!', 1);
         }
         $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
 
@@ -225,29 +225,26 @@ class TgVkMessageService extends FromTgMessageService
         try {
             $fullFilePath = TelegramHelper::getFileTelegramPath($this->update->fileId);
             if (empty($fullFilePath)) {
-                throw new \Exception('Ошибка получения данных файла!', 1);
+                throw new \Exception('Error getting file data!', 1);
             }
 
-            // get upload server data
             $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
             if (empty($resultData->response['upload_url'])) {
-                throw new \Exception('Ошибка получения ссылки для загрузки файла!', 1);
+                throw new \Exception('Error getting file upload URL!', 1);
             }
 
-            // upload file in VK
             $urlQuery = $resultData->response['upload_url'];
             $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
             if (empty($responseData)) {
-                throw new \Exception('Ошибка загрузки файла!', 1);
+                throw new \Exception('File upload error!', 1);
             }
 
-            // save file in VK
             return SaveFileVk::execute($typeMethod, $responseData);
         } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
                 'response_code' => 500,
                 'response' => 0,
-                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Request sending error',
             ]);
         }
     }

@@ -58,7 +58,6 @@ class TopicCreateJob implements ShouldQueue
                 'icon_custom_emoji_id' => __('icons.incoming'),
             ]);
 
-            // ✅ Успешная отправка
             if ($response->ok === true) {
                 $this->botUser->topic_id = $response->message_thread_id;
                 $this->botUser->save();
@@ -67,16 +66,14 @@ class TopicCreateJob implements ShouldQueue
                 return;
             }
 
-            // ✅ 429 Too Many Requests
             if ($response->response_code === 429) {
                 $retryAfter = $response->parameters->retry_after ?? 3;
-                Log::warning("429 Too Many Requests. Повтор через {$retryAfter} сек.");
+                Log::warning("429 Too Many Requests. Retry after {$retryAfter} sec.");
                 $this->release($retryAfter);
                 return;
             }
 
-            // ✅ Неизвестная ошибка
-            Log::error('TopicCreateJob: неизвестная ошибка', [
+            Log::error('TopicCreateJob: unknown error', [
                 'response' => (array)$response,
             ]);
         } catch (\Throwable $e) {
@@ -85,7 +82,7 @@ class TopicCreateJob implements ShouldQueue
     }
 
     /**
-     * Генерируем название чата
+     * Generate chat name.
      *
      * @param BotUser $botUser
      *
@@ -136,7 +133,7 @@ class TopicCreateJob implements ShouldQueue
     }
 
     /**
-     * Получаем части для генерации названия чата
+     * Get parts for chat name generation.
      *
      * @param int $chatId
      *
