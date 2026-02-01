@@ -7,12 +7,12 @@ use App\DTOs\TGTextMessageDto;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Удаление сообщения
+ * Delete message.
  */
 class DeleteMessage
 {
     /**
-     * Удаление сообщения
+     * Delete message.
      *
      * @param TGTextMessageDto $queryParams
      *
