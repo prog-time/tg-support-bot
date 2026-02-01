@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Actions;
+namespace Tests\Unit\Actions\Telegram;
 
 use App\Actions\Telegram\ConversionMessageText;
 use Tests\TestCase;
