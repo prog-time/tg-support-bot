@@ -9,12 +9,12 @@ use App\Models\BotUser;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Отправка стартового сообщения
+ * Send start message.
  */
 class SendStartMessage
 {
     /**
-     * Отправка стартового сообщения
+     * Send start message.
      *
      * @param TelegramUpdateDto $update
      *
