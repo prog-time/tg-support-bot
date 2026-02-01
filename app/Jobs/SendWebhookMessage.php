@@ -38,7 +38,7 @@ class SendWebhookMessage implements ShouldQueue
     {
         try {
             if (empty($this->url)) {
-                throw new \Exception('Webhook URL пустой', 1);
+                throw new \Exception('Webhook URL is empty', 1);
             }
 
             (new WebhookService())->sendMessage($this->url, $this->payload);

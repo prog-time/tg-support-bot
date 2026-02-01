@@ -31,7 +31,7 @@ class SwaggerController
             $path = storage_path('app/swagger.json');
 
             if (!File::exists($path)) {
-                throw new Exception('Файл swagger.json не найден. Сначала вызовите /generate-swagger', 1);
+                throw new Exception('File swagger.json not found. First call /generate-swagger', 1);
             }
 
             return response()->file($path, [
@@ -40,7 +40,7 @@ class SwaggerController
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => $e->getCode() === 1 ? $e->getMessage() : 'Ошибка в swagger документе!',
+                'message' => $e->getCode() === 1 ? $e->getMessage() : 'Swagger document error!',
             ], 404);
         }
     }
