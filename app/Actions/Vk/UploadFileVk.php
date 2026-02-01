@@ -5,12 +5,12 @@ namespace App\Actions\Vk;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Загрузка файла на сервер VK
+ * Upload file to VK server.
  */
 class UploadFileVk
 {
     /**
-     * Загрузка файла на сервер VK
+     * Upload file to VK server.
      *
      * @param string $typeFile
      * @param string $upload_url
@@ -26,7 +26,7 @@ class UploadFileVk
             $responseFile = Http::get($fullFilePath);
 
             if ($responseFile->failed()) {
-                throw new \Exception("Не удалось скачать файл Telegram: {$fullFilePath}");
+                throw new \Exception("Failed to download Telegram file: {$fullFilePath}");
             }
 
             $stream = $responseFile->body();

@@ -29,7 +29,7 @@ abstract class ToTgEditService extends TemplateEditService
         $this->botUser = BotUser::getUserByChatId($chatId, $this->source);
 
         if (empty($this->botUser)) {
-            throw new Exception('Пользователя не существует!');
+            throw new Exception('User does not exist!');
         }
 
         $this->messageParamsDTO = TGTextMessageDto::from([
