@@ -6,12 +6,12 @@ use App\DTOs\Vk\VkAnswerDto;
 use App\VkBot\VkMethods;
 
 /**
- * Сохранение файла
+ * Save file.
  */
 class SaveFileVk
 {
     /**
-     * Сохранение файла
+     * Save file.
      *
      * @param string $typeFile
      * @param array  $dataQuery
@@ -32,7 +32,7 @@ class SaveFileVk
             }
 
             if (empty($methodQuery)) {
-                throw new \Exception('Метод для сохранения файла не найден!', 1);
+                throw new \Exception('File save method not found!', 1);
             }
 
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
@@ -40,7 +40,7 @@ class SaveFileVk
             return VkAnswerDto::fromData([
                 'response_code' => 500,
                 'response' => 0,
-                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Ошибка отправки запроса',
+                'error_message' => $e->getCode() == 1 ? $e->getMessage() : 'Request sending error',
             ]);
         }
     }

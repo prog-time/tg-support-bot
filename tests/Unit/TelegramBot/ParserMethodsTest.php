@@ -39,7 +39,7 @@ class ParserMethodsTest extends TestCase
         $response = ParserMethods::postQuery($this->url, ['param' => 'value'], ['Header' => 'value']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals('Запрос вызвал ошибку', $response['result']);
+        $this->assertEquals('Request caused an error', $response['result']);
     }
 
     public function test_get_query_success(): void
@@ -63,7 +63,7 @@ class ParserMethodsTest extends TestCase
         $response = ParserMethods::getQuery($this->url, ['param' => 'value'], ['Header' => 'value']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals('Запрос вызвал ошибку', $response['result']);
+        $this->assertEquals('Request caused an error', $response['result']);
     }
 
     public function test_attach_query_with_valid_file(): void
@@ -92,6 +92,6 @@ class ParserMethodsTest extends TestCase
 
         $this->assertFalse($response['ok']);
         $this->assertEquals(500, $response['response_code']);
-        $this->assertStringContainsString('Файл пустой', $response['result']);
+        $this->assertStringContainsString('File is empty and cannot be sent', $response['result']);
     }
 }
