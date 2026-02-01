@@ -7,7 +7,7 @@ use App\DTOs\TelegramAnswerDto;
 class TelegramMethods
 {
     /**
-     * Отправка запроса в Telegram с проверкой лимитов
+     * Send request to Telegram with rate limit check.
      *
      * @param string $methodQuery
      * @param ?array $dataQuery

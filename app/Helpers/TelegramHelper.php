@@ -8,7 +8,7 @@ use phpDocumentor\Reflection\Exception;
 class TelegramHelper
 {
     /**
-     * Генерация пути к файлу
+     * Generate file path.
      *
      * @param string $localFilePath
      *
@@ -21,7 +21,7 @@ class TelegramHelper
     }
 
     /**
-     * Генерация публичного пути к файлу
+     * Generate public file path.
      *
      * @param string $fileId
      *
@@ -47,7 +47,7 @@ class TelegramHelper
         try {
             $tgFileData = $fileService->getTelegramFile($fileId);
             if (empty($tgFileData['result']['file_path'])) {
-                throw new Exception('Файл не найден');
+                throw new Exception('File not found');
             }
 
             $tgFilePath = $tgFileData['result']['file_path'];
