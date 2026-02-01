@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 /**
- * Типы кнопок для сообщений
+ * Button types for messages.
  */
 enum ButtonType: string
 {
@@ -15,7 +15,7 @@ enum ButtonType: string
     case TEXT = 'text';
 
     /**
-     * Проверяет, является ли тип inline кнопкой.
+     * Check if type is inline button.
      *
      * @return bool
      */
@@ -28,7 +28,7 @@ enum ButtonType: string
     }
 
     /**
-     * Проверяет, является ли тип reply keyboard кнопкой.
+     * Check if type is reply keyboard button.
      *
      * @return bool
      */
@@ -38,9 +38,9 @@ enum ButtonType: string
     }
 
     /**
-     * Парсит тип кнопки из строки команды.
+     * Parse button type from command string.
      *
-     * @param string|null $command Команда в формате "type:value" или null
+     * @param string|null $command Command in "type:value" format or null
      *
      * @return self
      */

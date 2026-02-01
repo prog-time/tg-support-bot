@@ -41,10 +41,9 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
 
             $managerTextMessage = trim(str_replace('/ai_generate', '', $this->updateDto->text));
             if (empty($managerTextMessage)) {
-                throw new \Exception('Сообщение пустое!', 1);
+                throw new \Exception('Message is empty!', 1);
             }
 
-            // Создать AI-запрос
             $aiRequest = new AiRequestDto(
                 message: $managerTextMessage,
                 userId: $this->botUserId,
@@ -53,15 +52,12 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
                 forceEscalation: false
             );
 
-            // Обработать через AI
             $aiService = new AiAssistantService();
             $aiResponse = $aiService->processMessage($aiRequest);
 
             if (empty($aiResponse)) {
-                throw new \Exception('Не удалось отправить запрос в AI!', 1);
+                throw new \Exception('Failed to send request to AI!', 1);
             }
-
-            // отправка запроса в Telegram
             SendAiTelegramMessageJob::dispatch(
                 $botUser->id,
                 $this->updateDto,
@@ -74,7 +70,7 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -87,7 +83,7 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *

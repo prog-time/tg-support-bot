@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
 /**
- * DTO для запроса из Telegram
+ * DTO for Telegram request.
  *
  * @property int         $updateId
  * @property bool        $isBot
@@ -67,7 +67,7 @@ class TelegramUpdateDto extends Data
             $type = self::detectType($data);
 
             if ($type === 'unknown') {
-                throw new \Exception('Данный тип запроса не поддерживается!');
+                throw new \Exception('This request type is not supported!');
             }
 
             $textMessage = $data[$type]['text'] ?? '';
@@ -97,7 +97,7 @@ class TelegramUpdateDto extends Data
                 username: self::extractUsername($data, $type),
                 callbackData: $data['callback_query']['data'] ?? null,
                 location: $data['message']['location'] ?? null,
-                rawData: $data // Сохраняем весь запрос, если вдруг понадобится
+                rawData: $data
             );
         } catch (\Throwable $e) {
             return null;

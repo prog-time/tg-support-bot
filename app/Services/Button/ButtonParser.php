@@ -8,28 +8,28 @@ use App\DTOs\Button\ButtonDto;
 use App\DTOs\Button\ParsedMessageDto;
 
 /**
- * Парсер синтаксиса кнопок из текста сообщения.
+ * Button syntax parser from message text.
  *
- * Синтаксис: [[Текст кнопки|тип:значение]]
+ * Syntax: [[Button text|type:value]]
  *
- * Примеры:
- * - [[Открыть сайт|url:https://example.com]] - кнопка со ссылкой
- * - [[Вернуться|callback:back]] - inline callback кнопка
- * - [[Поделиться номером|phone]] - кнопка запроса телефона
- * - [[Текст ответа]] - reply keyboard с текстом
+ * Examples:
+ * - [[Open site|url:https://example.com]] - URL button
+ * - [[Go back|callback:back]] - inline callback button
+ * - [[Share phone|phone]] - phone request button
+ * - [[Response text]] - reply keyboard with text
  */
 class ButtonParser
 {
     /**
-     * Регулярное выражение для поиска кнопок.
-     * Формат: [[текст]] или [[текст|команда]]
+     * Regular expression for finding buttons.
+     * Format: [[text]] or [[text|command]]
      */
     private const BUTTON_PATTERN = "/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/";
 
     /**
-     * Парсит текст сообщения и извлекает кнопки.
+     * Parse message text and extract buttons.
      *
-     * @param string $message Исходный текст сообщения
+     * @param string $message Original message text
      *
      * @return ParsedMessageDto
      */
@@ -51,7 +51,6 @@ class ButtonParser
             $text = $matches[1][$index][0];
             $command = $matches[2][$index][0] ?? null;
 
-            // Проверяем, была ли новая строка между кнопками
             if ($index > 0) {
                 $textBetween = substr($message, $lastPosition, $position - $lastPosition);
                 if (str_contains($textBetween, "\n")) {
@@ -68,7 +67,6 @@ class ButtonParser
             $lastPosition = $position + strlen($fullMatch);
         }
 
-        // Удаляем синтаксис кнопок из текста
         $cleanText = $this->removeButtonSyntax($message);
 
         return new ParsedMessageDto(
@@ -78,30 +76,25 @@ class ButtonParser
     }
 
     /**
-     * Удаляет синтаксис кнопок из текста.
+     * Remove button syntax from text.
      *
-     * @param string $message Исходный текст
+     * @param string $message Original text
      *
      * @return string
      */
     private function removeButtonSyntax(string $message): string
     {
-        // Удаляем все кнопки
         $cleanText = preg_replace(self::BUTTON_PATTERN, '', $message);
-
-        // Убираем лишние пустые строки в конце
         $cleanText = rtrim($cleanText ?? '');
-
-        // Убираем множественные пустые строки
         $cleanText = preg_replace('/\n{3,}/', "\n\n", $cleanText);
 
         return $cleanText ?? '';
     }
 
     /**
-     * Проверяет, содержит ли текст синтаксис кнопок.
+     * Check if text contains button syntax.
      *
-     * @param string $message Текст для проверки
+     * @param string $message Text to check
      *
      * @return bool
      */

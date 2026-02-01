@@ -28,7 +28,7 @@ class ParserMethods
                 ->json();
 
             if (empty($resultQuery)) {
-                throw new \RuntimeException('Запрос вызвал ошибку');
+                throw new \RuntimeException('Request caused an error');
             }
 
             return $resultQuery;
@@ -65,7 +65,7 @@ class ParserMethods
                 ->json();
 
             if (empty($resultQuery)) {
-                throw new \RuntimeException('Запрос вызвал ошибку');
+                throw new \RuntimeException('Request caused an error');
             }
 
             return $resultQuery;
@@ -87,39 +87,34 @@ class ParserMethods
             }
 
             if (empty($queryParams['uploaded_file']) || !$queryParams['uploaded_file'] instanceof UploadedFile) {
-                throw new phpDocumentorException('Файл не передан!');
+                throw new phpDocumentorException('File not provided!');
             }
 
             /** @var UploadedFile $attachData */
             $attachData = $queryParams['uploaded_file'];
             unset($queryParams['uploaded_file']);
 
-            // Проверка размера файла (макс. 50 МБ для Telegram)
             if ($attachData->getSize() > 50 * 1024 * 1024) {
-                throw new phpDocumentorException('Файл слишком большой для Telegram (макс. 50 МБ)');
+                throw new phpDocumentorException('File is too large for Telegram (max 50 MB)');
             }
 
             if ($attachData->getSize() === 0) {
-                throw new phpDocumentorException('Файл пустой и не может быть отправлен');
+                throw new phpDocumentorException('File is empty and cannot be sent');
             }
 
-            // Проверка валидности файла
             if (!$attachData->isValid()) {
-                throw new phpDocumentorException('Файл невалиден');
+                throw new phpDocumentorException('File is invalid');
             }
 
-            // Получение пути к временному файлу
             $tempPath = $attachData->getRealPath();
 
             if (!$tempPath || !file_exists($tempPath) || !is_readable($tempPath)) {
-                throw new phpDocumentorException('Временный файл не существует или недоступен для чтения');
+                throw new phpDocumentorException('Temporary file does not exist or is not readable');
             }
 
-            // Генерация уникального имени с UUID
             $extension = $attachData->getClientOriginalExtension();
             $safeName = Str::uuid() . ($extension ? '.' . $extension : '');
 
-            // Отправка файла в Telegram
             $resultQuery = Http::attach(
                 $attachType,
                 fopen($tempPath, 'rb'),
@@ -130,7 +125,7 @@ class ParserMethods
                 ->json();
 
             if (empty($resultQuery)) {
-                throw new \RuntimeException('Запрос вызвал ошибку');
+                throw new \RuntimeException('Request caused an error');
             }
 
             return $resultQuery;

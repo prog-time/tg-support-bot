@@ -7,12 +7,12 @@ use App\DTOs\Vk\VkTextMessageDto;
 use App\VkBot\VkMethods;
 
 /**
- * Отправка запроса в VK
+ * Send request to VK.
  */
 class SendQueryVk
 {
     /**
-     * Отправка запроса в VK
+     * Send request to VK.
      *
      * @param VkTextMessageDto $queryParams
      *

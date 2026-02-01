@@ -5,7 +5,7 @@ namespace App\DTOs\External;
 use Spatie\LaravelData\Data;
 
 /**
- * DTO для результата списка сообщений
+ * DTO for message list result.
  *
  * @param string $source
  * @param string $external_id

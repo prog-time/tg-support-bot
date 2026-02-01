@@ -11,7 +11,7 @@ use Exception;
 class SendAiAnswerMessage
 {
     /**
-     * Выполнить обработку AI-сообщения для Telegram.
+     * Process AI message for Telegram.
      *
      * @param TelegramUpdateDto $update
      *
@@ -21,12 +21,12 @@ class SendAiAnswerMessage
     {
         try {
             if (empty(config('traffic_source.settings.telegram_ai.token'))) {
-                throw new Exception('Неуказан токен для AI бота!');
+                throw new Exception('AI bot token not specified!');
             }
 
             $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
-                throw new Exception('Пользователь не найден!', 1);
+                throw new Exception('User not found!', 1);
             }
 
             SendAiResponseMessageJob::dispatch(

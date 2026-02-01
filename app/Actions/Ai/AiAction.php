@@ -18,13 +18,13 @@ abstract class AiAction
         try {
             $messageParams = explode('_', $callbackData);
             if (empty($messageParams[3])) {
-                throw new Exception('ID сообщения не найдено!', 1);
+                throw new Exception('Message ID not found!', 1);
             }
 
             $messageId = $messageParams[3];
             $messageData = AiMessage::where('message_id', $messageId)->first();
             if (empty($messageData)) {
-                throw new Exception('Сообщение не найдено в БД!', 1);
+                throw new Exception('Message not found in database!', 1);
             }
 
             return $messageData;

@@ -40,7 +40,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
     abstract public function handle(): void;
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -48,7 +48,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
     abstract protected function saveMessage(BotUser $botUser, mixed $resultQuery): void;
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Edit message in database.
      *
      * @param mixed   $resultQuery
      * @param BotUser $botUser
@@ -56,7 +56,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
     abstract protected function editMessage(BotUser $botUser, mixed $resultQuery): void;
 
     /**
-     * Обновляем тему в зависимости от типа источника
+     * Update topic depending on source type.
      *
      * @return void
      */
@@ -72,28 +72,23 @@ abstract class AbstractSendMessageJob implements ShouldQueue
 
     protected function telegramResponseHandler(TelegramAnswerDto $response): void
     {
-        // ✅ 429 Too Many Requests
         if ($response->response_code === 429) {
             $retryAfter = $response->parameters->retry_after ?? 3;
             (new LokiLogger())->log('warning', "429 Too Many Requests. Replay {$retryAfter}");
             sleep(10);
-            // Job автоматически будет повторён Laravel Queue
             $this->release($retryAfter);
             return;
         }
 
-        // ✅ 400 MARKDOWN_ERROR
         if ($response->response_code === 400 && $response->type_error === 'MARKDOWN_ERROR') {
-            (new LokiLogger())->log('warning', "MARKDOWN_ERROR → переключаем parse_mode в HTML");
+            (new LokiLogger())->log('warning', "MARKDOWN_ERROR -> switching parse_mode to HTML");
             $this->queryParams->parse_mode = 'html';
-            // Повторяем отправку с исправленным parse_mode
             $this->release(1);
             return;
         }
 
-        // ✅ 400 TOPIC_NOT_FOUND / TOPIC_DELETED
         if ($response->response_code === 400 && in_array($response->type_error, ['TOPIC_NOT_FOUND', 'TOPIC_DELETED', 'TOPIC_ID_INVALID'])) {
-            (new LokiLogger())->log('warning', "TOPIC_NOT_FOUND/TOPIC_DELETED → создаём новую тему");
+            (new LokiLogger())->log('warning', "TOPIC_NOT_FOUND/TOPIC_DELETED -> creating new topic");
 
             $retryJob = $this->getRetryJobInstance();
             if ($retryJob !== null) {
@@ -109,14 +104,12 @@ abstract class AbstractSendMessageJob implements ShouldQueue
             return;
         }
 
-        // ✅ 403 — пользователь заблокировал бота
         if ($response->response_code === 403) {
-            (new LokiLogger())->log('warning', "403 — пользователь заблокировал бота");
+            (new LokiLogger())->log('warning', "403 - user blocked the bot");
             BanMessage::execute($this->botUserId, $this->updateDto);
             return;
         }
 
-        // ✅ Неизвестная ошибка
         (new LokiLogger())->log('error', [
             'response' => (array)$response,
         ]);

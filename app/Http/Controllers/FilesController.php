@@ -22,7 +22,7 @@ class FilesController
     }
 
     /**
-     * Передать файл на просмотр
+     * Stream file for viewing.
      *
      * @param string $fileId
      *
@@ -39,7 +39,7 @@ class FilesController
     }
 
     /**
-     * Передать файл на скачивание
+     * Download file.
      *
      * @param string $fileId
      *

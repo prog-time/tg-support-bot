@@ -58,6 +58,6 @@ class VkMethodsTest extends TestCase
         $dto = VkMethods::sendQueryVk('messages.send', []);
 
         $this->assertEquals(500, $dto->response_code);
-        $this->assertEquals('Ошибка отправки запроса', $dto->error_message);
+        $this->assertEquals('Request sending error', $dto->error_message);
     }
 }

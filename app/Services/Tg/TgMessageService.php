@@ -25,7 +25,7 @@ class TgMessageService extends FromTgMessageService
     {
         try {
             if ($this->update->typeQuery !== 'message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['message']['photo'])) {
@@ -60,7 +60,7 @@ class TgMessageService extends FromTgMessageService
     }
 
     /**
-     * Устанавливает reply_parameters если это ответ на сообщение из группы.
+     * Set reply_parameters if this is a reply to a message from the group.
      *
      * @return void
      */
@@ -98,7 +98,6 @@ class TgMessageService extends FromTgMessageService
         $caption = $this->update->caption;
         $keyboard = null;
 
-        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
         if ($this->update->typeSource === 'supergroup' && $caption) {
             $buttonParser = new ButtonParser();
             $keyboardBuilder = new KeyboardBuilder();
@@ -128,7 +127,6 @@ class TgMessageService extends FromTgMessageService
         $caption = $this->update->caption;
         $keyboard = null;
 
-        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
         if ($this->update->typeSource === 'supergroup' && $caption) {
             $buttonParser = new ButtonParser();
             $keyboardBuilder = new KeyboardBuilder();
@@ -209,7 +207,6 @@ class TgMessageService extends FromTgMessageService
         $text = $this->update->text;
         $keyboard = null;
 
-        // Парсим кнопки только для исходящих сообщений (из группы к пользователю)
         if ($this->update->typeSource === 'supergroup') {
             $buttonParser = new ButtonParser();
             $keyboardBuilder = new KeyboardBuilder();

@@ -45,7 +45,7 @@ class TelegramAnswerDto
     {
         try {
             if (empty($dataAnswer)) {
-                throw new \Exception('Пустой массив с ответом!');
+                throw new \Exception('Empty response array!');
             }
 
             $result = $dataAnswer['result'] ?? [];
@@ -86,7 +86,7 @@ class TelegramAnswerDto
     }
 
     /**
-     * Получение кода ошибки
+     * Get error code.
      *
      * @param string $textError
      *

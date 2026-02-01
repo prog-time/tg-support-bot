@@ -26,7 +26,7 @@ class VkEditService extends ToTgEditService
     {
         try {
             if ($this->update->type !== 'message_edit') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->listFileUrl)) {
@@ -49,7 +49,7 @@ class VkEditService extends ToTgEditService
 
         $messageData = Message::getMessageData($this->typeMessage, $this->update->id, $this->source);
         if (empty($messageData)) {
-            throw new \Exception('Сообщение не найдено!', 1);
+            throw new \Exception('Message not found!', 1);
         }
 
         $this->messageParamsDTO->message_id = $messageData->to_id;
@@ -71,7 +71,7 @@ class VkEditService extends ToTgEditService
 
         $messageData = Message::getMessageData($this->typeMessage, $this->update->id, $this->source);
         if (empty($messageData)) {
-            throw new \Exception('Сообщение не найдено!', 1);
+            throw new \Exception('Message not found!', 1);
         }
 
         $this->messageParamsDTO->message_id = $messageData->to_id;

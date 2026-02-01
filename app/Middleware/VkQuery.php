@@ -20,7 +20,7 @@ class VkQuery
         try {
             $secretCode = config('traffic_source.settings.vk.secret_key');
             if ($secretCode !== request()->secret) {
-                throw new Exception('Secret-Key указан неверно!');
+                throw new Exception('Secret-Key is invalid!');
             }
 
             $this->sendRequestInLoki($request);

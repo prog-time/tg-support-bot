@@ -18,11 +18,11 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Обработать сообщение пользователя через OpenAI API.
+     * Process user message through OpenAI API.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return AiResponseDto|null DTO с ответом AI
+     * @return AiResponseDto|null AI response DTO
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto
     {
@@ -46,11 +46,11 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Выполнить API-вызов к OpenAI.
+     * Make API call to OpenAI.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return array Ответ от OpenAI API
+     * @return array OpenAI API response
      *
      * @throws \Exception
      */
@@ -76,11 +76,11 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Построить массив сообщений для OpenAI API.
+     * Build messages array for OpenAI API.
      *
-     * @param AiRequestDto $request DTO с данными запроса
+     * @param AiRequestDto $request Request DTO
      *
-     * @return array Массив сообщений в формате OpenAI
+     * @return array Messages array in OpenAI format
      */
     private function buildMessages(AiRequestDto $request): array
     {
@@ -91,7 +91,6 @@ class OpenAiProvider extends BaseAiProvider
             ],
         ];
 
-        // Добавить контекстные сообщения, если доступны
         foreach ($request->context as $contextMessage) {
             $messages[] = [
                 'role' => $contextMessage['role'] ?? 'user',
@@ -99,7 +98,6 @@ class OpenAiProvider extends BaseAiProvider
             ];
         }
 
-        // Добавить текущее сообщение пользователя
         $messages[] = [
             'role' => 'user',
             'content' => $request->message,
@@ -109,19 +107,18 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Разобрать ответ от OpenAI API и создать DTO.
+     * Parse OpenAI API response and create DTO.
      *
-     * @param array        $response Ответ от OpenAI API
-     * @param AiRequestDto $request  Исходный запрос
+     * @param array        $response OpenAI API response
+     * @param AiRequestDto $request  Original request
      *
-     * @return AiResponseDto DTO с ответом AI
+     * @return AiResponseDto AI response DTO
      */
     private function parseApiResponse(array $response, AiRequestDto $request): AiResponseDto
     {
         $content = $response['choices'][0]['message']['content'] ?? '';
         $usage = $response['usage'] ?? [];
 
-        // Попытаться разобрать JSON-ответ для структурированных данных
         $parsedContent = $this->parseStructuredResponse($content);
 
         $confidenceScore = $parsedContent['confidence_score'] ?? 0.8;
@@ -143,11 +140,11 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Разобрать структурированный ответ от AI.
+     * Parse structured response from AI.
      *
-     * @param string $content Текст ответа от AI
+     * @param string $content AI response text
      *
-     * @return array Разобранные данные с уверенностью и флагом эскалации
+     * @return array Parsed data with confidence and escalation flag
      */
     private function parseStructuredResponse(string $content): array
     {
@@ -156,7 +153,6 @@ class OpenAiProvider extends BaseAiProvider
             return $decoded;
         }
 
-        // Резервный вариант: попытаться извлечь информацию об уверенности и эскалации из текста
         $confidenceScore = 0.8;
         $shouldEscalate = false;
 
@@ -176,7 +172,7 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Проверить, доступен ли провайдер и правильно настроен.
+     * Check if provider is available and properly configured.
      *
      * @return bool
      */

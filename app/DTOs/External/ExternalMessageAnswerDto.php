@@ -5,7 +5,7 @@ namespace App\DTOs\External;
 use Spatie\LaravelData\Data;
 
 /**
- * DTO для ответа на работу с сообщениями через API
+ * DTO for API message response.
  *
  * @property bool $status
  * @property int|null $message_id

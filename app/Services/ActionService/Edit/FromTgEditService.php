@@ -17,7 +17,7 @@ abstract class FromTgEditService extends TemplateEditService
         $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->update);
 
         if (empty($this->botUser)) {
-            throw new Exception('Пользователя не существует!');
+            throw new Exception('User does not exist!');
         }
 
         switch ($update->typeSource) {
@@ -39,7 +39,7 @@ abstract class FromTgEditService extends TemplateEditService
                 break;
 
             default:
-                throw new Exception('Данный тип запроса не поддерживается!');
+                throw new Exception('This request type is not supported!');
         }
 
         $queryParams['methodQuery'] = 'sendMessage';
@@ -48,14 +48,14 @@ abstract class FromTgEditService extends TemplateEditService
     }
 
     /**
-     * Редактирование сообщения
+     * Edit text message.
      *
      * @return void
      */
     abstract protected function editMessageText(): void;
 
     /**
-     * Редактирование сообщения с фото или документом
+     * Edit message with photo or document.
      *
      * @return void
      */

@@ -6,12 +6,12 @@ use App\DTOs\Vk\VkAnswerDto;
 use App\VkBot\VkMethods;
 
 /**
- * Получение сервера для загрузки документа
+ * Get document upload server.
  */
 class GetMessagesUploadServerVk
 {
     /**
-     * Получение сервера для загрузки документа
+     * Get document upload server.
      *
      * @param int    $chat_id
      * @param string $typeMethod

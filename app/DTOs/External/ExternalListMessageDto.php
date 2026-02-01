@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
 /**
- * DTO для запроса на получение списка сообщений
+ * DTO for message list request.
  *
  * @param string  $source
  * @param string  $external_id

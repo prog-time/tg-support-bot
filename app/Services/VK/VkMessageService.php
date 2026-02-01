@@ -35,7 +35,7 @@ class VkMessageService extends ToTgMessageService
     {
         try {
             if ($this->update->type !== 'message_new') {
-                throw new \Exception('Неизвестный тип события', 1);
+                throw new \Exception('Unknown event type', 1);
             }
 
             if (!empty($this->update->listFileUrl)) {

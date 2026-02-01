@@ -11,12 +11,12 @@ use App\TelegramBot\TelegramMethods;
 use phpDocumentor\Reflection\Exception;
 
 /**
- * Удаление сообщения
+ * Delete message.
  */
 class DeleteMessage
 {
     /**
-     * Удаление сообщения
+     * Delete message.
      *
      * @param ExternalMessageDto $updateData
      *
@@ -29,7 +29,7 @@ class DeleteMessage
                 'external_id' => $updateData->external_id,
             ])->first();
             if (empty($externalUser)) {
-                throw new Exception('Чат не найден!', 1);
+                throw new Exception('Chat not found!', 1);
             }
 
             $botUser = BotUser::where([
@@ -37,7 +37,7 @@ class DeleteMessage
                 'platform' => $externalUser->source,
             ])->first();
             if (empty($botUser)) {
-                throw new Exception('Чат не найден!', 1);
+                throw new Exception('Chat not found!', 1);
             }
 
             $whereParamsMessage = [
@@ -48,7 +48,7 @@ class DeleteMessage
 
             $messageData = Message::where($whereParamsMessage)->first();
             if (empty($messageData)) {
-                throw new Exception('Сообщение не найдено!', 1);
+                throw new Exception('Message not found!', 1);
             }
 
             TelegramMethods::sendQueryTelegram('deleteMessage', [

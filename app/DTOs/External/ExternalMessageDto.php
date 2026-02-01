@@ -7,7 +7,7 @@ use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Data;
 
 /**
- * DTO для сообщений через API
+ * DTO for API messages.
  *
  * @property string          $source
  * @property string          $external_id

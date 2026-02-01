@@ -5,12 +5,15 @@ namespace Tests\Unit\Services\Ai;
 use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
 use App\Services\Ai\AiAssistantService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class GigaChatProviderTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $provider;
@@ -35,6 +38,10 @@ class GigaChatProviderTest extends TestCase
         $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot. 123';
 
         Http::fake([
+            'https://ngw.devices.sberbank.ru:9443/api/v2/oauth' => Http::response([
+                'access_token' => 'test_access_token',
+                'expires_at' => time() + 3600,
+            ], 200),
             $this->baseProviderUrl . '/chat/completions' => Http::response([
                 'choices' => [
                     [

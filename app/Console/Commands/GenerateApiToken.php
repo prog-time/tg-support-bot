@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Validator;
 use phpDocumentor\Reflection\Exception;
 
 /**
- * Пример запроса
- * php artisan app:generate-token live_chat http://{домен бота}:3001/push-message
+ * Example request:
+ * php artisan app:generate-token live_chat http://{bot-domain}:3001/push-message
  */
 class GenerateApiToken extends Command
 {
     protected $signature = 'app:generate-token {source} {hook_url}';
 
-    protected $description = 'Генерирует токен для пользователя, создаёт пользователя если нет';
+    protected $description = 'Generate token for user, create user if not exists';
 
     public function handle(): int
     {
@@ -51,7 +51,7 @@ class GenerateApiToken extends Command
 
                 $sourceItem = ExternalSource::where('name', $sourceName)->first();
                 if (!$sourceItem) {
-                    $this->info('Добавляем новый ресурс...');
+                    $this->info('Adding new resource...');
 
                     $sourceData = ExternalSourceDto::from(array_merge($externalSourceData, [
                         'created_at' => date('Y-m-d H:i:s'),
@@ -59,7 +59,7 @@ class GenerateApiToken extends Command
 
                     $sourceItem = (new ExternalSourceService())->create($sourceData);
                 } else {
-                    $this->info("Обновляем ресурс {$sourceName}...");
+                    $this->info("Updating resource {$sourceName}...");
 
                     $sourceData = ExternalSourceDto::from(array_merge($externalSourceData, [
                         'id' => $sourceItem->id,
@@ -74,16 +74,16 @@ class GenerateApiToken extends Command
                     ->first();
 
                 if (!$accessToken) {
-                    throw new Exception('Токен не создан!', 1);
+                    throw new Exception('Token not created!', 1);
                 }
 
-                $this->info("Токен успешно сгенерирован! {$sourceItem->name} : {$accessToken->token}");
+                $this->info("Token generated successfully! {$sourceItem->name} : {$accessToken->token}");
             });
 
             return 0;
         } catch (\Throwable $exception) {
             if ($exception->getCode() === 1) {
-                $this->error("Не удалось добавить ресурс: {$exception->getMessage()}");
+                $this->error("Failed to add resource: {$exception->getMessage()}");
             }
             return 1;
         }

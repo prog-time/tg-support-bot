@@ -7,7 +7,7 @@ use Carbon\Carbon;
 class DateHelper
 {
     /**
-     * Проверяет, превышает ли разница между двумя датами заданный интервал.
+     * Check if difference between two dates exceeds given interval.
      *
      * @param Carbon $date1
      * @param Carbon $date2

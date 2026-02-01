@@ -16,7 +16,7 @@ class ApiQuery
         try {
             $token = $request->bearerToken();
             if (empty($token)) {
-                throw new Exception('Bearer Token не найден!');
+                throw new Exception('Bearer Token not found!');
             }
 
             $itemAccessToken = ExternalSourceAccessTokens::where('token', $token)
@@ -26,7 +26,7 @@ class ApiQuery
                 ->first();
 
             if (!$itemAccessToken) {
-                throw new Exception('Bearer Token указан неверно!');
+                throw new Exception('Bearer Token is invalid!');
             }
 
             $request->merge([

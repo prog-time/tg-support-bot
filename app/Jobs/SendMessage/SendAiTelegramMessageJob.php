@@ -51,10 +51,9 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
 
             $managerTextMessage = trim(str_replace('/ai_generate', '', $this->updateDto->text));
             if (empty($managerTextMessage)) {
-                throw new \Exception('Сообщение пустое!', 1);
+                throw new \Exception('Message is empty!', 1);
             }
 
-            // Создать AI-запрос
             $aiService = new AiAssistantService();
             $aiResponse = $aiService->processMessage(new AiRequestDto(
                 message: $managerTextMessage,
@@ -65,7 +64,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
             ));
 
             if (empty($aiResponse)) {
-                throw new \Exception('Не удалось отправить запрос в AI!', 1);
+                throw new \Exception('Failed to send request to AI!', 1);
             }
 
             $response = $this->telegramMethods->sendQueryTelegram('sendMessage', [
@@ -75,11 +74,9 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                 'parse_mode' => 'html',
             ], config('traffic_source.settings.telegram_ai.token'));
 
-            // ✅ Успешная отправка
             if ($response->ok === true) {
                 $this->saveMessage($botUser, $response);
 
-                // изменяем сообщение
                 SendTelegramMessageJob::dispatch(
                     $botUser->id,
                     $this->updateDto,
@@ -97,7 +94,6 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                     'incoming',
                 );
 
-                // удаляем сообщение
                 SendTelegramMessageJob::dispatch(
                     $botUser->id,
                     $this->updateDto,
@@ -120,7 +116,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -142,7 +138,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *

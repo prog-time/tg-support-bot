@@ -20,11 +20,11 @@ class TelegramQuery
         try {
             $receivedToken = $request->header('X-Telegram-Bot-Api-Secret-Token');
             if (empty($receivedToken)) {
-                throw new Exception('Secret-Token указан неверно!');
+                throw new Exception('Secret-Token is invalid!');
             }
 
             if ($receivedToken !== config('traffic_source.settings.telegram.secret_key')) {
-                throw new Exception('Secret-Token указан неверно!');
+                throw new Exception('Secret-Token is invalid!');
             }
 
             $this->sendRequestInLoki($request);

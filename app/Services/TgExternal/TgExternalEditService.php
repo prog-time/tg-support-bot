@@ -42,7 +42,7 @@ class TgExternalEditService extends FromTgEditService
     {
         try {
             if ($this->update->typeQuery !== 'edited_message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}");
             }
 
             $resultData = [

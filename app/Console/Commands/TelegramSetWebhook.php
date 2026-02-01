@@ -9,7 +9,7 @@ class TelegramSetWebhook extends Command
 {
     protected $signature = 'telegram:set-webhook';
 
-    protected $description = 'Устанавливает Telegram Webhook для бота';
+    protected $description = 'Set Telegram Webhook for bot';
 
     /**
      * @return int
@@ -30,10 +30,10 @@ class TelegramSetWebhook extends Command
         $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
 
         if (isset($result->rawData)) {
-            $this->info('Webhook установлен:');
+            $this->info('Webhook set:');
             $this->line(json_encode($result->rawData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         } else {
-            $this->error('Ошибка при установке webhook');
+            $this->error('Error setting webhook');
         }
 
         return Command::SUCCESS;

@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Ai;
 use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
 use App\Services\Ai\AiAssistantService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -12,6 +13,8 @@ use Tests\TestCase;
 
 class DeepSeekProviderTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $provider;

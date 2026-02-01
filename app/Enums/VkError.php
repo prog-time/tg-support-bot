@@ -3,8 +3,7 @@
 namespace App\Enums;
 
 /**
- * Enum для ошибок VK Bot API
- * Поддерживает PHP 8.1+ с backed enum
+ * Enum for VK Bot API errors.
  */
 enum VkError: string
 {
@@ -12,18 +11,18 @@ enum VkError: string
     case METHOD_PASSED = 'Unknown method passed';
 
     /**
-     * Получить описание ошибки на русском языке
+     * Get error description.
      */
     public function getDescription(): string
     {
         return match ($this) {
-            self::SYSTEM_ERROR => 'Ошибка работы бота',
-            self::METHOD_PASSED => 'Сообщение не изменено',
+            self::SYSTEM_ERROR => 'Bot error',
+            self::METHOD_PASSED => 'Message not modified',
         };
     }
 
     /**
-     * Попытаться определить ошибку по тексту ответа
+     * Try to determine error by response text.
      */
     public static function fromResponse(string $description): ?self
     {

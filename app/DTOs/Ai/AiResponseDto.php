@@ -7,16 +7,16 @@ namespace App\DTOs\Ai;
 class AiResponseDto
 {
     /**
-     * Конструктор DTO для AI-ответа
+     * AI response DTO constructor.
      *
-     * @param string $response        Текст ответа AI
-     * @param float  $confidenceScore Показатель уверенности (0.0 - 1.0)
-     * @param bool   $shouldEscalate  Нужно ли эскалировать к оператору
-     * @param string $provider        Использованный AI-провайдер
-     * @param string $modelUsed       Использованная модель
-     * @param int    $tokensUsed      Количество использованных токенов
-     * @param float  $responseTime    Время ответа в секундах
-     * @param array  $metadata        Дополнительные метаданные
+     * @param string $response        AI response text
+     * @param float  $confidenceScore Confidence score (0.0 - 1.0)
+     * @param bool   $shouldEscalate  Whether to escalate to operator
+     * @param string $provider        Used AI provider
+     * @param string $modelUsed       Used model
+     * @param int    $tokensUsed      Number of tokens used
+     * @param float  $responseTime    Response time in seconds
+     * @param array  $metadata        Additional metadata
      */
     public function __construct(
         public readonly string $response,
@@ -31,9 +31,9 @@ class AiResponseDto
     }
 
     /**
-     * Создать DTO из массива данных
+     * Create DTO from data array.
      *
-     * @param array $data Массив данных
+     * @param array $data Data array
      *
      * @return self
      */
@@ -52,7 +52,7 @@ class AiResponseDto
     }
 
     /**
-     * Преобразовать DTO в массив
+     * Convert DTO to array.
      *
      * @return array
      */
@@ -71,7 +71,7 @@ class AiResponseDto
     }
 
     /**
-     * Проверить, достаточно ли уверенности для автоответа
+     * Check if confidence is sufficient for auto-reply.
      *
      * @return bool
      */

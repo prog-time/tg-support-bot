@@ -76,7 +76,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                 $fullPath = storage_path('app/public/' . $params['uploaded_file_path']);
 
                 if (!file_exists($fullPath)) {
-                    throw new \Exception('Файл не найден: ' . $fullPath);
+                    throw new \Exception('File not found: ' . $fullPath);
                 }
 
                 $params['uploaded_file'] = new UploadedFile(
@@ -113,7 +113,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -140,7 +140,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Редактируем сообщение
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *

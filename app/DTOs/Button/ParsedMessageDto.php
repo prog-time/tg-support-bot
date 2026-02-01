@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\DTOs\Button;
 
 /**
- * DTO для распарсенного сообщения с кнопками
+ * DTO for parsed message with buttons.
  */
 readonly class ParsedMessageDto
 {
     /**
-     * @param string           $text    Текст сообщения без синтаксиса кнопок
-     * @param array<ButtonDto> $buttons Массив кнопок
+     * @param string           $text    Message text without button syntax
+     * @param array<ButtonDto> $buttons Array of buttons
      */
     public function __construct(
         public string $text,
@@ -20,7 +20,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Проверяет, есть ли кнопки в сообщении.
+     * Check if message has buttons.
      *
      * @return bool
      */
@@ -30,7 +30,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Проверяет, есть ли inline кнопки.
+     * Check if message has inline buttons.
      *
      * @return bool
      */
@@ -46,7 +46,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Проверяет, есть ли reply keyboard кнопки.
+     * Check if message has reply keyboard buttons.
      *
      * @return bool
      */
@@ -62,7 +62,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Возвращает только inline кнопки.
+     * Get only inline buttons.
      *
      * @return array<ButtonDto>
      */
@@ -75,7 +75,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Возвращает только reply keyboard кнопки.
+     * Get only reply keyboard buttons.
      *
      * @return array<ButtonDto>
      */
@@ -88,7 +88,7 @@ readonly class ParsedMessageDto
     }
 
     /**
-     * Возвращает кнопки, сгруппированные по рядам.
+     * Get buttons grouped by rows.
      *
      * @return array<int, array<ButtonDto>>
      */

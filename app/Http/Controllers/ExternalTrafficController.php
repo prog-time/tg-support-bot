@@ -42,7 +42,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Получить список сообщений
+     * Get message list.
      *
      * @return JsonResponse
      */
@@ -52,7 +52,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Получить одно сообщение
+     * Get single message.
      *
      * @param int $id
      *
@@ -64,7 +64,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Создать текстового сообщение
+     * Create text message.
      *
      * @return void
      */
@@ -74,7 +74,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Отправка файла
+     * Send file.
      *
      * @return void
      */
@@ -84,7 +84,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Обновить сообщение
+     * Update message.
      *
      * @return void
      */
@@ -94,7 +94,7 @@ class ExternalTrafficController
     }
 
     /**
-     * Удалить сообщение
+     * Delete message.
      *
      * @return void
      */

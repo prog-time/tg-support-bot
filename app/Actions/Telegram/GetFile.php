@@ -6,12 +6,12 @@ use App\DTOs\TelegramAnswerDto;
 use App\TelegramBot\TelegramMethods;
 
 /**
- * Получение файла
+ * Get file.
  */
 class GetFile
 {
     /**
-     * Получение файла по fileId
+     * Get file by fileId.
      *
      * @param string $fileId
      *

@@ -152,13 +152,13 @@ class TelegramBotController
                     break;
 
                 default:
-                    throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+                    throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
             }
         }
     }
 
     /**
-     * Controller vk message
+     * Controller VK message.
      *
      * @return void
      */
@@ -174,12 +174,12 @@ class TelegramBotController
                 break;
 
             default:
-                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+                throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
         }
     }
 
     /**
-     * Controller external message
+     * Controller external message.
      *
      * @return void
      */
@@ -195,7 +195,7 @@ class TelegramBotController
                 break;
 
             default:
-                throw new \Exception("Неизвестный тип события: {$this->dataHook->typeQuery}");
+                throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
         }
     }
 }
