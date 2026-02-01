@@ -29,7 +29,7 @@ class TgExternalMessageService extends FromTgMessageService
     {
         try {
             if ($this->update->typeQuery !== 'message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}");
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}");
             }
 
             $rawText = $this->update->text ?? $this->update->caption;

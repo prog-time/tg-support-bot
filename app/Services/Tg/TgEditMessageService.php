@@ -26,7 +26,7 @@ class TgEditMessageService extends FromTgEditService
     {
         try {
             if ($this->update->typeQuery !== 'edited_message') {
-                throw new \Exception("Неизвестный тип события: {$this->update->typeQuery}", 1);
+                throw new \Exception("Unknown event type: {$this->update->typeQuery}", 1);
             }
 
             if (!empty($this->update->rawData['edited_message']['photo']) ||
@@ -71,7 +71,7 @@ class TgEditMessageService extends FromTgEditService
 
         $toIdMessage = $messageData->to_id ?? null;
         if (empty($toIdMessage)) {
-            throw new \Exception('Сообщение не найдено!', 1);
+            throw new \Exception('Message not found!', 1);
         }
 
         $this->messageParamsDTO->message_id = $toIdMessage;
@@ -101,7 +101,7 @@ class TgEditMessageService extends FromTgEditService
 
         $toIdMessage = $messageData->to_id ?? null;
         if (empty($toIdMessage)) {
-            throw new \Exception('Сообщение не найдено!', 1);
+            throw new \Exception('Message not found!', 1);
         }
 
         $this->messageParamsDTO->message_id = $toIdMessage;
