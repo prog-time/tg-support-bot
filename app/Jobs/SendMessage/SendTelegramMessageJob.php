@@ -106,7 +106,7 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -129,7 +129,7 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *

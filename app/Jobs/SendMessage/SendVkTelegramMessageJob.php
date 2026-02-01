@@ -102,7 +102,7 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param mixed $resultQuery
      *
@@ -124,7 +124,7 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Редактируем сообщение
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *

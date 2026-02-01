@@ -56,14 +56,14 @@ class SendVkMessageJob extends AbstractSendMessageJob
                 throw new \Exception($response->error_message, 1);
             }
 
-            throw new \Exception('SendVkMessageJob: неизвестная ошибка', 1);
+            throw new \Exception('SendVkMessageJob: unknown error', 1);
         } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }
     }
 
     /**
-     * Сохраняем сообщение в базу после успешной отправки
+     * Save message to database after successful sending.
      *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
@@ -82,7 +82,7 @@ class SendVkMessageJob extends AbstractSendMessageJob
     }
 
     /**
-     * Редактируем сообщение
+     * Edit message in database.
      *
      * @param mixed $resultQuery
      *
