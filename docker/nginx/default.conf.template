@@ -44,6 +44,21 @@ server {
 
     # Socket.IO
     location /socket.io/ {
+        # CORS headers
+        add_header 'Access-Control-Allow-Origin' $http_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' $http_origin;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+            add_header 'Access-Control-Max-Age' 86400;
+            return 204;
+        }
+
         proxy_pass http://node_server:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

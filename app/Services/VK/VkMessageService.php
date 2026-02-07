@@ -46,7 +46,6 @@ class VkMessageService extends ToTgMessageService
                 $this->sendLocation();
             }
 
-            echo 'ok';
         } catch (\Throwable $e) {
             (new LokiLogger())->logException($e);
         }

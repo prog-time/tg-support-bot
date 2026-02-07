@@ -8,46 +8,51 @@ use App\Models\BotUser;
 use App\Services\VK\VkEditService;
 use App\Services\VK\VkMessageService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class VkBotController
 {
-    private VkUpdateDto $dataHook;
-
-    private ?BotUser $botUser;
-
-    public function __construct(Request $request)
-    {
-        if (request()->type === 'confirmation') {
-            echo config('traffic_source.settings.vk.confirm_code');
-            die();
-        }
-
-        $dataHook = VkUpdateDto::fromRequest($request);
-        $this->dataHook = !empty($dataHook) ? $dataHook : die('ok');
-
-        $this->botUser = (new BotUser())->getUserByChatId($this->dataHook->from_id, 'vk');
-    }
-
     /**
-     * @return void
+     * @return Response
      *
      * @throws \Exception
      */
-    public function bot_query(): void
+    public function bot_query(Request $request): Response
     {
-        if ($this->botUser->isBanned()) {
-            (new SendBannedMessageVk())->execute($this->botUser);
-            die('ok');
+        if ($request->type === 'confirmation') {
+            return response(config('traffic_source.settings.vk.confirm_code'), 200);
         }
 
-        switch ($this->dataHook->type) {
+        $dataHook = VkUpdateDto::fromRequest($request);
+        if (empty($dataHook)) {
+            return response('ok', 200);
+        }
+
+        $cacheKey = 'vk_event_' . $dataHook->event_id;
+        if (Cache::has($cacheKey)) {
+            return response('ok', 200);
+        }
+        Cache::put($cacheKey, true, 600);
+
+        $botUser = (new BotUser())->getUserByChatId($dataHook->from_id, 'vk');
+
+        if ($botUser->isBanned()) {
+            (new SendBannedMessageVk())->execute($botUser);
+
+            return response('ok', 200);
+        }
+
+        switch ($dataHook->type) {
             case 'message_new':
-                (new VkMessageService($this->dataHook))->handleUpdate();
+                (new VkMessageService($dataHook))->handleUpdate();
                 break;
 
             case 'message_edit':
-                (new VkEditService($this->dataHook))->handleUpdate();
+                (new VkEditService($dataHook))->handleUpdate();
                 break;
         }
+
+        return response('ok', 200);
     }
 }
