@@ -59,7 +59,7 @@ class TgEditMessageService extends FromTgEditService
         $this->messageParamsDTO->methodQuery = 'editMessageText';
 
         $this->messageParamsDTO->text = $this->update->text;
-        if (!empty($this->update->entities)) {
+        if (!empty($this->update->entities) && ConversionMessageText::hasFormattingEntities($this->update->entities)) {
             $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($this->update->text, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
@@ -89,7 +89,7 @@ class TgEditMessageService extends FromTgEditService
         $this->messageParamsDTO->methodQuery = 'editMessageCaption';
 
         $this->messageParamsDTO->caption = $this->update->caption;
-        if (!empty($this->update->entities)) {
+        if (!empty($this->update->entities) && ConversionMessageText::hasFormattingEntities($this->update->entities)) {
             $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($this->update->caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }

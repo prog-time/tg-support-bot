@@ -2,7 +2,40 @@
 
 namespace App\Actions\Telegram;
 
-class ConversionMessageText {
+class ConversionMessageText
+{
+    /**
+     * Entity types that require MarkdownV2 conversion.
+     */
+    private const FORMATTING_ENTITY_TYPES = [
+        'bold',
+        'italic',
+        'underline',
+        'strikethrough',
+        'spoiler',
+        'code',
+        'pre',
+        'text_link',
+        'blockquote',
+        'custom_emoji',
+    ];
+
+    /**
+     * Check if entities contain formatting types that require MarkdownV2.
+     *
+     * @param array $entities
+     * @return bool
+     */
+    public static function hasFormattingEntities(array $entities): bool
+    {
+        foreach ($entities as $entity) {
+            if (in_array($entity['type'], self::FORMATTING_ENTITY_TYPES, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Convert message to MarkdownV2 format.

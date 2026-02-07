@@ -308,4 +308,67 @@ class ConversionMessageTextTest extends TestCase
         // Должны обрабатываться в порядке: третий (14), второй (7), первый (0)
         $this->assertEquals('**Первый** _второй_ `третий`', $result);
     }
+
+    /**
+     * Тест: url entity не является форматирующим
+     */
+    public function test_has_formatting_entities_returns_false_for_url_only(): void
+    {
+        $entities = [
+            [
+                'offset' => 0,
+                'length' => 23,
+                'type' => 'url',
+            ],
+        ];
+
+        $this->assertFalse(ConversionMessageText::hasFormattingEntities($entities));
+    }
+
+    /**
+     * Тест: bold entity является форматирующим
+     */
+    public function test_has_formatting_entities_returns_true_for_bold(): void
+    {
+        $entities = [
+            [
+                'offset' => 0,
+                'length' => 23,
+                'type' => 'url',
+            ],
+            [
+                'offset' => 24,
+                'length' => 6,
+                'type' => 'bold',
+            ],
+        ];
+
+        $this->assertTrue(ConversionMessageText::hasFormattingEntities($entities));
+    }
+
+    /**
+     * Тест: mention, hashtag, bot_command не являются форматирующими
+     */
+    public function test_has_formatting_entities_returns_false_for_non_formatting(): void
+    {
+        $entities = [
+            [
+                'offset' => 0,
+                'length' => 10,
+                'type' => 'mention',
+            ],
+            [
+                'offset' => 11,
+                'length' => 5,
+                'type' => 'hashtag',
+            ],
+            [
+                'offset' => 17,
+                'length' => 6,
+                'type' => 'bot_command',
+            ],
+        ];
+
+        $this->assertFalse(ConversionMessageText::hasFormattingEntities($entities));
+    }
 }
