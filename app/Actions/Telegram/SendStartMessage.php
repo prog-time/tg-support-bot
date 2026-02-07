@@ -6,6 +6,8 @@ use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
+use App\Services\Button\ButtonParser;
+use App\Services\Button\KeyboardBuilder;
 use App\TelegramBot\TelegramMethods;
 
 /**
@@ -28,12 +30,19 @@ class SendStartMessage
         ]);
 
         if ($update->typeSource === 'private') {
+            $buttonParser = new ButtonParser();
+            $keyboardBuilder = new KeyboardBuilder();
+
+            $parsedMessage = $buttonParser->parse(__('messages.start'));
+            $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
+
             $messageParamsDTO = TGTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
                 'chat_id' => $update->chatId,
                 'message_thread_id' => $update->messageThreadId,
-                'text' => __('messages.start'),
+                'text' => $parsedMessage->text,
                 'parse_mode' => 'html',
+                'reply_markup' => $keyboard,
             ]);
 
             $botUser = BotUser::getOrCreateByTelegramUpdate($update);
