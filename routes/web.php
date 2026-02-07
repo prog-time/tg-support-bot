@@ -16,3 +16,4 @@ Route::group([
 Route::get('/preview/chat', [PreviewController::class, 'chat']);
 
 Route::get('/', [SimplePage::class, 'index']);
+Route::get('/live_chat_promo', [SimplePage::class, 'liveChatPromo']);
