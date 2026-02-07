@@ -110,7 +110,7 @@ class TgMessageService extends FromTgMessageService
         $this->messageParamsDTO->caption = $caption;
         $this->messageParamsDTO->reply_markup = $keyboard;
 
-        if (!empty($this->update->entities)) {
+        if (!empty($this->update->entities) && ConversionMessageText::hasFormattingEntities($this->update->entities)) {
             $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
@@ -139,7 +139,7 @@ class TgMessageService extends FromTgMessageService
         $this->messageParamsDTO->caption = $caption;
         $this->messageParamsDTO->reply_markup = $keyboard;
 
-        if (!empty($this->update->entities)) {
+        if (!empty($this->update->entities) && ConversionMessageText::hasFormattingEntities($this->update->entities)) {
             $this->messageParamsDTO->caption = ConversionMessageText::conversionMarkdownFormat($caption, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
@@ -219,7 +219,7 @@ class TgMessageService extends FromTgMessageService
         $this->messageParamsDTO->text = $text;
         $this->messageParamsDTO->reply_markup = $keyboard;
 
-        if (!empty($this->update->entities)) {
+        if (!empty($this->update->entities) && ConversionMessageText::hasFormattingEntities($this->update->entities)) {
             $this->messageParamsDTO->text = ConversionMessageText::conversionMarkdownFormat($text, $this->update->entities);
             $this->messageParamsDTO->parse_mode = 'MarkdownV2';
         }
