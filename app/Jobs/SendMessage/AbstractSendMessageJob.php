@@ -75,7 +75,6 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         if ($response->response_code === 429) {
             $retryAfter = $response->parameters->retry_after ?? 3;
             (new LokiLogger())->log('warning', "429 Too Many Requests. Replay {$retryAfter}");
-            sleep(10);
             $this->release($retryAfter);
             return;
         }
