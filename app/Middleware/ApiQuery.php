@@ -2,10 +2,10 @@
 
 namespace App\Middleware;
 
-use App\Logging\LokiLogger;
 use App\Models\ExternalSourceAccessTokens;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -53,7 +53,6 @@ class ApiQuery
     {
         $dataRequest = json_encode($request->all());
 
-        $logger = new LokiLogger();
-        $logger->log('api_request', $dataRequest);
+        Log::channel('loki')->info($dataRequest, ['source' => 'api_request']);
     }
 }

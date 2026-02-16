@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TelegramUpdateDto;
-use App\Logging\LokiLogger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use phpDocumentor\Reflection\Exception;
@@ -93,7 +93,7 @@ class BotUser extends Model
 
             return $botUser ? $botUser->platform : null;
         } catch (\Throwable $e) {
-            (new LokiLogger())->sendBasicLog($e);
+            Log::channel('loki')->error('File: ' . $e->getFile() . '; Line: ' . $e->getLine() . '; Error: ' . $e->getMessage());
             return null;
         }
     }
@@ -114,7 +114,7 @@ class BotUser extends Model
 
             return $botUser->platform ?? null;
         } catch (\Throwable $e) {
-            (new LokiLogger())->sendBasicLog($e);
+            Log::channel('loki')->error('File: ' . $e->getFile() . '; Line: ' . $e->getLine() . '; Error: ' . $e->getMessage());
             return null;
         }
     }
