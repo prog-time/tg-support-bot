@@ -5,7 +5,7 @@ namespace App\Services\External;
 use App\DTOs\External\ExternalMessageDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 
 class ExternalFileService extends ExternalService
 {
@@ -37,7 +37,7 @@ class ExternalFileService extends ExternalService
 
             $this->sendDocument();
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 

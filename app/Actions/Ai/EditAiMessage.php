@@ -6,7 +6,7 @@ use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Helpers\AiHelper;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use phpDocumentor\Reflection\Exception;
@@ -93,7 +93,7 @@ class EditAiMessage
                 'incoming',
             );
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('ai_error', $e->getMessage());
+            Log::channel('loki')->error($e->getMessage(), ['source' => 'ai_error']);
         }
     }
 }
