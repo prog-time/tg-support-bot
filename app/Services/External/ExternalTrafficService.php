@@ -100,6 +100,7 @@ class ExternalTrafficService
                         'file_id' => $message->externalMessage->file_id,
                         'file_url' => !empty($message->externalMessage->file_id) ? TelegramHelper::getFilePublicPath($message->externalMessage->file_id) : null,
                         'file_type' => $message->externalMessage->file_type,
+                        'file_name' => $message->externalMessage->file_name,
                     ])->toArray();
                 }
             }

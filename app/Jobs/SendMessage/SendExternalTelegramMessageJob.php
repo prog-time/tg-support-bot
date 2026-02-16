@@ -136,6 +136,8 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
         $message->externalMessage()->create([
             'text' => $resultQuery->text,
             'file_id' => $resultQuery->fileId,
+            'file_type' => $this->updateDto->file_type ?? null,
+            'file_name' => $this->updateDto->file_name ?? null,
         ]);
     }
 

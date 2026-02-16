@@ -16,6 +16,7 @@ class ExternalMessageResponseDto extends Data
      * @param string|null $file_id
      * @param string|null $file_url
      * @param string|null $file_type
+     * @param string|null $file_name
      * @param array|null  $buttons      Buttons as ButtonDto array
      */
     public function __construct(
@@ -28,6 +29,7 @@ class ExternalMessageResponseDto extends Data
         public ?string $file_id,
         public ?string $file_url,
         public ?string $file_type,
+        public ?string $file_name = null,
         public ?array $buttons = null,
     ) {
     }
@@ -57,6 +59,7 @@ class ExternalMessageResponseDto extends Data
                 file_id: $data['file_id'] ?? null,
                 file_url: $data['file_url'] ?? null,
                 file_type: $data['file_type'] ?? null,
+                file_name: $data['file_name'] ?? null,
                 buttons: $data['buttons'] ?? null,
             );
         } catch (\Throwable $e) {
