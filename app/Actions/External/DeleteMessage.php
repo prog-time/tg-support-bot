@@ -3,8 +3,8 @@
 namespace App\Actions\External;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\Logging\LokiLogger;
 use App\Models\BotUser;
+use Illuminate\Support\Facades\Log;
 use App\Models\ExternalUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -59,7 +59,7 @@ class DeleteMessage
 
             Message::where($whereParamsMessage)->delete();
         } catch (Exception $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 }
