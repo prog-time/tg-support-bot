@@ -2,8 +2,8 @@
 
 namespace App\Services\Webhook;
 
-use App\Logging\LokiLogger;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class WebhookService
 {
@@ -23,7 +23,7 @@ class WebhookService
 
             return $response->body();
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
 
             return null;
         }

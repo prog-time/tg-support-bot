@@ -4,7 +4,7 @@ namespace App\Services\VK;
 
 use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendMessage\SendVkTelegramMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\Message;
 use App\Services\ActionService\Edit\ToTgEditService;
 
@@ -35,7 +35,7 @@ class VkEditService extends ToTgEditService
                 $this->editMessageText();
             }
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 
