@@ -69,8 +69,10 @@ class TgExternalMessageService extends FromTgMessageService
             if (!empty($this->update->fileId)) {
                 if (!empty($this->update->rawData['message']['photo'])) {
                     $fileType = 'photo';
+                    $fileName = null;
                 } else {
                     $fileType = 'document';
+                    $fileName = $this->update->rawData['message']['document']['file_name'] ?? null;
                 }
 
                 $resultData['message'] = array_merge($resultData['message'], [
@@ -78,6 +80,7 @@ class TgExternalMessageService extends FromTgMessageService
                     'file_id' => $this->update->fileId,
                     'file_url' => TelegramHelper::getFilePublicPath($this->update->fileId),
                     'file_type' => $fileType,
+                    'file_name' => $fileName,
                 ]);
             } elseif (!empty($this->update->rawData['message']['location'])) {
                 $resultData['message'] = array_merge($resultData['message'], [
@@ -205,6 +208,7 @@ class TgExternalMessageService extends FromTgMessageService
             'text' => $resultQuery->message->text ?? null,
             'file_id' => $resultQuery->message->file_id ?? null,
             'file_type' => $resultQuery->message->file_type ?? null,
+            'file_name' => $resultQuery->message->file_name ?? null,
         ]);
 
         return ExternalMessageAnswerDto::from([
@@ -219,6 +223,7 @@ class TgExternalMessageService extends FromTgMessageService
                 'file_id' => $message->externalMessage->file_id,
                 'file_url' => $message->externalMessage->file_url,
                 'file_type' => $message->externalMessage->file_type,
+                'file_name' => $message->externalMessage->file_name,
                 'buttons' => $resultQuery->message->buttons,
             ]),
         ]);
