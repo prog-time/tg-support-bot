@@ -47,7 +47,6 @@
     container.id = widgetId;
     container.setAttribute('role', 'region');
     container.setAttribute('aria-label', 'Онлайн-чат поддержки');
-    container.style.display = 'none';
 
     container.innerHTML = `
         <header class="ptw_header">
@@ -375,15 +374,14 @@
     });
 
     butWidget.addEventListener('click', () => {
-        butWidget.style.display = 'none';
-        container.style.display = 'flex';
-
-        scrollBottom()
+        butWidget.classList.add('ptw--hidden');
+        container.classList.add('ptw--open');
+        scrollBottom();
     });
 
     container.querySelector('.ptw_close_but').addEventListener('click', () => {
-        container.style.display = 'none';
-        butWidget.style.display = 'block';
+        container.classList.remove('ptw--open');
+        butWidget.classList.remove('ptw--hidden');
     });
 
     container.querySelector('.ptw_send_but').addEventListener('click', sendMessage);
