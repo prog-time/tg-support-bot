@@ -155,7 +155,9 @@
         const displayName = fileName || 'Документ';
         const label = fileName ? ext : 'Файл';
         const safeName = displayName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<div class="ptw_file_card">
+        const safeUrl = (messageData.file_url || '').replace(/"/g, '&quot;');
+        const safeDl = displayName.replace(/"/g, '&quot;');
+        return `<div class="ptw_file_card" data-file-url="${safeUrl}" data-file-name="${safeDl}">
                     <div class="ptw_file_icon" style="background:${iconColor}">${ext}</div>
                     <div class="ptw_file_info">
                         <div class="ptw_file_name">${safeName}</div>
@@ -415,6 +417,15 @@
         const img = e.target.closest('img.imageMessage');
         if (img && img.src) {
             openLightbox(img.src);
+            return;
+        }
+
+        const card = e.target.closest('.ptw_file_card');
+        if (card && card.dataset.fileUrl) {
+            const a = document.createElement('a');
+            a.href = card.dataset.fileUrl;
+            a.download = card.dataset.fileName || 'file';
+            a.click();
         }
     });
 })();

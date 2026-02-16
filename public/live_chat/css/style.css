@@ -276,6 +276,7 @@
     gap: 12px;
     max-width: 230px;
     padding: 2px 0;
+    cursor: pointer;
 }
 
 #prog-time-widget .ptw_file_icon {
