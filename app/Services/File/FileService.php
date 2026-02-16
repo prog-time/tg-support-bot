@@ -2,8 +2,8 @@
 
 namespace App\Services\File;
 
-use App\Logging\LokiLogger;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -55,7 +55,7 @@ class FileService
                 'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
             ]);
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('tg_request', $e->getMessage());
+            Log::channel('loki')->info($e->getMessage(), ['source' => 'tg_request']);
             die();
         }
     }
@@ -86,7 +86,7 @@ class FileService
                 ->header('Content-Type', $contentType)
                 ->header('Content-Disposition', 'attachment; filename="' . basename($filePath) . '"');
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('tg_request', $e->getMessage());
+            Log::channel('loki')->info($e->getMessage(), ['source' => 'tg_request']);
             die();
         }
     }
