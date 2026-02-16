@@ -4,7 +4,7 @@ namespace App\Actions\Telegram;
 
 use App\DTOs\TelegramUpdateDto;
 use App\Jobs\SendMessage\SendAiResponseMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\BotUser;
 use Exception;
 
@@ -34,7 +34,7 @@ class SendAiAnswerMessage
                 $update,
             );
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('ai_error', $e->getMessage());
+            Log::channel('loki')->error($e->getMessage(), ['source' => 'ai_error']);
         }
     }
 }

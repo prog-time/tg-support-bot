@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Actions\Telegram\GetChat;
 use App\Actions\Telegram\SendContactMessage;
-use App\Logging\LokiLogger;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\TelegramBot\TelegramMethods;
@@ -77,7 +76,7 @@ class TopicCreateJob implements ShouldQueue
                 'response' => (array)$response,
             ]);
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 

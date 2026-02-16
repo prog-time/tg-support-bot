@@ -31,6 +31,6 @@ description: Development workflow and best practices
 - Access Swagger UI through [resources/views/swagger-ui.blade.php](mdc:resources/views/swagger-ui.blade.php)
 
 ## Logging and Monitoring
-- Use [app/Logging/LokiLogger.php](mdc:app/Logging/LokiLogger.php) for centralized logging
+- Use `Log::channel('loki')` for centralized logging via [app/Logging/LokiHandler.php](mdc:app/Logging/LokiHandler.php)
 - Monitor application through [config/logging.php](mdc:config/logging.php)
 - Use [config/sentry.php](mdc:config/sentry.php) for error tracking

@@ -10,7 +10,7 @@ use App\DTOs\Vk\VkAnswerDto;
 use App\DTOs\Vk\VkTextMessageDto;
 use App\Helpers\TelegramHelper;
 use App\Jobs\SendMessage\SendVkMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Services\ActionService\Send\FromTgMessageService;
 use App\Services\Button\ButtonParser;
 use App\Services\Button\KeyboardBuilder;
@@ -46,7 +46,7 @@ class TgVkMessageService extends FromTgMessageService
 
             echo 'ok';
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 
