@@ -134,34 +134,48 @@
 
 #prog-time-widget footer.ptw_footer {
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
     border-top: 1px solid #D5D7DA;
-    padding: 14px 24px;
+    padding: 12px 16px;
 }
 
-#prog-time-widget footer.ptw_footer {
-    display: grid;
-    grid-template-columns: 1fr 40px;
-    grid-gap: 12px;
-    border-top: 1px solid #D5D7DA;
-    padding: 16px 24px;
-}
-
-#prog-time-widget .ptw_form_block {
+#prog-time-widget .ptw_input_row {
     display: flex;
-    position: relative;
+    align-items: center;
+    gap: 8px;
+}
+
+#prog-time-widget label.ptw_attach_but {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+#prog-time-widget label.ptw_attach_but:hover {
+    background: #F0F9FF;
+}
+
+#prog-time-widget .ptw_file_field {
+    display: none;
 }
 
 #prog-time-widget textarea#ptw_text_field {
-    display: flex;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     border: 1px solid #D5D7DA;
     border-radius: 8px;
-    padding: 12px 14px;
+    padding: 8px 12px;
     font-size: 15px;
     resize: none;
     font-family: "Inter", sans-serif;
+    box-sizing: border-box;
 }
 
 #prog-time-widget textarea#ptw_text_field:focus {
@@ -173,17 +187,40 @@
     font-weight: 400;
 }
 
-#prog-time-widget textarea#ptw_file_field {
+#prog-time-widget .ptw_attachments {
     display: none;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-#prog-time-widget .ptw_file_field_block {
+#prog-time-widget .ptw_attachment_item {
     display: flex;
-    position: absolute;
-    top: 10px;
-    left: auto;
-    right: 6px;
+    align-items: center;
+    gap: 4px;
+    background: #E0F2FE;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #0086C9;
+    max-width: 160px;
+}
+
+#prog-time-widget .ptw_attachment_name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+#prog-time-widget .ptw_attachment_remove {
+    background: none;
+    border: none;
+    padding: 0;
     cursor: pointer;
+    color: #0086C9;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 #prog-time-widget button.ptw_send_but {

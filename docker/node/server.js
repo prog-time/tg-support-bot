@@ -82,6 +82,27 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("send_file", async ({ name, type, data }) => {
+        try {
+            const buffer = Buffer.from(data, 'base64');
+            const blob = new Blob([buffer], { type: type || 'application/octet-stream' });
+
+            const formData = new FormData();
+            formData.append('uploaded_file', blob, name);
+
+            const urlQuery = `${domain}/api/external/${externalId}/files`;
+            await fetch(urlQuery, {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + apiToken,
+                },
+                body: formData,
+            });
+        } catch (err) {
+            console.error("Ошибка при отправке файла:", err);
+        }
+    });
+
     socket.on("disconnect", () => {
         console.log("Клиент отключился:", socket.id);
     });

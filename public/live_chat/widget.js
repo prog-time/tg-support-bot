@@ -69,17 +69,14 @@
         <main class="ptw_content_block" id="ptw_messages"></main>
 
         <footer class="ptw_footer">
-            <div class="ptw_form_block">
-                <textarea id="ptw_text_field" class="ptw_text_field" rows="1" placeholder="Введите сообщение" type="text" aria-label="Поле ввода сообщения"></textarea>
-<!--                <div class="ptw_file_field_block">-->
-<!--                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">-->
-<!--                        <path d="M13.3643 8.53806L7.14889 14.7535C6.56765 15.3347 6.56765 16.2771 7.14889 16.8584V16.8584C7.73014 17.4396 8.67252 17.4396 9.25376 16.8584L18.0481 8.06397C19.1894 6.92272 19.1899 5.07254 18.0493 3.93065V3.93065C16.9078 2.78785 15.0558 2.78732 13.9137 3.92949L4.93981 12.9033C3.23957 14.6036 3.23957 17.3602 4.93981 19.0604V19.0604C6.64004 20.7607 9.39668 20.7607 11.0969 19.0604L17.7556 12.4018" stroke="#999EA1" stroke-width="1.5" stroke-linecap="round"/>-->
-<!--                    </svg>-->
-<!--                    <input id="ptw_file_field" class="ptw_file_field" type="file" aria-label="Прикрепить файл">-->
-<!--                </div>-->
-            </div>
-
-            <div class="ptw_send_but_block">
+            <div class="ptw_input_row">
+                <label for="ptw_file_field" class="ptw_attach_but" aria-label="Прикрепить файл">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M13.3643 8.53806L7.14889 14.7535C6.56765 15.3347 6.56765 16.2771 7.14889 16.8584V16.8584C7.73014 17.4396 8.67252 17.4396 9.25376 16.8584L18.0481 8.06397C19.1894 6.92272 19.1899 5.07254 18.0493 3.93065V3.93065C16.9078 2.78785 15.0558 2.78732 13.9137 3.92949L4.93981 12.9033C3.23957 14.6036 3.23957 17.3602 4.93981 19.0604V19.0604C6.64004 20.7607 9.39668 20.7607 11.0969 19.0604L17.7556 12.4018" stroke="#999EA1" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </label>
+                <input id="ptw_file_field" class="ptw_file_field" type="file" multiple aria-label="Прикрепить файл">
+                <textarea id="ptw_text_field" class="ptw_text_field" rows="1" placeholder="Введите сообщение" aria-label="Поле ввода сообщения"></textarea>
                 <button disabled class="ptw_send_but" type="submit" aria-label="Отправить сообщение">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                         <rect width="48" height="48" rx="8" fill="#0BA5EC"/>
@@ -87,6 +84,7 @@
                     </svg>
                 </button>
             </div>
+            <div id="ptw_attachments" class="ptw_attachments"></div>
         </footer>
     `;
     document.body.appendChild(container);
@@ -154,35 +152,89 @@
         }
     }
 
-    // Send message
-    function sendTextMessage() {
+    let attachedFiles = [];
+
+    function updateSendButton() {
+        const input = container.querySelector('#ptw_text_field');
+        const hasText = input.value.trim().length > 0;
+        container.querySelector('.ptw_send_but').disabled = !hasText && attachedFiles.length === 0;
+    }
+
+    function renderAttachments() {
+        const attachmentsEl = container.querySelector('#ptw_attachments');
+        attachmentsEl.innerHTML = '';
+        attachedFiles.forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'ptw_attachment_item';
+            item.innerHTML = `
+                <span class="ptw_attachment_name">${file.name}</span>
+                <button type="button" class="ptw_attachment_remove" data-index="${index}" aria-label="Удалить файл">&times;</button>
+            `;
+            attachmentsEl.appendChild(item);
+        });
+        attachmentsEl.style.display = attachedFiles.length > 0 ? 'flex' : 'none';
+        updateSendButton();
+    }
+
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function getLocalDate() {
+        return new Date().toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        }).replace(',', '');
+    }
+
+    // Send files and text message
+    async function sendMessage() {
         const input = container.querySelector('#ptw_text_field');
         const text = input.value.trim();
-        if (!text) {
+
+        if (!text && attachedFiles.length === 0) {
             return;
         }
 
-        let messageData = {
-            message_type: 'incoming',
-            content_type: 'text',
-            text: text,
-            date: new Date().toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            }).replace(',', '')
+        const filesToSend = [...attachedFiles];
+        attachedFiles = [];
+        renderAttachments();
+
+        for (const file of filesToSend) {
+            createMessageBlock({
+                message_type: 'incoming',
+                content_type: 'file',
+                file_url: URL.createObjectURL(file),
+                text: null,
+                date: getLocalDate(),
+            });
+
+            const base64 = await readFileAsBase64(file);
+            socket.emit('send_file', { name: file.name, type: file.type, data: base64 });
         }
 
-        createMessageBlock(messageData);
+        if (text) {
+            createMessageBlock({
+                message_type: 'incoming',
+                content_type: 'text',
+                text: text,
+                date: getLocalDate(),
+            });
+            socket.emit('send_message', { text });
+            input.value = '';
+        }
 
-        scrollBottom()
-
-        socket.emit('send_message', { text });
-        input.value = '';
         container.querySelector('.ptw_send_but').disabled = true;
+        scrollBottom();
     }
 
     function isDifferentDay(date1, date2) {
@@ -261,20 +313,30 @@
         butWidget.style.display = 'block';
     });
 
-    container.querySelector('.ptw_send_but').addEventListener('click', sendTextMessage);
+    container.querySelector('.ptw_send_but').addEventListener('click', sendMessage);
     container.querySelector('#ptw_text_field').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendTextMessage();
+            sendMessage();
         }
     });
 
-    container.querySelector('.ptw_text_field').addEventListener('input', (e) => {
-        let value = e.target.value;
-        if (value.length > 0) {
-            container.querySelector('.ptw_send_but').disabled = false;
-        } else {
-            container.querySelector('.ptw_send_but').disabled = true;
+    container.querySelector('.ptw_text_field').addEventListener('input', updateSendButton);
+
+    container.querySelector('#ptw_file_field').addEventListener('change', (e) => {
+        const newFiles = Array.from(e.target.files);
+        const remaining = 5 - attachedFiles.length;
+        attachedFiles = [...attachedFiles, ...newFiles.slice(0, remaining)];
+        renderAttachments();
+        e.target.value = '';
+    });
+
+    container.querySelector('#ptw_attachments').addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.ptw_attachment_remove');
+        if (removeBtn) {
+            const index = parseInt(removeBtn.dataset.index);
+            attachedFiles.splice(index, 1);
+            renderAttachments();
         }
     });
 })();
