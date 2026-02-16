@@ -7,7 +7,7 @@ namespace App\Services\Ai;
 use App\Contracts\Ai\AiProviderInterface;
 use App\DTOs\Ai\AiRequestDto;
 use App\DTOs\Ai\AiResponseDto;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 
 class AiAssistantService
@@ -51,9 +51,7 @@ class AiAssistantService
 
             return $response;
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('ai_error', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::channel('loki')->error($e->getMessage(), ['source' => 'ai_error']);
 
             return null;
         }
