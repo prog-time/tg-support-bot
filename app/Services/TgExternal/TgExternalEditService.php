@@ -10,7 +10,7 @@ use App\DTOs\TGTextMessageDto;
 use App\Helpers\TelegramHelper;
 use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Jobs\SendWebhookMessage;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\Message;
 use App\Services\ActionService\Edit\FromTgEditService;
 
@@ -77,7 +77,7 @@ class TgExternalEditService extends FromTgEditService
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Logging\LokiLogger;
 use App\Services\Webhook\WebhookService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -43,7 +43,7 @@ class SendWebhookMessage implements ShouldQueue
 
             (new WebhookService())->sendMessage($this->url, $this->payload);
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
 
             $this->fail($e->getMessage());
         }

@@ -2,9 +2,9 @@
 
 namespace App\Middleware;
 
-use App\Logging\LokiLogger;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -44,7 +44,6 @@ class TelegramQuery
      */
     private function sendRequestInLoki(Request $request): void
     {
-        $logger = new LokiLogger();
-        $logger->log('tg_request', json_encode($request->all()));
+        Log::channel('loki')->info(json_encode($request->all()), ['source' => 'tg_request']);
     }
 }
