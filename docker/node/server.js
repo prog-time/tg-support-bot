@@ -16,6 +16,7 @@ app.use(express.json());
 
 const server = createServer(app);
 const io = new Server(server, {
+    maxHttpBufferSize: 50 * 1024 * 1024, // 50MB
     cors: {
         origin: function (origin, callback) {
             if (!origin || allowedOrigins.includes(origin)) {
@@ -84,8 +85,7 @@ io.on('connection', (socket) => {
 
     socket.on("send_file", async ({ name, type, data }) => {
         try {
-            const buffer = Buffer.from(data, 'base64');
-            const blob = new Blob([buffer], { type: type || 'application/octet-stream' });
+            const blob = new Blob([data], { type: type || 'application/octet-stream' });
 
             const formData = new FormData();
             formData.append('uploaded_file', blob, name);

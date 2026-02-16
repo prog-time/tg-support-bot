@@ -89,6 +89,38 @@
     `;
     document.body.appendChild(container);
 
+    // Lightbox
+    const lightbox = document.createElement('div');
+    lightbox.className = 'ptw_lightbox';
+    lightbox.style.display = 'none';
+    lightbox.innerHTML = `
+        <button class="ptw_lightbox_close" aria-label="Закрыть">&times;</button>
+        <img alt="Просмотр изображения">
+    `;
+    document.body.appendChild(lightbox);
+
+    const lightboxImg = lightbox.querySelector('img');
+
+    function openLightbox(src) {
+        lightboxImg.src = src;
+        lightbox.style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        lightboxImg.src = '';
+    }
+
+    lightbox.addEventListener('click', (e) => {
+        if (!e.target.closest('img')) {
+            closeLightbox();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
     // Socket.IO connection
     const socket = io(socketUrl, {
         query: { externalId }
@@ -99,6 +131,38 @@
         const [day, month, year] = datePart.split('.');
         const [hour, minute, second] = timePart.split(':');
         return new Date(year, month - 1, day, hour, minute, second);
+    }
+
+    function getFileIconColor(ext) {
+        const map = {
+            pdf: '#E53935',
+            doc: '#1565C0', docx: '#1565C0',
+            xls: '#2E7D32', xlsx: '#2E7D32', csv: '#2E7D32',
+            ppt: '#E64A19', pptx: '#E64A19',
+            zip: '#6A1B9A', rar: '#6A1B9A', '7z': '#6A1B9A',
+            mp3: '#AD1457', wav: '#AD1457', ogg: '#AD1457', m4a: '#AD1457',
+            mp4: '#1565C0', avi: '#1565C0', mov: '#1565C0', mkv: '#1565C0',
+            txt: '#546E7A',
+        };
+        return map[ext.toLowerCase()] || '#42A5F5';
+    }
+
+    function createFileCardHTML(messageData) {
+        const fileName = messageData.file_name || '';
+        const ext = fileName.includes('.')
+            ? fileName.split('.').pop().toUpperCase().slice(0, 4)
+            : 'DOC';
+        const iconColor = getFileIconColor(ext);
+        const displayName = fileName || 'Документ';
+        const label = fileName ? ext : 'Файл';
+        const safeName = displayName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<div class="ptw_file_card">
+                    <div class="ptw_file_icon" style="background:${iconColor}">${ext}</div>
+                    <div class="ptw_file_info">
+                        <div class="ptw_file_name">${safeName}</div>
+                        <div class="ptw_file_label">${label}</div>
+                    </div>
+                </div>`;
     }
 
     // Create message in DOM
@@ -116,7 +180,13 @@
         let content = `<div class="contentBlock">`
 
         if (messageData.content_type === 'file') {
-            content += `<img class="imageMessage" src="${messageData.file_url}" />`
+            const isImage = messageData.file_type === 'photo'
+                || (messageData.mime_type && messageData.mime_type.startsWith('image/'));
+            if (isImage) {
+                content += `<img class="imageMessage" src="${messageData.file_url}" />`
+            } else {
+                content += createFileCardHTML(messageData);
+            }
         }
 
         if (messageData.text) {
@@ -176,12 +246,12 @@
         updateSendButton();
     }
 
-    function readFileAsBase64(file) {
+    function readFileAsArrayBuffer(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onload = () => resolve(reader.result);
             reader.onerror = reject;
-            reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
         });
     }
 
@@ -214,12 +284,15 @@
                 message_type: 'incoming',
                 content_type: 'file',
                 file_url: URL.createObjectURL(file),
+                file_type: file.type.startsWith('image/') ? 'photo' : 'document',
+                file_name: file.name,
+                mime_type: file.type,
                 text: null,
                 date: getLocalDate(),
             });
 
-            const base64 = await readFileAsBase64(file);
-            socket.emit('send_file', { name: file.name, type: file.type, data: base64 });
+            const buffer = await readFileAsArrayBuffer(file);
+            socket.emit('send_file', { name: file.name, type: file.type, data: buffer });
         }
 
         if (text) {
@@ -337,6 +410,13 @@
             const index = parseInt(removeBtn.dataset.index);
             attachedFiles.splice(index, 1);
             renderAttachments();
+        }
+    });
+
+    container.querySelector('#ptw_messages').addEventListener('click', (e) => {
+        const img = e.target.closest('img.imageMessage');
+        if (img && img.src) {
+            openLightbox(img.src);
         }
     });
 })();
