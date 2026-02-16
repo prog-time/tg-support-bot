@@ -5,7 +5,7 @@ namespace App\Services\Tg;
 use App\Actions\Telegram\ConversionMessageText;
 use App\DTOs\TelegramUpdateDto;
 use App\Jobs\SendMessage\SendTelegramMessageJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\Message;
 use App\Services\ActionService\Send\FromTgMessageService;
 use App\Services\Button\ButtonParser;
@@ -55,7 +55,7 @@ class TgMessageService extends FromTgMessageService
                 $this->typeMessage,
             );
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 
@@ -83,7 +83,7 @@ class TgMessageService extends FromTgMessageService
                 ];
             }
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 
