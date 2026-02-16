@@ -4,7 +4,7 @@ namespace App\Jobs\SendMessage;
 
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\Vk\VkTextMessageDto;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\VkBot\VkMethods;
@@ -58,7 +58,7 @@ class SendVkMessageJob extends AbstractSendMessageJob
 
             throw new \Exception('SendVkMessageJob: unknown error', 1);
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 

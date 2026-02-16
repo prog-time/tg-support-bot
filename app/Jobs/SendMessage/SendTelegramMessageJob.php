@@ -6,7 +6,7 @@ use App\DTOs\TelegramAnswerDto;
 use App\DTOs\TelegramUpdateDto;
 use App\DTOs\TGTextMessageDto;
 use App\Jobs\TopicCreateJob;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\TelegramBot\TelegramMethods;
@@ -101,7 +101,7 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
                 $this->telegramResponseHandler($response);
             }
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
     }
 
