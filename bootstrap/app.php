@@ -1,11 +1,12 @@
 <?php
 
-use App\Logging\LokiLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Sentry\Laravel\Integration;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -31,7 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
          * Sending log in Loki
          */
         $exceptions->render(function (Throwable $e, Request $request) {
-            (new LokiLogger())->sendBasicLog($e);
+            if ($e instanceof HttpExceptionInterface || $e instanceof RouteNotFoundException) {
+                return null;
+            }
+
+            Log::channel('loki')->error('File: ' . $e->getFile() . '; Line: ' . $e->getLine() . '; Error: ' . $e->getMessage());
+
             if (env('APP_DEBUG') === false) {
                 return response('ok', 200);
             }

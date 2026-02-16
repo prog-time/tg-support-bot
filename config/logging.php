@@ -63,7 +63,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => env('LOG_STACK', 'single'),
+            'channels' => explode(',', env('LOG_STACK', 'single,loki')),
             'ignore_exceptions' => false,
         ],
 
@@ -137,8 +137,12 @@ return [
         ],
 
         'loki' => [
-            'driver' => 'custom',
-            'via' => \App\Logging\LokiLogger::class,
+            'driver' => 'monolog',
+            'handler' => \App\Logging\LokiHandler::class,
+            'handler_with' => [
+                'url' => env('LOKI_URL_PUSH', 'http://loki:3100/loki/api/v1/push'),
+            ],
+            'level' => env('LOG_LEVEL', 'debug'),
         ],
     ],
 
