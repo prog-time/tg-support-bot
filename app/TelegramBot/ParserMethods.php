@@ -2,9 +2,9 @@
 
 namespace App\TelegramBot;
 
-use App\Logging\LokiLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use phpDocumentor\Reflection\Exception as phpDocumentorException;
 
@@ -33,7 +33,7 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,
@@ -70,7 +70,7 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,
@@ -130,7 +130,7 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            (new LokiLogger())->logException($e);
+            Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,

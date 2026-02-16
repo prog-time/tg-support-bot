@@ -6,7 +6,7 @@ namespace App\Services\Ai;
 
 use App\DTOs\Ai\AiRequestDto;
 use App\DTOs\Ai\AiResponseDto;
-use App\Logging\LokiLogger;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use phpDocumentor\Reflection\Exception;
 
@@ -35,8 +35,8 @@ class OpenAiProvider extends BaseAiProvider
 
             return $this->parseApiResponse($response, $request);
         } catch (\Throwable $e) {
-            (new LokiLogger())->log('ai_error', [
-                'error' => $e->getMessage(),
+            Log::channel('loki')->error($e->getMessage(), [
+                'source' => 'ai_error',
                 'user_id' => $request->userId,
                 'platform' => $request->platform,
             ]);
