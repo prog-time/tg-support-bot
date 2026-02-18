@@ -1,10 +1,22 @@
 {
-    "/api/external/messages/": {
+    "/api/external/{external_id}/messages/": {
         "get": {
             "summary": "Получение списка сообщений",
             "operationId": "api_external_messages_index",
             "tags": [
                 "External Messages"
+            ],
+            "parameters": [
+                {
+                    "name": "external_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Внешний идентификатор пользователя",
+                    "example": "u123"
+                }
             ],
             "requestBody": {
                 "required": true,

@@ -1,14 +1,46 @@
 {
-    "/api/external/messages/{id_message}": {
+    "/api/external/{external_id}/messages/{id_message}": {
         "get": {
             "summary": "Получение сообщения по ID",
             "operationId": "api_external_messages_show",
             "tags": [
                 "External Messages"
             ],
+            "parameters": [
+                {
+                    "name": "external_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Внешний идентификатор пользователя",
+                    "example": "u123"
+                },
+                {
+                    "name": "id_message",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    },
+                    "description": "ID сообщения",
+                    "example": 123456
+                }
+            ],
             "responses": {
                 "200": {
-                    "description": "Сообщение успешно получено"
+                    "description": "Сообщение успешно получено",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_show_response_200"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Сообщение не найдено!"
                 }
             }
         }

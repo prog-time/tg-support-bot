@@ -1,10 +1,22 @@
 {
-    "/api/external/messages/": {
+    "/api/external/{external_id}/messages/": {
         "delete": {
-            "summary": "@lang(swagger.summary.delete_message)",
+            "summary": "Удаление сообщения",
             "operationId": "api_external_messages_delete",
             "tags": [
                 "External Messages"
+            ],
+            "parameters": [
+                {
+                    "name": "external_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Внешний идентификатор пользователя",
+                    "example": "u123"
+                }
             ],
             "requestBody": {
                 "required": true,
@@ -22,7 +34,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/api_external_messages_store_response_200"
+                                "$ref": "#/components/schemas/api_external_messages_delete_response_200"
                             }
                         }
                     }
