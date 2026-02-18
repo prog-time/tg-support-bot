@@ -1,9 +1,10 @@
 {
-    "api_external_messages_store": {
+    "api_external_files_store": {
         "type": "object",
         "required": [
             "source",
-            "external_id"
+            "external_id",
+            "uploaded_file"
         ],
         "properties": {
             "source": {
@@ -14,9 +15,10 @@
                 "type": "string",
                 "example": "u123"
             },
-            "text": {
+            "uploaded_file": {
                 "type": "string",
-                "example": "Привет"
+                "format": "binary",
+                "description": "Файл для отправки"
             }
         }
     }

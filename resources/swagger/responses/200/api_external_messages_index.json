@@ -2,6 +2,10 @@
     "api_external_messages_index_response_200": {
         "type": "object",
         "properties": {
+            "status": {
+                "type": "boolean",
+                "example": true
+            },
             "source": {
                 "type": "string",
                 "example": "live_chat"
@@ -15,21 +19,48 @@
                 "items": {
                     "type": "object",
                     "properties": {
-                        "message_id": {
-                            "type": "integer",
-                            "example": 1
-                        },
                         "message_type": {
                             "type": "string",
                             "example": "incoming"
                         },
+                        "to_id": {
+                            "type": "integer",
+                            "example": 123
+                        },
+                        "from_id": {
+                            "type": "integer",
+                            "example": 456
+                        },
                         "text": {
                             "type": "string",
-                            "example": "Hello"
+                            "example": "Привет"
                         },
                         "date": {
                             "type": "string",
-                            "example": "2021-01-01 00:00:00"
+                            "example": "01.01.2021 00:00:00"
+                        },
+                        "content_type": {
+                            "type": "string",
+                            "example": "text",
+                            "description": "Тип содержимого: text или file"
+                        },
+                        "file_id": {
+                            "type": "string",
+                            "example": "BQACAgIAAx0CAgAB"
+                        },
+                        "file_url": {
+                            "type": "string",
+                            "format": "uri",
+                            "example": "https://tg-support-bot.ru/api/files/BQACAgIAAx0CAgAB"
+                        },
+                        "file_type": {
+                            "type": "string",
+                            "example": "photo",
+                            "description": "Тип файла: photo или document"
+                        },
+                        "file_name": {
+                            "type": "string",
+                            "example": "image.jpg"
                         }
                     }
                 }

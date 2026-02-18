@@ -6,7 +6,18 @@
             "tags": [
                 "Files"
             ],
-            "requestBody": {},
+            "parameters": [
+                {
+                    "name": "file_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Telegram File ID",
+                    "example": "BQACAgIAAx0CAgAB"
+                }
+            ],
             "responses": {
                 "200": {
                     "description": "Файл получен!"

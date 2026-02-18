@@ -1,0 +1,39 @@
+{
+    "api_external_messages_show_response_200": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "integer",
+                "example": 1
+            },
+            "message_type": {
+                "type": "string",
+                "example": "incoming"
+            },
+            "platform": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "bot_user_id": {
+                "type": "integer",
+                "example": 42
+            },
+            "to_id": {
+                "type": "integer",
+                "example": 123
+            },
+            "from_id": {
+                "type": "integer",
+                "example": 456
+            },
+            "created_at": {
+                "type": "string",
+                "example": "2021-01-01T00:00:00.000000Z"
+            },
+            "updated_at": {
+                "type": "string",
+                "example": "2021-01-01T00:00:00.000000Z"
+            }
+        }
+    }
+}

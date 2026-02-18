@@ -20,11 +20,16 @@
             },
             "limit": {
                 "type": "integer",
-                "example": "10"
+                "example": 10
             },
             "offset": {
                 "type": "integer",
-                "example": "10"
+                "example": 10
+            },
+            "after_id": {
+                "type": "integer",
+                "example": 100,
+                "description": "Получить сообщения после указанного ID"
             },
             "date_start": {
                 "type": "string",

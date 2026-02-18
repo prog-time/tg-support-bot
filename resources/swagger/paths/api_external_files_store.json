@@ -1,8 +1,8 @@
 {
-    "/api/external/{external_id}/messages/": {
-        "put": {
-            "summary": "Редактирование сообщения",
-            "operationId": "api_external_messages_update",
+    "/api/external/{external_id}/files/": {
+        "post": {
+            "summary": "Отправка файла",
+            "operationId": "api_external_files_store",
             "tags": [
                 "External Messages"
             ],
@@ -21,23 +21,16 @@
             "requestBody": {
                 "required": true,
                 "content": {
-                    "application/json": {
+                    "multipart/form-data": {
                         "schema": {
-                            "$ref": "#/components/schemas/api_external_messages_update"
+                            "$ref": "#/components/schemas/api_external_files_store"
                         }
                     }
                 }
             },
             "responses": {
                 "200": {
-                    "description": "Сообщение успешно изменено!",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/api_external_messages_update_response_200"
-                            }
-                        }
-                    }
+                    "description": "Файл успешно отправлен!"
                 }
             }
         }
