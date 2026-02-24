@@ -62,8 +62,8 @@ class SendContactMessage
                 $chat = GetChat::execute($chatId);
                 $chatData = $chat->rawData;
                 if (!empty($chatData['result']['username'])) {
-                    $textMessage .= "Пользователь: <code>{$chatData['result']['username']}</code> \n";
                     $link = "https://telegram.me/{$chatData['result']['username']}";
+                    $textMessage .= "Пользователь: <code>{$chatData['result']['username']}</code> \n";
                     $textMessage .= "Ссылка: {$link} \n";
                 }
             }
