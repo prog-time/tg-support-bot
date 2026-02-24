@@ -56,12 +56,13 @@ class SendContactMessage
         try {
             $textMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
             $textMessage .= "Источник: {$platform} \n";
-            $textMessage .= "ID: {$chatId} \n";
+            $textMessage .= "ID: <code>{$chatId}</code> \n";
 
             if ($platform === 'telegram') {
                 $chat = GetChat::execute($chatId);
                 $chatData = $chat->rawData;
                 if (!empty($chatData['result']['username'])) {
+                    $textMessage .= "Пользователь: <code>{$chatData['result']['username']}</code> \n";
                     $link = "https://telegram.me/{$chatData['result']['username']}";
                     $textMessage .= "Ссылка: {$link} \n";
                 }
