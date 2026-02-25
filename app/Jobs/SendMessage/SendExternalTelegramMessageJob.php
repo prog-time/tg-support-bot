@@ -56,6 +56,16 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
             if ($this->typeMessage === 'incoming') {
                 if ($botUser->topic_id) {
                     $params['message_thread_id'] = $botUser->topic_id;
+                    if ($botUser->isClosed()) {
+                        $this->telegramMethods->sendQueryTelegram(
+                            'reopenForumTopic',
+                            [
+                                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                                'message_thread_id' => $botUser->topic_id,
+                            ]
+                        );
+                        $botUser->update(['is_closed' => false, 'closed_at' => null]);
+                    }
                 } else {
                     TopicCreateJob::withChain([
                         new SendExternalTelegramMessageJob(
