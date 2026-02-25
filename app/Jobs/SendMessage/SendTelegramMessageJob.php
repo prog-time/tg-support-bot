@@ -61,13 +61,15 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
                         ]
                     );
 
-                    $response = $this->telegramMethods->sendQueryTelegram(
-                        'reopenForumTopic',
-                        [
-                            'chat_id' => config('traffic_source.settings.telegram.group_id'),
-                            'message_thread_id' => $botUser->topic_id,
-                        ]
-                    );
+                    if ($botUser->isClosed()) {
+                        $response = $this->telegramMethods->sendQueryTelegram(
+                            'reopenForumTopic',
+                            [
+                                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                                'message_thread_id' => $botUser->topic_id,
+                            ]
+                        );
+                    }
 
                     if ($response->isTopicNotFound) {
                         $botUser->update([
@@ -77,6 +79,9 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
                         $botUser->refresh();
                     } else {
                         $params['message_thread_id'] = $botUser->topic_id;
+                        if ($botUser->isClosed()) {
+                            $botUser->update(['is_closed' => false, 'closed_at' => null]);
+                        }
                     }
                 }
 
