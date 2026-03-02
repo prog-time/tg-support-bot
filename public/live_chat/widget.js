@@ -297,12 +297,6 @@
         }
 
         if (text) {
-            createMessageBlock({
-                message_type: 'incoming',
-                content_type: 'text',
-                text: text,
-                date: getLocalDate(),
-            });
             socket.emit('send_message', { text });
             input.value = '';
         }
@@ -350,20 +344,24 @@
 
     // Get message
     socket.on("history_messages", (messagesList) => {
+        const messagesContainer = container.querySelector('#ptw_messages');
+        messagesContainer.innerHTML = '';
+        if (!Array.isArray(messagesList) || messagesList.length === 0) return;
         let statusChangeDate = false
         let prevDate = null
-        for (let item in messagesList) {
-            let currentDate = parseDateString(messagesList[item].date)
+        for (let item of messagesList) {
+            let currentDate = parseDateString(item.date)
 
             statusChangeDate = isDifferentDay(prevDate, currentDate)
             if (statusChangeDate) {
                 createLineBlock(currentDate)
             }
 
-            createMessageBlock(messagesList[item]);
+            createMessageBlock(item);
 
-            prevDate = parseDateString(messagesList[item].date)
+            prevDate = parseDateString(item.date)
         }
+        scrollBottom();
     });
 
     socket.on("receive_message", (messageData) => {

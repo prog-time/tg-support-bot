@@ -19,7 +19,7 @@
 
 <!-- Скрипты для виджета -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="https://tg-support-bot.ru/live_chat/dist/widget.js" defer></script>
+<script src="https://tg-support-bot.ru/live_chat/dist/widget.js?token=preview" defer></script>
 
 </body>
 </html>
