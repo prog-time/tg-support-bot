@@ -5,7 +5,7 @@ namespace Tests\Unit\Services\TgVk;
 use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\Services\TgVk\TgVkEditService;
+use App\Modules\Telegram\Services\TgVk\TgVkEditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
