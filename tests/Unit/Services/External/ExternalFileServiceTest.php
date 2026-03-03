@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Services\External;
 
-use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
+use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
 use App\Services\External\ExternalFileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;

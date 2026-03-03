@@ -4,10 +4,10 @@ namespace App\Actions\External;
 
 use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
-use Illuminate\Support\Facades\Log;
 use App\Models\ExternalUser;
 use App\Models\Message;
-use App\TelegramBot\TelegramMethods;
+use App\Modules\Telegram\Api\TelegramMethods;
+use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
 /**

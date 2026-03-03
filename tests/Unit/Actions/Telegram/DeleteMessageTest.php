@@ -2,14 +2,13 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\DeleteMessage;
-use App\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Actions\DeleteMessage;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class DeleteMessageTest extends TestCase
 {
-
     public function test_execute_returns_telegram_answer_dto_on_success(): void
     {
         Http::fake([

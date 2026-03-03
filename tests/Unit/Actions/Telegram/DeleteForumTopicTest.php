@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\DeleteForumTopic;
 use App\Models\BotUser;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

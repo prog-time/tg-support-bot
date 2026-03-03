@@ -3,8 +3,8 @@
 namespace App\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
 use Illuminate\Support\Facades\Log;
 
 class ExternalFileService extends ExternalService
