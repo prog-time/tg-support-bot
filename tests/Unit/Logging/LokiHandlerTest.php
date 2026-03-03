@@ -26,7 +26,7 @@ class LokiHandlerTest extends TestCase
             )
             ->andReturn(new Response(204));
 
-        $handler = new class('http://loki-test.com', Level::Debug, true) extends LokiHandler {
+        $handler = new class ('http://loki-test.com', Level::Debug, true) extends LokiHandler {
             /** @param Client&\Mockery\MockInterface $client */
             public function setClient(Client $client): void
             {
@@ -64,7 +64,7 @@ class LokiHandlerTest extends TestCase
             })
             ->andReturn(new Response(204));
 
-        $handler = new class('http://loki-test.com', Level::Debug, true) extends LokiHandler {
+        $handler = new class ('http://loki-test.com', Level::Debug, true) extends LokiHandler {
             /** @param Client&\Mockery\MockInterface $client */
             public function setClient(Client $client): void
             {
@@ -104,7 +104,7 @@ class LokiHandlerTest extends TestCase
             ->once()
             ->andThrow(new \RuntimeException('Connection refused'));
 
-        $handler = new class('http://loki-test.com', Level::Debug, true) extends LokiHandler {
+        $handler = new class ('http://loki-test.com', Level::Debug, true) extends LokiHandler {
             /** @param Client&\Mockery\MockInterface $client */
             public function setClient(Client $client): void
             {

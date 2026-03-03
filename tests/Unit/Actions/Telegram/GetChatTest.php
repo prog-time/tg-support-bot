@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\GetChat;
-use App\DTOs\TelegramAnswerDto;
+use App\Modules\Telegram\Actions\GetChat;
+use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;

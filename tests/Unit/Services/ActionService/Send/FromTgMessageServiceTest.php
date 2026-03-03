@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\ActionService\Send;
 
-use App\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Request;
 use Tests\Stubs\Services\ActionService\Send\FromTgMessageServiceStub;

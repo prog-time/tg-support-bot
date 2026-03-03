@@ -2,9 +2,9 @@
 
 namespace Tests\Traits;
 
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
+use App\Modules\Telegram\DTOs\TelegramAnswerDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
 
 trait HasGettersForHasTemplate
 {

@@ -2,7 +2,7 @@
 
 namespace Tests\Stubs\Services\ActionService\Edit;
 
-use App\Services\ActionService\Edit\TemplateEditService;
+use App\Modules\Telegram\Services\ActionService\Edit\TemplateEditService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class FromTgEditServiceStub extends TemplateEditService
