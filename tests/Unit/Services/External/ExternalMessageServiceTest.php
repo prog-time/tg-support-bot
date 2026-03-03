@@ -3,8 +3,8 @@
 namespace Tests\Unit\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
 use App\Services\External\ExternalMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;

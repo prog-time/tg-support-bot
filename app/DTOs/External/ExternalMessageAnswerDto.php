@@ -7,15 +7,15 @@ use Spatie\LaravelData\Data;
 /**
  * DTO for API message response.
  *
- * @property bool $status
- * @property int|null $message_id
+ * @property bool        $status
+ * @property int|null    $message_id
  * @property string|null $error
  */
 class ExternalMessageAnswerDto extends Data
 {
     /**
-     * @param bool $status
-     * @param string|null $error
+     * @param bool                            $status
+     * @param string|null                     $error
      * @param ExternalMessageResponseDto|null $result
      */
     public function __construct(
@@ -30,7 +30,6 @@ class ExternalMessageAnswerDto extends Data
      */
     public function toArray(): array
     {
-        return array_filter(parent::toArray(), fn($value) => !is_null($value));
+        return array_filter(parent::toArray(), fn ($value) => !is_null($value));
     }
-
 }

@@ -3,9 +3,9 @@
 namespace App\Services\External;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
 
 abstract class ExternalService
 {

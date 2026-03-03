@@ -6,7 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ExternalTrafficStoreRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
         return true;
@@ -26,5 +25,4 @@ class ExternalTrafficStoreRequest extends FormRequest
             'attachment' => 'nullable|array',
         ];
     }
-
 }

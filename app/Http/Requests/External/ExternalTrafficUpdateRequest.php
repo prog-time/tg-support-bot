@@ -6,7 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ExternalTrafficUpdateRequest extends FormRequest
 {
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -29,5 +28,4 @@ class ExternalTrafficUpdateRequest extends FormRequest
             'external_id.required' => 'The external_id field is required',
         ];
     }
-
 }
