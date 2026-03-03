@@ -31,7 +31,8 @@ class SendStartMessageTest extends TestCase
         $botUser = BotUser::getOrCreateByTelegramUpdate($dto);
 
         // Act
-        (new SendStartMessage())->execute($dto);
+        $action = app(SendStartMessage::class);
+        $action->handle($dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
@@ -57,7 +58,8 @@ class SendStartMessageTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($dtoUpdateParams);
         BotUser::getOrCreateByTelegramUpdate($dto);
 
-        (new SendStartMessage())->execute($dto);
+        $action = app(SendStartMessage::class);
+        $action->handle($dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
