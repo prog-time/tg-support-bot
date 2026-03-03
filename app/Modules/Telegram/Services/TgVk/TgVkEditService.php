@@ -31,8 +31,6 @@ class TgVkEditService extends FromTgEditService
             } else {
                 $this->editMessageText();
             }
-
-            echo 'ok';
         } catch (\Throwable $e) {
             Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }

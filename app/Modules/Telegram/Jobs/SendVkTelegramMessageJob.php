@@ -19,19 +19,21 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
 
     public int $botUserId;
 
+    /** @var VkUpdateDto */
     public mixed $updateDto;
 
+    /** @var TGTextMessageDto */
     public mixed $queryParams;
 
     public string $typeMessage = 'incoming';
 
-    private mixed $telegramMethods;
+    private TelegramMethods $telegramMethods;
 
     public function __construct(
         int $botUserId,
         VkUpdateDto $updateDto,
         TGTextMessageDto $queryParams,
-        mixed $telegramMethods = null,
+        ?TelegramMethods $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
@@ -75,7 +77,6 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
                         $this->botUserId,
                         $this->updateDto,
                         $this->queryParams,
-                        $this->typeMessage
                     ),
                 ])->dispatch($this->botUserId);
                 return;

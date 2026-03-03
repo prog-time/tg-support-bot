@@ -43,8 +43,6 @@ class TgVkMessageService extends FromTgMessageService
             } elseif (!empty($this->update->text)) {
                 $this->sendMessage();
             }
-
-            echo 'ok';
         } catch (\Throwable $e) {
             Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
