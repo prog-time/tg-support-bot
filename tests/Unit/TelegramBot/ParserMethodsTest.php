@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\TelegramBot;
 
-use App\TelegramBot\ParserMethods;
+use App\Modules\Telegram\Api\ParserMethods;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

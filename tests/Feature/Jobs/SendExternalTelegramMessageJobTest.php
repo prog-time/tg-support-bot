@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Actions\Telegram\DeleteForumTopic;
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendExternalTelegramMessageJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;

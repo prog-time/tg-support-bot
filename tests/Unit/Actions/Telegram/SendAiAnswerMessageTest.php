@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\SendAiAnswerMessage;
-use App\Jobs\SendMessage\SendAiResponseMessageJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Actions\SendAiAnswerMessage;
+use App\Modules\Telegram\Jobs\SendAiResponseMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
