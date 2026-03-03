@@ -3,10 +3,10 @@
 namespace Tests\Unit\Actions\Ai;
 
 use App\Actions\Ai\AiAcceptMessage;
-use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdate_AiButtonAction;
