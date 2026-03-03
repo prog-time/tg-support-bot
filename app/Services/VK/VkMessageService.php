@@ -2,12 +2,12 @@
 
 namespace App\Services\VK;
 
-use App\DTOs\TGTextMessageDto;
 use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendMessage\SendVkTelegramMessageJob;
-use Illuminate\Support\Facades\Log;
 use App\Models\BotUser;
-use App\Services\ActionService\Send\ToTgMessageService;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Telegram\Services\ActionService\Send\ToTgMessageService;
+use Illuminate\Support\Facades\Log;
 
 class VkMessageService extends ToTgMessageService
 {
@@ -45,7 +45,6 @@ class VkMessageService extends ToTgMessageService
             } elseif (!empty($this->update->geo)) {
                 $this->sendLocation();
             }
-
         } catch (\Throwable $e) {
             Log::channel('loki')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }

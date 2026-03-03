@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Services\VK;
 
-use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
 use App\Services\VK\VkEditService;
 use App\Services\VK\VkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

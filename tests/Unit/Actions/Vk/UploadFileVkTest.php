@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Actions\Vk;
 
-use App\Actions\Telegram\GetFile;
 use App\Actions\Vk\GetMessagesUploadServerVk;
 use App\Actions\Vk\UploadFileVk;
 use App\Helpers\TelegramHelper;
+use App\Modules\Telegram\Actions\GetFile;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;

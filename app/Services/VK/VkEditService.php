@@ -3,10 +3,10 @@
 namespace App\Services\VK;
 
 use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendMessage\SendVkTelegramMessageJob;
-use Illuminate\Support\Facades\Log;
 use App\Models\Message;
-use App\Services\ActionService\Edit\ToTgEditService;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Telegram\Services\ActionService\Edit\ToTgEditService;
+use Illuminate\Support\Facades\Log;
 
 class VkEditService extends ToTgEditService
 {

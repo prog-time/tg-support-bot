@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Services\VK;
 
-use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
 use App\Services\VK\VkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
