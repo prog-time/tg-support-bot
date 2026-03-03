@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\BannedContactMessage;
-use App\Jobs\SendTelegramSimpleQueryJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\Telegram\Actions\BannedContactMessage;
+use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

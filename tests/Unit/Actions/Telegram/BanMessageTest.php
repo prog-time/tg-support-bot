@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\BanMessage;
-use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Actions\BanMessage;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;

@@ -9,13 +9,13 @@ class AiRequestDto
     /**
      * AI request DTO constructor.
      *
-     * @param string $message User message
-     * @param int $userId User ID
-     * @param string $platform Platform (telegram, vk, etc.)
-     * @param array $context Previous messages context
-     * @param string $provider AI provider to use
-     * @param float|null $maxConfidence Maximum confidence for auto-reply
-     * @param bool $forceEscalation Force escalation to operator
+     * @param string     $message         User message
+     * @param int        $userId          User ID
+     * @param string     $platform        Platform (telegram, vk, etc.)
+     * @param array      $context         Previous messages context
+     * @param string     $provider        AI provider to use
+     * @param float|null $maxConfidence   Maximum confidence for auto-reply
+     * @param bool       $forceEscalation Force escalation to operator
      */
     public function __construct(
         public readonly string $message,
@@ -32,6 +32,7 @@ class AiRequestDto
      * Create DTO from data array.
      *
      * @param array $data Data array
+     *
      * @return self
      */
     public static function fromArray(array $data): self

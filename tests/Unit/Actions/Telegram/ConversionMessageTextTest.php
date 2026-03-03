@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Actions\Telegram;
 
-use App\Actions\Telegram\ConversionMessageText;
+use App\Modules\Telegram\Actions\ConversionMessageText;
 use Tests\TestCase;
 
 class ConversionMessageTextTest extends TestCase

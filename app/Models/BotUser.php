@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
 /**
