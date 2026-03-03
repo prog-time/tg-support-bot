@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendAiResponseMessageJob;
-use App\Jobs\SendMessage\SendAiTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendAiResponseMessageJob;
+use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
@@ -14,6 +14,8 @@ use Tests\TestCase;
 
 class SendAiResponseMessageJobTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $baseProviderUrl;
@@ -21,8 +23,6 @@ class SendAiResponseMessageJobTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-
-        Message::truncate();
 
         Queue::fake();
 
@@ -43,6 +43,10 @@ class SendAiResponseMessageJobTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($dtoParams);
 
         Http::fake([
+            'https://ngw.devices.sberbank.ru:9443/api/v2/oauth' => Http::response([
+                'access_token' => 'test_access_token',
+                'expires_at' => time() + 3600,
+            ], 200),
             $this->baseProviderUrl . '/chat/completions' => Http::response([
                 'choices' => [
                     [
