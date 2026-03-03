@@ -3,8 +3,8 @@
 namespace Tests\Mocks\Tg;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Support\Facades\Request;
 
 class TelegramUpdateDto_ExternalMock

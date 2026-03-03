@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\TelegramBot;
 
-use App\TelegramBot\TelegramMethods;
+use App\Modules\Telegram\Api\TelegramMethods;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
