@@ -2,9 +2,9 @@
 
 namespace Tests\Mocks\Tg\Answer;
 
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
+use App\Modules\Telegram\DTOs\TelegramAnswerDto;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 
 class TelegramAnswerDtoMock extends TelegramUpdateDto
 {
