@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SimplePage;
 use App\Http\Controllers\SwaggerController;
-use App\Http\Controllers\PreviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::group([
