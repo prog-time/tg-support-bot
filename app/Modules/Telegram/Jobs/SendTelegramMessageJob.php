@@ -19,20 +19,22 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
 
     public int $botUserId;
 
+    /** @var TelegramUpdateDto */
     public mixed $updateDto;
 
+    /** @var TGTextMessageDto */
     public mixed $queryParams;
 
     public string $typeMessage;
 
-    private mixed $telegramMethods;
+    private TelegramMethods $telegramMethods;
 
     public function __construct(
         int $botUserId,
         TelegramUpdateDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
-        mixed $telegramMethods = null,
+        ?TelegramMethods $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;

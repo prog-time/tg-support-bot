@@ -23,6 +23,7 @@ class SendTelegramSimpleQueryJob extends AbstractSendMessageJob
 
     public int $timeout = 20;
 
+    /** @var TGTextMessageDto */
     public mixed $queryParams;
 
     public function __construct(
