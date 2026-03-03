@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Services\Tg;
 
-use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\Services\Tg\TgEditMessageService;
-use App\Services\Tg\TgMessageService;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Services\Tg\TgEditMessageService;
+use App\Modules\Telegram\Services\Tg\TgMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;

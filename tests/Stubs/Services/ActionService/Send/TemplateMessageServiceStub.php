@@ -2,7 +2,7 @@
 
 namespace Tests\Stubs\Services\ActionService\Send;
 
-use App\Services\ActionService\Send\TemplateMessageService;
+use App\Modules\Telegram\Services\ActionService\Send\TemplateMessageService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class TemplateMessageServiceStub extends TemplateMessageService

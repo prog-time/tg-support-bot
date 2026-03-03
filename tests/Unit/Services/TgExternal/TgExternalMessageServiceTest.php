@@ -6,7 +6,7 @@ use App\DTOs\External\ExternalMessageDto;
 use App\Jobs\SendWebhookMessage;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\Services\TgExternal\TgExternalMessageService;
+use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;

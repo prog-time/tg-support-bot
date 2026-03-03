@@ -2,9 +2,9 @@
 
 namespace Tests\Stubs\Services\ActionService\Edit;
 
-use App\DTOs\TGTextMessageDto;
 use App\Models\BotUser;
-use App\Services\ActionService\Edit\TemplateEditService;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Services\ActionService\Edit\TemplateEditService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class TemplateEditServiceStub extends TemplateEditService
