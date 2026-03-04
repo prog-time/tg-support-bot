@@ -24,8 +24,6 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
 
     public string $typeMessage = 'incoming';
 
-    private mixed $telegramMethods;
-
     public string $managerTextMessage;
 
     public string $aiTextMessage;
@@ -35,18 +33,18 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
         TelegramUpdateDto $updateDto,
         string $managerTextMessage,
         string $aiTextMessage,
-        mixed $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->managerTextMessage = $managerTextMessage;
         $this->aiTextMessage = $aiTextMessage;
-
-        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
-    public function handle(): void
+    public function handle(?TelegramMethods $telegramMethods = null, ?AiAssistantService $aiService = null): void
     {
+        $telegramMethods ??= app(TelegramMethods::class);
+        $aiService ??= app(AiAssistantService::class);
+
         try {
             $botUser = BotUser::find($this->botUserId);
 
@@ -55,7 +53,6 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                 throw new \Exception('Message is empty!', 1);
             }
 
-            $aiService = new AiAssistantService();
             $aiResponse = $aiService->processMessage(new AiRequestDto(
                 message: $managerTextMessage,
                 userId: $this->botUserId,
@@ -68,7 +65,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                 throw new \Exception('Failed to send request to AI!', 1);
             }
 
-            $response = $this->telegramMethods->sendQueryTelegram('sendMessage', [
+            $response = $telegramMethods->sendQueryTelegram('sendMessage', [
                 'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $botUser->topic_id,
                 'text' => AiHelper::preparedAiAnswer($this->managerTextMessage, $this->aiTextMessage),
