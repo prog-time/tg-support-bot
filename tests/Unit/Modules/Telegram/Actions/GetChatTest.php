@@ -43,7 +43,7 @@ class GetChatTest extends TestCase
             'https://api.telegram.org/*/getChat*' => Http::response($data, 200),
         ]);
 
-        $result = GetChat::execute($this->chatId);
+        $result = app(GetChat::class)->execute($this->chatId);
 
         $this->assertInstanceOf(TelegramAnswerDto::class, $result);
         $this->assertNotEmpty($result->rawData);

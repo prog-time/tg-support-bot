@@ -17,7 +17,7 @@ class GetChat
      *
      * @return TelegramAnswerDto
      */
-    public static function execute(int $chatId): TelegramAnswerDto
+    public function execute(int $chatId): TelegramAnswerDto
     {
         return TelegramMethods::sendQueryTelegram('getChat', [
             'chat_id' => $chatId,
