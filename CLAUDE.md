@@ -2,37 +2,130 @@
 
 Instructions for Claude Code when working with the TG Support Bot project.
 
+> **IMPORTANT:** This project has a structured `rules/` documentation system. Before starting any non-trivial task, read `rules/README.md` and the relevant domain/process files listed below.
+
+---
+
+## Rules Directory
+
+The `rules/` directory is the source of truth for all architectural decisions, business rules, and coding standards.
+
+**Always read before working:**
+
+| Task Type | Files to Read |
+|---|---|
+| Any task | `rules/README.md` |
+| Messaging / sending | `rules/domain/messaging.md` |
+| User management / banning | `rules/domain/bot-users.md` |
+| AI assistant logic | `rules/domain/ai-assistant.md` |
+| External API integration | `rules/domain/external-sources.md` |
+| Database / migrations | `rules/database/schema.md` |
+| HTTP routes / endpoints | `rules/api/endpoints.md` |
+| Architecture decisions | `rules/process/architecture-design.md` |
+| Logging / monitoring | `rules/process/observability.md` |
+| Security / auth | `rules/process/security.md` |
+| Tests | `rules/process/testing-strategy.md` |
+| CI/CD / git hooks | `rules/process/ci-cd.md` |
+
+---
+
 ## Project Description
 
-TG Support Bot is a Laravel application for customer support via Telegram and VK. The project uses queues for asynchronous message processing and external API integrations.
+TG Support Bot is a Laravel 12 application for customer support via Telegram and VK. The support team works in a Telegram supergroup with forum topics — each user gets their own topic thread. The project also integrates with external third-party systems via REST API.
+
+**Supported platforms:**
+- **Telegram** — main support channel (forum topics in supergroup)
+- **VK** — secondary support channel
+- **External Sources** — third-party integrations via REST API + webhooks
+
+**Key integrations:**
+- AI providers: OpenAI, DeepSeek, GigaChat (draft responses for manager review)
+- Monitoring: Grafana + Loki + Sentry
+- Live chat: Node.js server (port 3001)
+
+---
 
 ## Tech Stack
 
-- **PHP**: 8.2+
-- **Framework**: Laravel 12
-- **Database**: MySQL/PostgreSQL
-- **Queues**: Laravel Queue
-- **Containerization**: Docker
-- **API Documentation**: L5-Swagger
+| Component | Technology |
+|---|---|
+| Language | PHP 8.2+ |
+| Framework | Laravel 12 |
+| Database | PostgreSQL |
+| Cache / Queue | Redis + Laravel Queue |
+| Containers | Docker |
+| API Documentation | L5-Swagger (annotations-based) |
+| Static Analysis | PHPStan level 6 (larastan) |
+| Code Formatting | Laravel Pint (PSR-12 + Laravel) |
+| Testing | PHPUnit 11 + Mockery |
+| Error Tracking | Sentry |
+| Log Aggregation | Loki + Grafana + Promtail |
+| Telegram Logging | prog-time/tg-logger |
+
+---
+
+## Architecture
+
+```
+HTTP Layer          app/Http/Controllers/ + app/Http/Middleware/
+     ↓
+DTO Layer           app/DTOs/
+     ↓
+Business Logic      app/Services/ + app/Actions/
+     ↓
+Integration         app/TelegramBot/ + app/VkBot/
+     ↓
+Queue Layer         app/Jobs/
+     ↓
+Data Layer          app/Models/ + PostgreSQL
+```
+
+### Layer Responsibilities
+
+| Layer | Directory | Rule |
+|---|---|---|
+| Controllers | `app/Http/Controllers/` | Thin — receive request, dispatch job or call service, return response |
+| Middleware | `app/Http/Middleware/` | Validate incoming webhooks (Telegram, VK, External API auth) |
+| DTOs | `app/DTOs/` | Parse and type incoming data via static `fromRequest()` |
+| Services | `app/Services/` | Reusable business logic |
+| Actions | `app/Actions/` | Single isolated operations (one action = one thing) |
+| TelegramBot/VkBot | `app/TelegramBot/`, `app/VkBot/` | Direct API calls only |
+| Jobs | `app/Jobs/` | All async operations — message sending, webhooks |
+| Models | `app/Models/` | Data operations only, no business logic, no API calls |
+
+### Key Patterns
+
+- **Action Pattern** — `app/Actions/` — static `execute()`, one responsibility
+- **Service Pattern** — `app/Services/` — injected, reusable logic
+- **DTO Pattern** — `app/DTOs/` — typed data transfer between layers
+- **Queue Pattern** — all Telegram/VK API sends go through Jobs, never synchronously
+- **Middleware Pattern** — webhook validation before controller runs
+
+---
 
 ## Project Structure
 
 ```
 app/
-├── Actions/          # Business logic commands
-├── Contracts/        # Interfaces
+├── Actions/          # Isolated operations (Telegram/, Vk/, Ai/, External/)
+├── Contracts/        # Interfaces (AiProviderInterface)
 ├── DTOs/             # Data Transfer Objects
-├── Enums/            # Enumerations
-├── Helpers/          # Helper classes
-├── Http/             # Controllers, Middleware, Requests
-├── Jobs/             # Background tasks (queues)
-├── Logging/          # Custom loggers
-├── Models/           # Eloquent models
-├── Providers/        # Service Providers
-├── Services/         # Business logic services
-├── TelegramBot/      # Telegram bot logic
-└── VkBot/            # VK bot logic
+├── Enums/            # Enumerations (ButtonType, TelegramError, VkError)
+├── Helpers/          # Utilities (TelegramHelper, AiHelper, DateHelper)
+├── Http/
+│   ├── Controllers/  # TelegramBotController, VkBotController, ExternalTrafficController, etc.
+│   ├── Middleware/   # TelegramQuery, VkQuery, ApiQuery
+│   └── Requests/     # Form Requests
+├── Jobs/             # Queue jobs (SendMessage/, TopicCreateJob, SendWebhookMessage)
+├── Logging/          # LokiHandler
+├── Models/           # BotUser, Message, ExternalMessage, ExternalSource, AiMessage, etc.
+├── Providers/        # AppServiceProvider
+├── Services/         # Tg/, VK/, TgVk/, TgExternal/, External/, Button/, etc.
+├── TelegramBot/      # TelegramMethods, ParserMethods
+└── VkBot/            # VkMethods
 ```
+
+---
 
 ## Development Commands
 
@@ -42,12 +135,12 @@ docker compose up -d
 docker exec -it pet composer install
 ```
 
-### Code formatting (Laravel Pint)
+### Code formatting (run before every commit)
 ```bash
 docker exec -it pet ./vendor/bin/pint
 ```
 
-### Static analysis (PHPStan level 6)
+### Static analysis (run before every push)
 ```bash
 docker exec -it pet ./vendor/bin/phpstan analyse
 ```
@@ -64,122 +157,183 @@ docker exec -it pet ./vendor/bin/phpunit
 docker exec -it pet php artisan test --filter=TestName
 ```
 
+---
+
 ## Code Standards
 
-### Formatting (PSR-12 + Laravel)
+### Formatting (PSR-12 + Laravel, enforced by Pint)
+
 - Indentation: 4 spaces
 - Single quotes for strings
 - Short array syntax `[]`
 - Trailing comma in multiline arrays
 - Remove unused imports
-- Sort imports
+- Sort imports alphabetically
 
 ### Naming Conventions
-- Classes: `PascalCase`
-- Methods and variables: `camelCase`
-- Constants: `UPPER_SNAKE_CASE`
-- Migration files: `snake_case`
 
-### Architectural Rules
-- **Controllers**: Thin, only handle HTTP requests/responses
-- **Services**: Business logic
-- **Models**: Only data operations, no business logic
-- **Jobs**: Asynchronous tasks
-- **DTOs**: For passing data between layers
-- **Actions**: For isolated operations
+| Element | Convention | Example |
+|---|---|---|
+| Classes | `PascalCase` | `SendBannedMessage` |
+| Methods, variables | `camelCase` | `getByTopicId()` |
+| Constants | `UPPER_SNAKE_CASE` | `MAX_RETRIES` |
+| Migration files | `snake_case` | `create_bot_users_table` |
+| Actions | Static `execute()` | `GetChat::execute($chatId)` |
+| DTOs | Static `fromRequest()` | `TelegramUpdateDto::fromRequest($request)` |
+| Jobs | `*Job` suffix | `SendTelegramMessageJob` |
 
-### PHPDoc
-- Required for public methods
-- Format:
+### PHPDoc (required for all public methods)
+
 ```php
 /**
  * Brief method description.
  *
- * @param MessageDto $messageDto Parameter description
- * @return bool Return value description
- * @throws TelegramException When thrown
+ * @param BotUser $botUser The target bot user
+ * @return TelegramAnswerDto
+ * @throws TelegramException When Telegram API call fails
  */
+public static function execute(BotUser $botUser): TelegramAnswerDto
+{
+}
 ```
+
+---
+
+## Business Rules Summary
+
+### Messaging
+
+- All message sending to Telegram/VK must go through **queue Jobs**, never synchronously
+- Every sent/received message must be saved to the `messages` table
+- Banned users receive a banned notification, not a regular reply
+- Each bot user has exactly one Telegram forum topic thread
+
+### Bot Users
+
+- Every interaction creates or finds a `BotUser` record
+- Users are identified by `chat_id` + `platform` (not `chat_id` alone)
+- Banning sets `is_banned = true`, `banned_at`, and closes the Telegram topic
+
+### AI Assistant
+
+- AI is disabled by default (`AI_ENABLED=false`)
+- AI drafts must be reviewed and accepted/cancelled by a manager before sending (unless `AI_AUTO_REPLY=true`)
+- Supported providers: OpenAI, DeepSeek, GigaChat (set via `AI_DEFAULT_PROVIDER`)
+
+### External Sources
+
+- Requests must be authenticated with a bearer token from `external_source_access_tokens`
+- When the team replies to an external user, a webhook is sent to `external_sources.webhook_url`
+
+---
+
+## Security Rules
+
+- All Telegram webhooks validated by `TelegramQuery` middleware (`X-Telegram-Bot-Api-Secret-Token`)
+- All VK webhooks validated by `VkQuery` middleware
+- All External API requests validated by `ApiQuery` middleware (bearer token)
+- Never pass raw `Request` objects to Services or Actions — use DTOs
+- Never use raw SQL string concatenation — use Eloquent / query builder
+- Never commit `.env` files or hardcode secrets
+- Never log tokens, passwords, or API keys
+
+---
 
 ## Commit Rules
 
 ### Message Format
+
 ```
 issues-{number} | {brief description}
 ```
 
 ### Examples
+
 ```
 issues-123 | add VK sticker support
 issues-45 | fix telegram webhook error handling
-issues-78 | update README with installation guide
+issues-78 | update rules documentation
 ```
 
 ### Change Types
+
 - `add` — new feature
 - `fix` — bug fix
 - `update` — update existing functionality
-- `refactor` — refactoring
-- `remove` — removal
-- `docs` — documentation
-- `test` — tests
-- `style` — formatting
-- `chore` — routine tasks
+- `refactor` — refactoring (no behavior change)
+- `remove` — deletion
+- `docs` — documentation only
+- `test` — tests only
+- `style` — formatting only
+- `chore` — routine maintenance
+
+---
 
 ## Branch Naming
 
 ```
 issues-{number}
-# or
 issues-{number}-{brief-description}
 ```
 
-Examples:
-- `issues-38`
-- `issues-45-fix-telegram-webhook`
+Examples: `issues-38`, `issues-45-fix-telegram-webhook`
+
+---
 
 ## Testing
 
+### Test Location Rule
+
+Test file location mirrors source file location:
+
+| Source | Test |
+|---|---|
+| `app/Actions/Telegram/GetChat.php` | `tests/Unit/Actions/Telegram/GetChatTest.php` |
+| `app/Services/Tg/TgMessageService.php` | `tests/Unit/Services/Tg/TgMessageServiceTest.php` |
+
+### Requirements
+
+- New functionality must be covered by tests before merge
+- Bug fixes must include a regression test
+- Unit tests use `Http::fake()` — no real API calls
+- Feature tests use `RefreshDatabase` trait
+- Test naming: `test_can_do_something` or `test_throws_exception_when_invalid`
+- Tests run with SQLite in-memory database (see `phpunit.xml`)
+
 ### Test Structure
+
 ```
 tests/
+├── Unit/       # Actions, Services, Helpers, Models
 ├── Feature/    # HTTP endpoints, integrations
-├── Unit/       # Services, helpers, DTOs
-├── Mocks/      # Test mocks
-├── Stubs/      # Data stubs
+├── Mocks/      # Mock objects
+├── Stubs/      # Raw data stubs (webhook payloads)
 └── Traits/     # Reusable traits
 ```
 
-### Tests for Services, Actions and Other Classes
-- Example: class `app/Actions/External/DeleteMessage.php` must have a test located at `tests/Unit/Actions/External/DeleteMessageTest.php`
-- Test classes must have the `*Test.php` suffix
-
-### Requirements
-- New functionality must be covered by tests
-- Use `RefreshDatabase` trait for Feature tests
-- Test naming: `test_can_do_something` or `test_throws_exception_when_invalid`
+---
 
 ## Git Hooks
 
-The project uses pre-commit and pre-push hooks:
-- **pre-commit**: Laravel Pint (formatting)
-- **pre-push**: PHPStan + PHPUnit
+| Hook | Script | What it checks |
+|---|---|---|
+| `pre-commit` | `scripts/pre-commit-check.sh` | Laravel Pint formatting |
+| `pre-push` | `scripts/pre-push-check.sh` | PHPStan level 6 + PHPUnit |
 
-Scripts are located in `scripts/`:
-- `scripts/pre-commit-check.sh`
-- `scripts/pre-push-check.sh`
+Never bypass hooks with `--no-verify`.
 
-## Important Notes
-
-1. **Never commit .env files** — they contain secrets
-2. **Always run Pint before committing** — code must be formatted
-3. **PHPStan level 6** — code must pass static analysis
-4. **Tests must pass** — don't merge code with failing tests
-5. **Use DTOs** for passing structured data
-6. **Jobs for async operations** — sending messages, external APIs
+---
 
 ## Post-Task Verification
 
-1. Created methods have type hints for all arguments and return values
-2. Created classes have tests in the `tests/` directory
-3. New and edited files must pass checks described in `scripts/pre-commit-check.sh`
+Before marking any task complete:
+
+1. All new public methods have PHPDoc with type hints
+2. New classes have corresponding test files in `tests/`
+3. Laravel Pint passes with no changes needed
+4. PHPStan level 6 passes with 0 errors
+5. All tests pass
+6. If schema changed → `rules/database/schema.md` updated
+7. If routes changed → `rules/api/endpoints.md` updated
+8. If business rules changed → relevant `rules/domain/*.md` updated
+9. No secrets committed (`.env` excluded from git)
