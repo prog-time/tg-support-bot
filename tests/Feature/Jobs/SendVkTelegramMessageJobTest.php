@@ -47,6 +47,7 @@ class SendVkTelegramMessageJobTest extends TestCase
             $dto = TelegramAnswerDtoMock::getDto($dtoParams);
 
             // Мокаем ответ от VK
+            /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
             $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
             $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
 
@@ -72,7 +73,7 @@ class SendVkTelegramMessageJobTest extends TestCase
             ]);
         } finally {
             if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
+                app(DeleteForumTopic::class)->execute($this->botUser);
             }
         }
     }

@@ -35,7 +35,7 @@ class SendAiAnswerMessageTest extends TestCase
         $dtoParams['message']['text'] = '/ai_generate напиши приветствие';
         $dto = TelegramUpdateDto_GroupMock::getDto($dtoParams);
 
-        (new SendAiAnswerMessage())->execute($dto);
+        app(SendAiAnswerMessage::class)->execute($dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendAiResponseMessageJob::class] ?? [];

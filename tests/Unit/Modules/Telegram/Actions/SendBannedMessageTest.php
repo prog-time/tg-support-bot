@@ -27,7 +27,7 @@ class SendBannedMessageTest extends TestCase
 
     public function test_send_ban_message(): void
     {
-        (new SendBannedMessage())->execute($this->botUser);
+        app(SendBannedMessage::class)->execute($this->botUser);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];

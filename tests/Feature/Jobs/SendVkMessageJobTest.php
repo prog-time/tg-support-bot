@@ -45,7 +45,7 @@ class SendVkMessageJobTest extends TestCase
     protected function tearDown(): void
     {
         if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
 
         parent::tearDown();
@@ -82,7 +82,7 @@ class SendVkMessageJobTest extends TestCase
             ]);
         } finally {
             if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
+                app(DeleteForumTopic::class)->execute($this->botUser);
             }
         }
     }

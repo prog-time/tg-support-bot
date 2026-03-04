@@ -43,7 +43,7 @@ class SendTelegramMessageJobTest extends TestCase
     protected function tearDown(): void
     {
         if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
 
         parent::tearDown();
@@ -59,7 +59,7 @@ class SendTelegramMessageJobTest extends TestCase
         $dtoParams['result']['text'] = $textMessage;
         $dto = TelegramAnswerDtoMock::getDto($dtoParams);
 
-        // Мокаем ответ от Telegram
+        /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
         $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
         $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
 

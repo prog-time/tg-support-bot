@@ -85,7 +85,7 @@ class UploadFileVkTest extends TestCase
 
         $photoFileId = $this->photoFileId;
 
-        $fileData = GetFile::execute($photoFileId);
+        $fileData = app(GetFile::class)->execute($photoFileId);
         $this->assertNotEmpty($fileData->rawData['result']['file_path']);
 
         $fullFilePath = TelegramHelper::getFileTelegramPath($photoFileId);

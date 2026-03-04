@@ -96,7 +96,7 @@ class SendTelegramSimpleQueryJobTest extends TestCase
             'chat_id' => time(),
         ])->first();
         if (isset($botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
     }
 }
