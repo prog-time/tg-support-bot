@@ -108,7 +108,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
 
         if ($response->response_code === 403) {
             Log::channel('loki')->warning('403 - user blocked the bot');
-            BanMessage::execute($this->botUserId, $this->updateDto);
+            app(BanMessage::class)->execute($this->botUserId, $this->updateDto);
             return;
         }
 
