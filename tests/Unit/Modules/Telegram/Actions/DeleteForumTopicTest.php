@@ -29,7 +29,7 @@ class DeleteForumTopicTest extends TestCase
         $botUser->topic_id = 123;
 
         // Act — вызываем действие
-        DeleteForumTopic::execute($botUser);
+        app(DeleteForumTopic::class)->execute($botUser);
 
         // Assert
         $sentRequests = Http::recorded();

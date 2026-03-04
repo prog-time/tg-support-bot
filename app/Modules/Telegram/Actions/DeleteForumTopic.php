@@ -17,7 +17,7 @@ class DeleteForumTopic
      *
      * @return void
      */
-    public static function execute(BotUser $botUser): void
+    public function execute(BotUser $botUser): void
     {
         TelegramMethods::sendQueryTelegram('deleteForumTopic', [
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
