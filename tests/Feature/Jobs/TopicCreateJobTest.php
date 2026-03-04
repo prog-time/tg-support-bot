@@ -37,7 +37,7 @@ class TopicCreateJobTest extends TestCase
             'chat_id' => $this->botUser->chat_id,
         ])->first();
         if (isset($botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
 
         parent::tearDown();

@@ -61,7 +61,7 @@ class TopicCreateJob implements ShouldQueue
                 $this->botUser->topic_id = $response->message_thread_id;
                 $this->botUser->save();
 
-                (new SendContactMessage())->execute($this->botUser);
+                app(SendContactMessage::class)->execute($this->botUser);
                 return;
             }
 
@@ -143,7 +143,7 @@ class TopicCreateJob implements ShouldQueue
     protected function getPartsGenerateName(int $chatId): array
     {
         try {
-            $chatDataQuery = GetChat::execute($chatId);
+            $chatDataQuery = app(GetChat::class)->execute($chatId);
             if (!$chatDataQuery->ok) {
                 throw new \Exception('ChatData not found');
             }
