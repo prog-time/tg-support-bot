@@ -5,7 +5,6 @@ namespace App\Modules\Telegram\Jobs;
 use App\DTOs\Ai\AiRequestDto;
 use App\Jobs\SendMessage\AbstractSendMessageJob;
 use App\Models\BotUser;
-use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Services\Ai\AiAssistantService;
 use Illuminate\Support\Facades\Log;
@@ -18,25 +17,23 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
 
     public int $botUserId;
 
+    /** @var TelegramUpdateDto */
     public mixed $updateDto;
 
     public string $typeMessage = 'incoming';
 
-    public mixed $telegramMethods;
-
     public function __construct(
         int $botUserId,
         TelegramUpdateDto $updateDto,
-        mixed $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
-
-        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
-    public function handle(): void
+    public function handle(?AiAssistantService $aiService = null): void
     {
+        $aiService ??= app(AiAssistantService::class);
+
         try {
             $botUser = BotUser::find($this->botUserId);
 
@@ -53,7 +50,6 @@ class SendAiResponseMessageJob extends AbstractSendMessageJob
                 forceEscalation: false
             );
 
-            $aiService = new AiAssistantService();
             $aiResponse = $aiService->processMessage($aiRequest);
 
             if (empty($aiResponse)) {

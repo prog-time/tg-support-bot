@@ -3,7 +3,6 @@
 namespace Tests\Feature\Jobs;
 
 use App\Models\BotUser;
-use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendAiResponseMessageJob;
 use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,18 +69,11 @@ class SendAiResponseMessageJobTest extends TestCase
             ], 200),
         ]);
 
-        $params = TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
-            'chat_id' => $this->botUser->chat_id,
-            'text' => $managerTextMessage,
-        ]);
-
         $job = new SendAiResponseMessageJob(
             $this->botUser->id,
             $dto,
-            $params,
         );
-        $job->handle();
+        app()->call([$job, 'handle']);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendAiTelegramMessageJob::class] ?? [];
