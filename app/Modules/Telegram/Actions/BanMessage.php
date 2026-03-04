@@ -16,7 +16,7 @@ class BanMessage
      *
      * @return void
      */
-    public static function execute(int $botUserId, mixed $update): void
+    public function execute(int $botUserId, mixed $update): void
     {
         $botUser = BotUser::find($botUserId);
 
