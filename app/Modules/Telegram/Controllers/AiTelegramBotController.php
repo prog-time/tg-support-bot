@@ -17,7 +17,10 @@ class AiTelegramBotController
     public function __construct(Request $request)
     {
         $dataHook = TelegramUpdateDto::fromRequest($request);
-        $this->dataHook = !empty($dataHook) ? $dataHook : die();
+        if (empty($dataHook)) {
+            abort(200);
+        }
+        $this->dataHook = $dataHook;
 
         if ($this->dataHook->typeSource === 'private') {
             $this->platform = 'telegram';
@@ -46,9 +49,9 @@ class AiTelegramBotController
         if (!$this->dataHook->isBot && $this->isSupergroup()) {
             if ($this->dataHook->typeQuery === 'callback_query') {
                 if (preg_match('/(ai_message_send_)[0-9]+/', $this->dataHook->callbackData)) {
-                    (new AiAcceptMessage())->execute($this->dataHook);
+                    app(AiAcceptMessage::class)->execute($this->dataHook);
                 } elseif (preg_match('/(ai_message_cancel_)[0-9]+/', $this->dataHook->callbackData)) {
-                    (new AiCancelMessage())->execute($this->dataHook);
+                    app(AiCancelMessage::class)->execute($this->dataHook);
                 }
             }
         }
