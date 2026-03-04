@@ -18,7 +18,7 @@ class DeleteMessage
      *
      * @return TelegramAnswerDto|null
      */
-    public static function execute(TGTextMessageDto $queryParams): ?TelegramAnswerDto
+    public function execute(TGTextMessageDto $queryParams): ?TelegramAnswerDto
     {
         try {
             $dataQuery = $queryParams->toArray();

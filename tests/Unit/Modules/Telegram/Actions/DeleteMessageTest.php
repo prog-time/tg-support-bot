@@ -29,7 +29,7 @@ class DeleteMessageTest extends TestCase
             caption: null,
         );
 
-        $result = DeleteMessage::execute($dto);
+        $result = app(DeleteMessage::class)->execute($dto);
 
         $this->assertNotNull($result);
         $this->assertTrue($result->ok);
@@ -58,7 +58,7 @@ class DeleteMessageTest extends TestCase
             caption: null,
         );
 
-        DeleteMessage::execute($dto);
+        app(DeleteMessage::class)->execute($dto);
 
         $sentRequests = Http::recorded();
         $this->assertCount(1, $sentRequests);
@@ -92,7 +92,7 @@ class DeleteMessageTest extends TestCase
             caption: null,
         );
 
-        $result = DeleteMessage::execute($dto);
+        $result = app(DeleteMessage::class)->execute($dto);
 
         $this->assertNotNull($result);
         $this->assertFalse($result->ok);
@@ -122,7 +122,7 @@ class DeleteMessageTest extends TestCase
             caption: null,
         );
 
-        DeleteMessage::execute($dto);
+        app(DeleteMessage::class)->execute($dto);
 
         $sentRequests = Http::recorded();
 
