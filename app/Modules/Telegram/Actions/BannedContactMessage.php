@@ -19,7 +19,7 @@ class BannedContactMessage
      *
      * @return void
      */
-    public function handle(BotUser $botUser, bool $banStatus, ?int $messageId = null): void
+    public function execute(BotUser $botUser, bool $banStatus, ?int $messageId = null): void
     {
         $botUser->update([
             'is_banned' => $banStatus,
