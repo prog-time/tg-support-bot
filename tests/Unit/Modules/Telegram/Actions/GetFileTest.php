@@ -33,7 +33,7 @@ class GetFileTest extends TestCase
             'https://api.telegram.org/*/getFile*' => Http::response($data, 200),
         ]);
 
-        $result = GetFile::execute($fileId);
+        $result = app(GetFile::class)->execute($fileId);
 
         $this->assertInstanceOf(TelegramAnswerDto::class, $result);
         $this->assertEquals($expectedDto->rawData['result']['file_path'], $result->rawData['result']['file_path']);

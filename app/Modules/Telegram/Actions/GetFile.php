@@ -17,7 +17,7 @@ class GetFile
      *
      * @return TelegramAnswerDto
      */
-    public static function execute(string $fileId): TelegramAnswerDto
+    public function execute(string $fileId): TelegramAnswerDto
     {
         return TelegramMethods::sendQueryTelegram('getFile', [
             'file_id' => $fileId,
