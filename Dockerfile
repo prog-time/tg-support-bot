@@ -24,6 +24,9 @@ WORKDIR /var/www
 # Копируем проект
 COPY . .
 
+# Очищаем кэш фреймворка до установки зависимостей
+RUN rm -f bootstrap/cache/*.php
+
 # Права доступа на storage и bootstrap/cache
 RUN mkdir -p storage/logs \
     storage/framework/sessions \
