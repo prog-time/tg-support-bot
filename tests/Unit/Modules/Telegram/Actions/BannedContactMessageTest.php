@@ -29,7 +29,7 @@ class BannedContactMessageTest extends TestCase
 
     public function test_ban_status_true(): void
     {
-        (new BannedContactMessage())->execute($this->botUser, true);
+        app(BannedContactMessage::class)->handle($this->botUser, true);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];
