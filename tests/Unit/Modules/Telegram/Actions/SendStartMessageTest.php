@@ -32,7 +32,7 @@ class SendStartMessageTest extends TestCase
 
         // Act
         $action = app(SendStartMessage::class);
-        $action->handle($dto);
+        $action->execute($dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
@@ -59,7 +59,7 @@ class SendStartMessageTest extends TestCase
         BotUser::getOrCreateByTelegramUpdate($dto);
 
         $action = app(SendStartMessage::class);
-        $action->handle($dto);
+        $action->execute($dto);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];

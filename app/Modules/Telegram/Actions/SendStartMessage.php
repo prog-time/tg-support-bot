@@ -19,15 +19,17 @@ class SendStartMessage
         private TelegramMethods $telegramMethods,
         private ButtonParser $buttonParser,
         private KeyboardBuilder $keyboardBuilder,
-    ) {}
+    ) {
+    }
 
     /**
      * Send start message
      *
      * @param TelegramUpdateDto $update
+     *
      * @return void
      */
-    public function handle(TelegramUpdateDto $update): void
+    public function execute(TelegramUpdateDto $update): void
     {
         $this->telegramMethods->sendQueryTelegram('deleteMessage', [
             'chat_id' => $update->chatId,
