@@ -48,7 +48,7 @@ class CloseTopic
      *
      * @return void
      */
-    public function sendMessageInTelegram(BotUser $botUser): void
+    private function sendMessageInTelegram(BotUser $botUser): void
     {
         SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
@@ -63,7 +63,7 @@ class CloseTopic
      *
      * @return void
      */
-    public function sendMessageInVk(BotUser $botUser): void
+    private function sendMessageInVk(BotUser $botUser): void
     {
         SendVkSimpleMessageJob::dispatch(
             VkTextMessageDto::from([

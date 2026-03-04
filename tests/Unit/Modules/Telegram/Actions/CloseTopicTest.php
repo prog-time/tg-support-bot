@@ -31,7 +31,7 @@ class CloseTopicTest extends TestCase
         $chatId = time();
         $botUser = BotUser::getUserByChatId($chatId, 'test');
 
-        (new CloseTopic())->execute($botUser);
+        app(CloseTopic::class)->execute($botUser);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];
@@ -53,7 +53,7 @@ class CloseTopicTest extends TestCase
         $chatId = time();
         $botUser = BotUser::getUserByChatId($chatId, 'telegram');
 
-        (new CloseTopic())->execute($botUser);
+        app(CloseTopic::class)->execute($botUser);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];
@@ -79,7 +79,7 @@ class CloseTopicTest extends TestCase
         $chatId = time();
         $botUser = BotUser::getUserByChatId($chatId, 'vk');
 
-        (new CloseTopic())->execute($botUser);
+        app(CloseTopic::class)->execute($botUser);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendVkSimpleMessageJob::class] ?? [];
