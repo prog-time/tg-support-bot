@@ -26,7 +26,7 @@ class SendContactMessageTest extends TestCase
 
     public function test_send_contact_message(): void
     {
-        (new SendContactMessage())->execute($this->botUser);
+        app(SendContactMessage::class)->execute($this->botUser);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendTelegramSimpleQueryJob::class] ?? [];

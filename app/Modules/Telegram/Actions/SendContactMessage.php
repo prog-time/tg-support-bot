@@ -6,22 +6,17 @@ use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 
-/**
- * Send contact message
- */
 class SendContactMessage
 {
-    /**
-     * Send contact message
-     *
-     * @param BotUser $botUser
-     *
-     * @return void
-     */
+    public function __construct(
+        private GetChat $getChat,
+    ) {
+    }
+
     public function execute(BotUser $botUser): void
     {
-        $queryParams = $this->getQueryParams($botUser);
-        SendTelegramSimpleQueryJob::dispatch($queryParams);
+        $dto = $this->getQueryParams($botUser);
+        SendTelegramSimpleQueryJob::dispatch($dto);
     }
 
     /**
@@ -35,42 +30,41 @@ class SendContactMessage
             'methodQuery' => 'sendMessage',
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
-            'text' => $this->createContactMessage($botUser->chat_id, $botUser->platform),
+            'text' => $this->buildText($botUser),
             'parse_mode' => 'html',
             'reply_markup' => [
-                'inline_keyboard' => $this->getKeyboard($botUser),
+                'inline_keyboard' => $this->buildKeyboard($botUser),
             ],
         ]);
     }
 
     /**
-     * Create contact message
-     *
-     * @param int    $chatId
-     * @param string $platform
+     * @param BotUser $botUser
      *
      * @return string
      */
-    public function createContactMessage(int $chatId, string $platform): string
+    private function buildText(BotUser $botUser): string
     {
-        try {
-            $textMessage = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b> \n";
-            $textMessage .= "Источник: {$platform} \n";
-            $textMessage .= "ID: <code>{$chatId}</code> \n";
+        $text = "<b>КОНТАКТНАЯ ИНФОРМАЦИЯ</b>\n";
+        $text .= "Источник: {$botUser->platform}\n";
+        $text .= "ID: <code>{$botUser->chat_id}</code>\n";
 
-            if ($platform === 'telegram') {
-                $chat = GetChat::execute($chatId);
-                $chatData = $chat->rawData;
-                if (!empty($chatData['result']['username'])) {
-                    $link = "https://telegram.me/{$chatData['result']['username']}";
-                    $textMessage .= "Пользователь: <code>{$chatData['result']['username']}</code> \n";
-                    $textMessage .= "Ссылка: {$link} \n";
-                }
-            }
-            return $textMessage;
-        } catch (\Throwable $e) {
-            return '';
+        if ($botUser->platform !== 'telegram') {
+            return $text;
         }
+
+        try {
+            $chat = $this->getChat->execute($botUser->chat_id);
+            $username = $chat->rawData['result']['username'] ?? null;
+
+            if ($username) {
+                $text .= "Пользователь: <code>{$username}</code>\n";
+                $text .= "Ссылка: https://telegram.me/{$username}\n";
+            }
+        } catch (\Throwable) {
+        }
+
+        return $text;
     }
 
     /**
@@ -78,19 +72,16 @@ class SendContactMessage
      *
      * @return array
      */
-    public function getKeyboard(BotUser $botUser): array
+    private function buildKeyboard(BotUser $botUser): array
     {
-        if ($botUser->isBanned()) {
-            $banButton = [
-                'text' => __('messages.but_ban_user_false'),
-                'callback_data' => 'topic_user_ban_false',
-            ];
-        } else {
-            $banButton = [
-                'text' => __('messages.but_ban_user_true'),
-                'callback_data' => 'topic_user_ban_true',
-            ];
-        }
+        $banButton = [
+            'text' => $botUser->isBanned()
+                ? __('messages.but_ban_user_false')
+                : __('messages.but_ban_user_true'),
+            'callback_data' => $botUser->isBanned()
+                ? 'topic_user_ban_false'
+                : 'topic_user_ban_true',
+        ];
 
         return [
             [
