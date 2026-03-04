@@ -171,6 +171,6 @@ class ExternalTrafficService
      */
     public function destroy(ExternalMessageDto $dto): void
     {
-        DeleteMessage::execute($dto);
+        app(DeleteMessage::class)->execute($dto);
     }
 }
