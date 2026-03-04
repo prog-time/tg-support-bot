@@ -4,7 +4,6 @@ namespace App\Modules\Telegram\Services\ActionService\Send;
 
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
-use phpDocumentor\Reflection\Exception;
 
 /**
  * Class ToTgMessageService
@@ -33,7 +32,7 @@ abstract class ToTgMessageService extends TemplateMessageService
 
             $this->botUser = BotUser::getUserByChatId($chatId, $this->source);
             if (empty($this->botUser)) {
-                throw new Exception('User does not exist!');
+                throw new \RuntimeException('User does not exist!');
             }
 
             $this->messageParamsDTO = TGTextMessageDto::from([
@@ -42,8 +41,8 @@ abstract class ToTgMessageService extends TemplateMessageService
                 'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'message_thread_id' => $this->botUser->topic_id,
             ]);
-        } catch (Exception $e) {
-            die();
+        } catch (\RuntimeException $e) {
+            throw $e;
         }
     }
 
