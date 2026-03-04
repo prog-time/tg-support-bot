@@ -86,7 +86,7 @@ class SendExternalTelegramMessageJobTest extends TestCase
             ]);
         } finally {
             if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
+                app(DeleteForumTopic::class)->execute($this->botUser);
             }
         }
     }

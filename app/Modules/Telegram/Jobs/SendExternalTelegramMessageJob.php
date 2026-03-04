@@ -21,31 +21,30 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
 
     public int $botUserId;
 
+    /** @var ExternalMessageDto */
     public mixed $updateDto;
 
+    /** @var TGTextMessageDto */
     public mixed $queryParams;
 
     public string $typeMessage = 'incoming';
-
-    private mixed $telegramMethods;
 
     public function __construct(
         int $botUserId,
         ExternalMessageDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
-        mixed $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
         $this->typeMessage = $typeMessage;
-
-        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
-    public function handle(): void
+    public function handle(?TelegramMethods $telegramMethods = null): void
     {
+        $telegramMethods ??= app(TelegramMethods::class);
+
         try {
             $botUser = BotUser::find($this->botUserId);
             $botUser->refresh();
@@ -88,7 +87,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                 );
             }
 
-            $response = $this->telegramMethods->sendQueryTelegram(
+            $response = $telegramMethods->sendQueryTelegram(
                 $methodQuery,
                 $params,
                 $this->queryParams->token
