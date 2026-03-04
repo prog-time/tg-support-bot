@@ -74,9 +74,9 @@ class TelegramBotController
         if ($this->dataHook->typeQuery === 'callback_query') {
             if (str_contains($this->dataHook->callbackData, 'topic_user_ban_')) {
                 $banStatus = $this->dataHook->callbackData === 'topic_user_ban_true';
-                BannedContactMessage::execute($this->botUser, $banStatus, $this->dataHook->messageId);
+                app(BannedContactMessage::class)->execute($this->botUser, $banStatus, $this->dataHook->messageId);
             } elseif ($this->dataHook->callbackData === 'close_topic') {
-                CloseTopic::execute($this->botUser);
+                app(CloseTopic::class)->execute($this->botUser);
             }
 
             return;
@@ -100,7 +100,7 @@ class TelegramBotController
         } elseif (!$this->dataHook->isBot) {
             if ($this->dataHook->typeSource === 'supergroup') {
                 if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
-                    SendContactMessage::execute($this->botUser);
+                    app(SendContactMessage::class)->execute($this->botUser);
                     return;
                 }
             }
@@ -132,19 +132,19 @@ class TelegramBotController
     private function controllerPlatformTg(): void
     {
         if ($this->botUser->isBanned() && $this->dataHook->typeSource === 'private') {
-            SendBannedMessage::execute($this->botUser);
+            app(SendBannedMessage::class)->execute($this->botUser);
             return;
         } elseif ($this->dataHook->aiTechMessage) {
             if (str_contains($this->dataHook->text, 'ai_message_edit_')) {
-                (new EditAiMessage())->execute($this->dataHook);
+                app(EditAiMessage::class)->execute($this->dataHook);
             }
         } else {
             switch ($this->dataHook->typeQuery) {
                 case 'message':
                     if ($this->dataHook->text === '/start' && !$this->isSupergroup()) {
-                        SendStartMessage::execute($this->dataHook);
+                        app(SendStartMessage::class)->execute($this->dataHook);
                     } elseif (str_contains($this->dataHook->text, '/ai_generate') && $this->isSupergroup()) {
-                        SendAiAnswerMessage::execute($this->dataHook);
+                        app(SendAiAnswerMessage::class)->execute($this->dataHook);
                     } else {
                         (new TgMessageService($this->dataHook))->handleUpdate();
                     }
