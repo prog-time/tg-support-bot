@@ -30,7 +30,7 @@ class SendMessageVkTest extends TestCase
             'peer_id' => $this->chatId,
             'message' => 'Тестовое сообщение',
         ];
-        $result = SendMessageVk::execute(VkTextMessageDto::from($queryParams));
+        $result = app(SendMessageVk::class)->execute(VkTextMessageDto::from($queryParams));
 
         $this->assertNotEmpty($result->response);
         $this->assertEquals(200, $result->response_code);
