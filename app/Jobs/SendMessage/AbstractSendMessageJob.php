@@ -3,7 +3,6 @@
 namespace App\Jobs\SendMessage;
 
 use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\Vk\VkUpdateDto;
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\BanMessage;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
@@ -14,6 +13,7 @@ use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
 use App\Modules\Telegram\Jobs\TopicCreateJob;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

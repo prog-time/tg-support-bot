@@ -2,13 +2,13 @@
 
 namespace App\Modules\Telegram\Jobs;
 
-use App\DTOs\Vk\VkUpdateDto;
 use App\Jobs\SendMessage\AbstractSendMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Support\Facades\Log;
 
 class SendVkTelegramMessageJob extends AbstractSendMessageJob

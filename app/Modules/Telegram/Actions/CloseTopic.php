@@ -2,11 +2,11 @@
 
 namespace App\Modules\Telegram\Actions;
 
-use App\DTOs\Vk\VkTextMessageDto;
-use App\Jobs\SendMessage\SendVkSimpleMessageJob;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Vk\DTOs\VkTextMessageDto;
+use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 
 class CloseTopic
 {

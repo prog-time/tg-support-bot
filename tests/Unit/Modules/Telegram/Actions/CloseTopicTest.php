@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Modules\Telegram\Actions;
 
-use App\Jobs\SendMessage\SendVkSimpleMessageJob;
+use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\CloseTopic;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
