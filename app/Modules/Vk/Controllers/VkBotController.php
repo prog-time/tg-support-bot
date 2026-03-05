@@ -38,7 +38,7 @@ class VkBotController
         $botUser = (new BotUser())->getUserByChatId($dataHook->from_id, 'vk');
 
         if ($botUser->isBanned()) {
-            (new SendBannedMessageVk())->execute($botUser);
+            app(SendBannedMessageVk::class)->execute($botUser);
 
             return response('ok', 200);
         }
