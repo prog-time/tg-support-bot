@@ -2,15 +2,15 @@
 
 namespace App\Modules\Telegram\Services\TgVk;
 
-use App\Actions\Vk\GetMessagesUploadServerVk;
-use App\Actions\Vk\SaveFileVk;
-use App\Actions\Vk\UploadFileVk;
-use App\DTOs\Vk\VkAnswerDto;
-use App\DTOs\Vk\VkTextMessageDto;
 use App\Helpers\TelegramHelper;
-use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use App\Modules\Vk\Actions\GetMessagesUploadServerVk;
+use App\Modules\Vk\Actions\SaveFileVk;
+use App\Modules\Vk\Actions\UploadFileVk;
+use App\Modules\Vk\DTOs\VkAnswerDto;
+use App\Modules\Vk\DTOs\VkTextMessageDto;
+use App\Modules\Vk\Jobs\SendVkMessageJob;
 use App\Services\Button\ButtonParser;
 use App\Services\Button\KeyboardBuilder;
 use Illuminate\Support\Facades\Log;

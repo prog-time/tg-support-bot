@@ -10,6 +10,7 @@ use Tests\TestCase;
 class ToTgMessageServiceTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_construct_with_private_source(): void
     {
         $dto = TelegramUpdateDtoMock::getDto([

@@ -2,11 +2,11 @@
 
 namespace App\Modules\Telegram\Services\TgVk;
 
-use App\DTOs\Vk\VkTextMessageDto;
-use App\Jobs\SendMessage\SendVkMessageJob;
 use App\Models\Message;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\Services\ActionService\Edit\FromTgEditService;
+use App\Modules\Vk\DTOs\VkTextMessageDto;
+use App\Modules\Vk\Jobs\SendVkMessageJob;
 use Illuminate\Support\Facades\Log;
 
 class TgVkEditService extends FromTgEditService

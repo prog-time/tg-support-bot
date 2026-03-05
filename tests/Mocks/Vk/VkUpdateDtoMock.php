@@ -2,7 +2,7 @@
 
 namespace Tests\Mocks\Vk;
 
-use App\DTOs\Vk\VkUpdateDto;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Support\Facades\Request;
 
 class VkUpdateDtoMock

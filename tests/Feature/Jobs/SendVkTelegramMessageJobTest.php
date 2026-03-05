@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\Vk\VkUpdateDto;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Telegram\Actions\DeleteForumTopic;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;

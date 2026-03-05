@@ -2,7 +2,7 @@
 
 namespace Tests\Mocks\Vk\Answer;
 
-use App\DTOs\Vk\VkAnswerDto;
+use App\Modules\Vk\DTOs\VkAnswerDto;
 
 class VkAnswerDtoMock
 {
