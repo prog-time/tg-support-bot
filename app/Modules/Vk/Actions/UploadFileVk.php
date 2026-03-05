@@ -18,7 +18,7 @@ class UploadFileVk
      *
      * @return array|null
      */
-    public static function execute(string $upload_url, string $fullFilePath, string $typeFile = 'doc'): ?array
+    public function execute(string $upload_url, string $fullFilePath, string $typeFile = 'doc'): ?array
     {
         try {
             $urlQuery = $upload_url;

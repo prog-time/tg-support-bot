@@ -92,12 +92,12 @@ class UploadFileVkTest extends TestCase
         $this->assertNotEmpty($fullFilePath);
 
         // get upload server data
-        $resultData = GetMessagesUploadServerVk::execute($this->chatId, 'photos');
+        $resultData = app(GetMessagesUploadServerVk::class)->execute($this->chatId, 'photos');
         $this->assertNotEmpty($resultData->response['upload_url']);
 
         // upload file in VK
         $urlQuery = $resultData->response['upload_url'];
-        $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, 'photo');
+        $responseData = app(UploadFileVk::class)->execute($urlQuery, $fullFilePath, 'photo');
 
         $this->assertNotEmpty($responseData['file']);
     }
