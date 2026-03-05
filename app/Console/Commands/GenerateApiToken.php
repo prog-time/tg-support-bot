@@ -21,6 +21,11 @@ class GenerateApiToken extends Command
 
     protected $description = 'Generate token for user, create user if not exists';
 
+    public function __construct(private ExternalSourceService $externalSourceService)
+    {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
         try {
@@ -57,7 +62,7 @@ class GenerateApiToken extends Command
                         'created_at' => date('Y-m-d H:i:s'),
                     ]));
 
-                    $sourceItem = (new ExternalSourceService())->create($sourceData);
+                    $sourceItem = $this->externalSourceService->create($sourceData);
                 } else {
                     $this->info("Updating resource {$sourceName}...");
 
@@ -66,7 +71,7 @@ class GenerateApiToken extends Command
                         'created_at' => date('Y-m-d H:i:s'),
                     ]));
 
-                    (new ExternalSourceService())->update($sourceData);
+                    $this->externalSourceService->update($sourceData);
                 }
 
                 $accessToken = (new ExternalSourceAccessTokens())
