@@ -2,10 +2,10 @@
 
 namespace App\Modules\Telegram\Jobs;
 
-use App\DTOs\External\ExternalMessageDto;
 use App\Jobs\SendMessage\AbstractSendMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;

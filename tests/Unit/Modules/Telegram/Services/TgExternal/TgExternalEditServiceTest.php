@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Modules\Telegram\Services\TgExternal;
 
-use App\Jobs\SendWebhookMessage;
 use App\Models\BotUser;
 use App\Models\ExternalMessage;
 use App\Models\Message;
+use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;

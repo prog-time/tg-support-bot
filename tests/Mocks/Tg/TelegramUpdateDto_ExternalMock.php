@@ -2,8 +2,8 @@
 
 namespace Tests\Mocks\Tg;
 
-use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Support\Facades\Request;
 

@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Modules\Telegram\Actions;
 
-use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\CloseTopic;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

@@ -2,7 +2,7 @@
 
 namespace App\DTOs\Redis;
 
-use App\DTOs\External\ExternalMessageResponseDto;
+use App\Modules\External\DTOs\ExternalMessageResponseDto;
 
 class WebhookMessageDto
 {

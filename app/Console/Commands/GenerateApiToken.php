@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\DTOs\ExternalSourceDto;
 use App\Models\ExternalSource;
 use App\Models\ExternalSourceAccessTokens;
-use App\Services\External\Source\ExternalSourceService;
+use App\Modules\External\DTOs\ExternalSourceDto;
+use App\Modules\External\Services\Source\ExternalSourceService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;

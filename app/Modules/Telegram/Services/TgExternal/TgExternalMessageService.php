@@ -2,12 +2,12 @@
 
 namespace App\Modules\Telegram\Services\TgExternal;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
-use App\DTOs\External\ExternalMessageResponseDto;
 use App\DTOs\Redis\WebhookMessageDto;
 use App\Helpers\TelegramHelper;
-use App\Jobs\SendWebhookMessage;
 use App\Models\Message;
+use App\Modules\External\DTOs\ExternalMessageAnswerDto;
+use App\Modules\External\DTOs\ExternalMessageResponseDto;
+use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;

@@ -2,8 +2,8 @@
 
 namespace App\Jobs\SendMessage;
 
-use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\Actions\BanMessage;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;

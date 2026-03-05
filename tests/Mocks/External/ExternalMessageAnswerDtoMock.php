@@ -2,7 +2,7 @@
 
 namespace Tests\Mocks\External;
 
-use App\DTOs\External\ExternalMessageAnswerDto;
+use App\Modules\External\DTOs\ExternalMessageAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 
 class ExternalMessageAnswerDtoMock extends TelegramUpdateDto

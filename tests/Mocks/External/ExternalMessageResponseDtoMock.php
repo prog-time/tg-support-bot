@@ -2,7 +2,7 @@
 
 namespace Tests\Mocks\External;
 
-use App\DTOs\External\ExternalMessageResponseDto;
+use App\Modules\External\DTOs\ExternalMessageResponseDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Support\Facades\Request;
 

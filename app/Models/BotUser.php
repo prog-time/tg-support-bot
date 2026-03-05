@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\DTOs\External\ExternalMessageDto;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
