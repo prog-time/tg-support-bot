@@ -3,6 +3,7 @@
 namespace App\Modules\Telegram\Controllers;
 
 use App\Actions\Ai\EditAiMessage;
+use App\Contracts\ManagerInterfaceContract;
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\BannedContactMessage;
 use App\Modules\Telegram\Actions\CloseTopic;
@@ -14,7 +15,6 @@ use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\Tg\TgEditMessageService;
-use App\Modules\Telegram\Services\Tg\TgMessageService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
 use App\Modules\Telegram\Services\TgVk\TgVkEditService;
@@ -29,7 +29,7 @@ class TelegramBotController
 
     private ?BotUser $botUser;
 
-    public function __construct(Request $request)
+    public function __construct(Request $request, private readonly ManagerInterfaceContract $managerInterface)
     {
         $dataHook = TelegramUpdateDto::fromRequest($request);
         if (empty($dataHook)) {
@@ -146,7 +146,7 @@ class TelegramBotController
                     } elseif (str_contains($this->dataHook->text, '/ai_generate') && $this->isSupergroup()) {
                         app(SendAiAnswerMessage::class)->execute($this->dataHook);
                     } else {
-                        (new TgMessageService($this->dataHook))->handleUpdate();
+                        $this->managerInterface->notifyIncomingMessage($this->botUser, $this->dataHook);
                     }
                     break;
 

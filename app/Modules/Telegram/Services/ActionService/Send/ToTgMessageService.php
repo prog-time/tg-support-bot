@@ -2,6 +2,7 @@
 
 namespace App\Modules\Telegram\Services\ActionService\Send;
 
+use App\Contracts\ManagerInterfaceContract;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 
@@ -21,8 +22,11 @@ abstract class ToTgMessageService extends TemplateMessageService
 
     protected TGTextMessageDto $messageParamsDTO;
 
+    protected ManagerInterfaceContract $managerInterface;
+
     public function __construct(mixed $update)
     {
+        $this->managerInterface = app(ManagerInterfaceContract::class);
         try {
             $this->update = $update;
 
