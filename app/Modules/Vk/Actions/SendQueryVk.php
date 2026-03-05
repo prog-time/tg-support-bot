@@ -18,7 +18,7 @@ class SendQueryVk
      *
      * @return VkAnswerDto|null
      */
-    public static function execute(VkTextMessageDto $queryParams): ?VkAnswerDto
+    public function execute(VkTextMessageDto $queryParams): ?VkAnswerDto
     {
         try {
             $dataQuery = $queryParams->toArray();

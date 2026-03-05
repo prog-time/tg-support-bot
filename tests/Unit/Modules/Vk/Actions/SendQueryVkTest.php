@@ -35,7 +35,7 @@ class SendQueryVkTest extends TestCase
             attachment: null,
         );
 
-        $result = SendQueryVk::execute($dto);
+        $result = app(SendQueryVk::class)->execute($dto);
 
         $this->assertNotNull($result);
         $this->assertEquals(200, $result->response_code);
@@ -62,7 +62,7 @@ class SendQueryVkTest extends TestCase
             attachment: null,
         );
 
-        SendQueryVk::execute($dto);
+        app(SendQueryVk::class)->execute($dto);
 
         $sentRequests = Http::recorded();
         $this->assertCount(1, $sentRequests);
@@ -96,7 +96,7 @@ class SendQueryVkTest extends TestCase
             attachment: null,
         );
 
-        $result = SendQueryVk::execute($dto);
+        $result = app(SendQueryVk::class)->execute($dto);
 
         $this->assertNotNull($result);
         $this->assertEquals(500, $result->response_code);
@@ -123,7 +123,7 @@ class SendQueryVkTest extends TestCase
             attachment: $attachment,
         );
 
-        SendQueryVk::execute($dto);
+        app(SendQueryVk::class)->execute($dto);
 
         $sentRequests = Http::recorded();
 
@@ -161,7 +161,7 @@ class SendQueryVkTest extends TestCase
             keyboard: $keyboard,
         );
 
-        SendQueryVk::execute($dto);
+        app(SendQueryVk::class)->execute($dto);
 
         $sentRequests = Http::recorded();
 
@@ -189,7 +189,7 @@ class SendQueryVkTest extends TestCase
             attachment: null,
         );
 
-        $result = SendQueryVk::execute($dto);
+        $result = app(SendQueryVk::class)->execute($dto);
 
         $sentRequests = Http::recorded();
 
