@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Services\External;
+namespace Tests\Unit\Modules\External\Services;
 
-use App\DTOs\External\ExternalMessageDto;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Request;
 use Tests\Stubs\Services\External\ExternalServiceStub;

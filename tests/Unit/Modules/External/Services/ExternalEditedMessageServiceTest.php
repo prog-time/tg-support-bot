@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\Unit\Services\External;
+namespace Tests\Unit\Modules\External\Services;
 
-use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
+use App\Modules\External\DTOs\ExternalMessageDto;
+use App\Modules\External\Services\ExternalTrafficService;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
-use App\Services\External\ExternalTrafficService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Modules\External\Jobs;
 
-use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\Actions\DeleteForumTopic;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;

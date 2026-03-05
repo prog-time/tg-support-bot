@@ -1,15 +1,15 @@
 <?php
 
-namespace Tests\Unit\Services\External;
+namespace Tests\Unit\Modules\External\Services;
 
-use App\Actions\External\DeleteMessage;
-use App\DTOs\External\ExternalListMessageDto;
-use App\DTOs\External\ExternalMessageDto;
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
+use App\Modules\External\Actions\DeleteMessage;
+use App\Modules\External\DTOs\ExternalListMessageDto;
+use App\Modules\External\DTOs\ExternalMessageDto;
+use App\Modules\External\Services\ExternalTrafficService;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
-use App\Services\External\ExternalTrafficService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -153,7 +153,7 @@ class ExternalTrafficServiceTest extends TestCase
 
         (new ExternalTrafficService())->destroy($deleteDto);
 
-        DeleteMessage::execute($deleteDto);
+        app(DeleteMessage::class)->execute($deleteDto);
 
         $this->assertNull(Message::first());
     }

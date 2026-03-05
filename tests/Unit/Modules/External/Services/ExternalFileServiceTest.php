@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit\Services\External;
+namespace Tests\Unit\Modules\External\Services;
 
 use App\Models\BotUser;
 use App\Models\ExternalUser;
 use App\Models\Message;
+use App\Modules\External\Services\ExternalFileService;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
-use App\Services\External\ExternalFileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;

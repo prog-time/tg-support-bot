@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Actions\External;
+namespace Tests\Unit\Modules\External\Actions;
 
-use App\Actions\External\DeleteMessage;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\Services\External\ExternalTrafficService;
+use App\Modules\External\Actions\DeleteMessage;
+use App\Modules\External\Services\ExternalTrafficService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -51,7 +51,7 @@ class DeleteMessageTest extends TestCase
         $payload['message_id'] = $messageData->from_id;
 
         $dto = ExternalMessageDtoMock::getDto($payload);
-        DeleteMessage::execute($dto);
+        app(DeleteMessage::class)->execute($dto);
 
         $messageData = Message::first();
 
