@@ -37,7 +37,7 @@ class GetMessagesUploadServerVkTest extends TestCase
             ], 500),
         ]);
 
-        $result = GetMessagesUploadServerVk::execute($this->chatId, 'plomb');
+        $result = app(GetMessagesUploadServerVk::class)->execute($this->chatId, 'plomb');
 
         $this->assertEquals(500, $result->response_code);
         $this->assertEquals('METHOD_PASSED', $result->error_type);
@@ -53,7 +53,7 @@ class GetMessagesUploadServerVkTest extends TestCase
             ], 200),
         ]);
 
-        $result = GetMessagesUploadServerVk::execute($this->chatId, 'docs');
+        $result = app(GetMessagesUploadServerVk::class)->execute($this->chatId, 'docs');
 
         $this->assertEquals(200, $result->response_code);
         $this->assertNotEmpty($result->response['upload_url']);

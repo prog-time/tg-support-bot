@@ -18,7 +18,7 @@ class GetMessagesUploadServerVk
      *
      * @return VkAnswerDto
      */
-    public static function execute(int $chat_id, string $typeMethod = 'doc'): VkAnswerDto
+    public function execute(int $chat_id, string $typeMethod = 'doc'): VkAnswerDto
     {
         try {
             $methodQuery = $typeMethod . '.getMessagesUploadServer';
