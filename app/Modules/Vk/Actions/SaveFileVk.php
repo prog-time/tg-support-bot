@@ -18,7 +18,7 @@ class SaveFileVk
      *
      * @return VkAnswerDto
      */
-    public static function execute(string $typeFile, array $dataQuery): VkAnswerDto
+    public function execute(string $typeFile, array $dataQuery): VkAnswerDto
     {
         try {
             switch ($typeFile) {

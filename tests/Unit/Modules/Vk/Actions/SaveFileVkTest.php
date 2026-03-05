@@ -30,7 +30,7 @@ class SaveFileVkTest extends TestCase
             'hash' => 'b600e0c0e22cbbc5f231e777e4766c93',
         ];
 
-        $resultSave = SaveFileVk::execute('photos', $responseData);
+        $resultSave = app(SaveFileVk::class)->execute('photos', $responseData);
 
         $this->assertNotEmpty($resultSave->response);
         $this->assertEmpty($resultSave->error_type);
@@ -54,7 +54,7 @@ class SaveFileVkTest extends TestCase
             'file' => '222232176|0|-1|909428|58cec28ed8|jpg|83643|file_84.jpg|9d35c54103a98176ef084060650b806e|385a19671c2dc4e6ba58444509e2694d||||eyJkaXNrIjoiNDYiLCJvcmlnX3NpemUiOiIxMjgweDgzMyIsImtpZCI6IjZiMWY5ZjIzMzMyYzVmMzBlOGExM2FjZWYyODYwYmExXG4iLCJzdDJfcHJldmlldyI6IjIhd3NQRzU5SHkzT3lub1BCNzJBRUU4dG1BbjAtNEZMSnJOeHYtVGIzWldyRF9sRm80SkFBVUFBRUVEQUFEQUFBQUEiLCJzdDJfc2hhIjoiMjA2MzdhNzRjZTVhMzAzODYzM2VlMTUwYjA1OWMxZTI5NDUwZTUyM2Y3OTE1OWY5OTFkNzM5MmIiLCJzdDJfc2VjcmV0IjotNTY1MTAyOTE2ODE4OTU2NjAxLCJwZWVyX3NlbmRlciI6Ii0yMTc5MDM0NzQifQ==',
         ];
 
-        $resultSave = SaveFileVk::execute('docs', $responseData);
+        $resultSave = app(SaveFileVk::class)->execute('docs', $responseData);
 
         $this->assertNotEmpty($resultSave->response);
         $this->assertEmpty($resultSave->error_type);
