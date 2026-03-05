@@ -226,18 +226,18 @@ class TgVkMessageService extends FromTgMessageService
                 throw new \Exception('Error getting file data!', 1);
             }
 
-            $resultData = GetMessagesUploadServerVk::execute($this->botUser->chat_id, $typeMethod);
+            $resultData = app(GetMessagesUploadServerVk::class)->execute($this->botUser->chat_id, $typeMethod);
             if (empty($resultData->response['upload_url'])) {
                 throw new \Exception('Error getting file upload URL!', 1);
             }
 
             $urlQuery = $resultData->response['upload_url'];
-            $responseData = UploadFileVk::execute($urlQuery, $fullFilePath, $typeFile);
+            $responseData = app(UploadFileVk::class)->execute($urlQuery, $fullFilePath, $typeFile);
             if (empty($responseData)) {
                 throw new \Exception('File upload error!', 1);
             }
 
-            return SaveFileVk::execute($typeMethod, $responseData);
+            return app(SaveFileVk::class)->execute($typeMethod, $responseData);
         } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
                 'response_code' => 500,
