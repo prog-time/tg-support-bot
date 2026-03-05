@@ -2,18 +2,11 @@
 
 use App\Http\Controllers\ExternalTrafficController;
 use App\Http\Controllers\FilesController;
-use App\Http\Controllers\VkBotController;
 use App\Middleware\ApiQuery;
-use App\Middleware\VkQuery;
 use Illuminate\Support\Facades\Route;
 
 // Telegram routes are registered by App\Modules\Telegram\TelegramServiceProvider
-
-Route::group([
-    'prefix' => 'vk',
-], function () {
-    Route::post('bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
-});
+// VK routes are registered by App\Modules\Vk\VkServiceProvider
 
 Route::group([
     'prefix' => 'external',
