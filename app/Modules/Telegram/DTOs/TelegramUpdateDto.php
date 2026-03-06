@@ -24,6 +24,7 @@ use Spatie\LaravelData\Data;
  * @property array|null  $entities
  * @property string|null $caption
  * @property string|null $fileId
+ * @property string|null $fileType
  * @property string|null $username
  * @property string|null $callbackData
  * @property array|null  $location
@@ -48,6 +49,7 @@ class TelegramUpdateDto extends Data
         public ?array  $entities = null,
         public ?string $caption = null,
         public ?string $fileId = null,
+        public ?string $fileType = null,
         public ?string $username = null,
         public ?string $callbackData = null,
         public ?array  $location = null,
@@ -94,6 +96,7 @@ class TelegramUpdateDto extends Data
                 entities: $data[$type]['entities'] ?? $data[$type]['caption_entities'] ?? null,
                 caption: $data[$type]['caption'] ?? null,
                 fileId: TelegramHelper::extractFileId($data),
+                fileType: TelegramHelper::extractFileType($data),
                 username: self::extractUsername($data, $type),
                 callbackData: $data['callback_query']['data'] ?? null,
                 location: $data['message']['location'] ?? null,

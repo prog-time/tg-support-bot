@@ -115,13 +115,22 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->id,
             'to_id' => $resultQuery->message_id,
+            'text' => $this->updateDto->text ?? null,
         ]);
+
+        foreach ($this->updateDto->listAttachments as $attachment) {
+            $message->attachments()->create([
+                'file_id' => $attachment['file_id'],
+                'file_type' => $attachment['type'],
+                'file_name' => $attachment['file_name'] ?? null,
+            ]);
+        }
     }
 
     /**

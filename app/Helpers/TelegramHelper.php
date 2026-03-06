@@ -78,4 +78,26 @@ class TelegramHelper
 
         return $fileId ?? null;
     }
+
+    /**
+     * @param array $data
+     *
+     * @return string|null
+     */
+    public static function extractFileType(array $data): ?string
+    {
+        if (!empty($data['message']['photo'])) {
+            return 'photo';
+        } elseif (!empty($data['message']['document'])) {
+            return 'document';
+        } elseif (!empty($data['message']['voice'])) {
+            return 'voice';
+        } elseif (!empty($data['message']['sticker'])) {
+            return 'sticker';
+        } elseif (!empty($data['message']['video_note'])) {
+            return 'video_note';
+        }
+
+        return null;
+    }
 }

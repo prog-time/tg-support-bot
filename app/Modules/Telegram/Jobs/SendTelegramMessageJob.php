@@ -121,13 +121,47 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->messageId,
             'to_id' => $resultQuery->message_id,
+            'text' => $this->typeMessage === 'incoming' ? ($this->updateDto->text ?? null) : ($this->queryParams->text ?? null),
         ]);
+
+        if ($this->typeMessage === 'incoming' && !empty($this->updateDto->fileId)) {
+            $message->attachments()->create([
+                'file_id' => $this->updateDto->fileId,
+                'file_type' => $this->updateDto->fileType ?? 'document',
+            ]);
+        }
+
+        if ($this->typeMessage === 'outgoing') {
+            $fileId = $this->queryParams->photo
+                ?? $this->queryParams->document
+                ?? $this->queryParams->voice
+                ?? $this->queryParams->sticker
+                ?? $this->queryParams->video_note
+                ?? $this->queryParams->file_id;
+
+            $fileType = match (true) {
+                !empty($this->queryParams->photo) => 'photo',
+                !empty($this->queryParams->document) => 'document',
+                !empty($this->queryParams->voice) => 'voice',
+                !empty($this->queryParams->sticker) => 'sticker',
+                !empty($this->queryParams->video_note) => 'video_note',
+                !empty($this->queryParams->file_id) => 'document',
+                default => null,
+            };
+
+            if (!empty($fileId) && !empty($fileType)) {
+                $message->attachments()->create([
+                    'file_id' => $fileId,
+                    'file_type' => $fileType,
+                ]);
+            }
+        }
     }
 
     /**

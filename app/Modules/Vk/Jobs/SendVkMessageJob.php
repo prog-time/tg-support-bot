@@ -73,13 +73,21 @@ class SendVkMessageJob extends AbstractSendMessageJob
      */
     protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->messageId,
             'to_id' => $resultQuery->response,
+            'text' => $this->updateDto->text ?? null,
         ]);
+
+        if (!empty($this->updateDto->fileId)) {
+            $message->attachments()->create([
+                'file_id' => $this->updateDto->fileId,
+                'file_type' => $this->updateDto->fileType ?? 'document',
+            ]);
+        }
     }
 
     /**
