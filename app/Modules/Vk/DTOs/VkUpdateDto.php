@@ -17,7 +17,8 @@ readonly class VkUpdateDto
         public ?string $text,
         public ?array $geo,
         public array $rawData,
-        public array $listFileUrl
+        public array $listFileUrl,
+        public array $listAttachments,
     ) {
     }
 
@@ -42,6 +43,7 @@ readonly class VkUpdateDto
                 geo: $data['object']['message']['geo'] ?? null,
                 rawData: $data,
                 listFileUrl: self::getListUrlAttachments(self::detectAttachments($data)),
+                listAttachments: self::getListAttachments(self::detectAttachments($data)),
             );
         } catch (\Throwable $e) {
             return null;
@@ -136,6 +138,60 @@ readonly class VkUpdateDto
 
                 case 'audio_message':
                     $result[] = $attachmentData['link_mp3'];
+                    break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get structured attachments list with type and file_id.
+     *
+     * @param array|null $attachments
+     *
+     * @return array<int, array{type: string, file_id: string, file_name: string|null}>
+     */
+    private static function getListAttachments(?array $attachments): array
+    {
+        if (empty($attachments)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($attachments as $attachment) {
+            $attachmentData = $attachment[$attachment['type']];
+            switch ($attachment['type']) {
+                case 'photo':
+                    $result[] = [
+                        'type' => 'photo',
+                        'file_id' => $attachmentData['orig_photo']['url'],
+                        'file_name' => null,
+                    ];
+                    break;
+
+                case 'graffiti':
+                    $result[] = [
+                        'type' => 'photo',
+                        'file_id' => $attachmentData['url'],
+                        'file_name' => null,
+                    ];
+                    break;
+
+                case 'doc':
+                    $result[] = [
+                        'type' => 'document',
+                        'file_id' => $attachmentData['url'],
+                        'file_name' => $attachmentData['title'] ?? null,
+                    ];
+                    break;
+
+                case 'audio_message':
+                    $result[] = [
+                        'type' => 'voice',
+                        'file_id' => $attachmentData['link_mp3'],
+                        'file_name' => null,
+                    ];
                     break;
             }
         }
