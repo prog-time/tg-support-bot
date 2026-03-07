@@ -16,11 +16,11 @@ class BotUserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationLabel = 'Пользователи';
+    protected static ?string $navigationLabel = 'Чаты';
 
-    protected static ?string $modelLabel = 'Пользователь';
+    protected static ?string $modelLabel = 'Чат';
 
-    protected static ?string $pluralModelLabel = 'Пользователи';
+    protected static ?string $pluralModelLabel = 'Чаты';
 
     protected static ?int $navigationSort = 2;
 

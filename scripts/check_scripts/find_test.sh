@@ -11,7 +11,7 @@ EXCLUDE_PATTERNS=(
     "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
     "*Mock*" "*api*" "*Providers*" "*Provider*" "*Abstract*"
     "*resources*" "*Stubs*" "*TestCase*" "*Test*"
-    "*Interface*"
+    "*Interface*" "*Factories*"
 )
 
 # -----------------------------

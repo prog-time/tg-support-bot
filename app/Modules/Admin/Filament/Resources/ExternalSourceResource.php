@@ -31,6 +31,19 @@ class ExternalSourceResource extends Resource
     protected static ?int $navigationSort = 3;
 
     /**
+     * Only admins can manage external sources.
+     *
+     * @return bool
+     */
+    public static function canAccess(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = auth()->user();
+
+        return $user?->isAdmin() ?? false;
+    }
+
+    /**
      * @param Form $form
      *
      * @return Form

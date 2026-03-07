@@ -26,6 +26,7 @@ erDiagram
         bigint id PK
         string name
         string email UK
+        string role
         string password
         timestamp email_verified_at
         string remember_token
@@ -123,6 +124,7 @@ Laravel authentication table for admin users.
 | `id` | `bigint` | No | auto | Primary key |
 | `name` | `string` | No | — | Display name |
 | `email` | `string` | No | — | Unique login identifier |
+| `role` | `string` | No | `manager` | Access role: `admin` or `manager` |
 | `email_verified_at` | `timestamp` | Yes | NULL | Email verification timestamp |
 | `password` | `string` | No | — | Hashed password (bcrypt) |
 | `remember_token` | `string(100)` | Yes | NULL | Session remember token |
