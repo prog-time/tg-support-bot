@@ -213,6 +213,68 @@ class TgVkMessageServiceTest extends TestCase
         $this->assertCount(2, $keyboard['buttons']);
     }
 
+    public function test_send_voice(): void
+    {
+        $fileName = 'path/voice.ogg';
+        $tgFileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$fileName}";
+        $vkUploadFileUrl = 'https://vk.com/stub_file/voice_upload';
+
+        Http::fake([
+            'https://api.telegram.org/bot*/getFile*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'file_id'   => 'voice_file_id',
+                    'file_path' => $fileName,
+                ],
+            ], 200),
+
+            $tgFileUrl => Http::response('FAKE_OGG_CONTENT', 200, ['Content-Type' => 'audio/ogg']),
+
+            'https://api.vk.com/method/docs.getMessagesUploadServer*' => Http::response([
+                'response' => ['upload_url' => $vkUploadFileUrl],
+            ], 200),
+
+            'https://vk.com/stub_file/*' => Http::response([
+                'file' => 'encoded_voice_data',
+            ], 200),
+
+            'https://api.vk.com/method/docs.save*' => Http::response([
+                'response' => [
+                    'type'          => 'audio_message',
+                    'audio_message' => ['id' => 42, 'owner_id' => 123],
+                ],
+            ], 200),
+        ]);
+
+        $payload = $this->basicPayload;
+        $payload['message']['voice'] = [
+            'file_id'   => 'voice_file_id',
+            'duration'  => 5,
+            'mime_type' => 'audio/ogg',
+        ];
+        unset($payload['message']['text']);
+
+        $dto = TelegramUpdateDto_VKMock::getDto($payload);
+
+        (new TgVkMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendVkMessageJob::class];
+        $this->assertEquals(1, count($pushed));
+
+        $jobData = $pushed[0]['job'];
+
+        $this->assertEquals($this->botUser->id, $jobData->botUserId);
+        $this->assertEquals($this->botUser->chat_id, $jobData->queryParams->peer_id);
+        $this->assertNotEmpty($jobData->queryParams->attachment);
+
+        // Verify type=audio_message was sent to VK upload server
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'docs.getMessagesUploadServer')
+                && $request->data()['type'] === 'audio_message';
+        });
+    }
+
     public function test_send_text_message_without_buttons(): void
     {
         $payload = $this->basicPayload;

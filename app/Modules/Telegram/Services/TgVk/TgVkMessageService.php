@@ -36,6 +36,8 @@ class TgVkMessageService extends FromTgMessageService
                 $this->sendPhoto();
             } elseif (!empty($this->update->rawData['message']['document'])) {
                 $this->sendDocument();
+            } elseif (!empty($this->update->rawData['message']['voice'])) {
+                $this->sendVoice();
             } elseif (!empty($this->update->rawData['message']['sticker'])) {
                 $this->sendSticker();
             } elseif (!empty($this->update->rawData['message']['contact'])) {
@@ -119,7 +121,13 @@ class TgVkMessageService extends FromTgMessageService
         if (empty($fileData->response)) {
             throw new \Exception('File upload error!', 1);
         }
-        $attachment = "doc{$fileData->response['doc']['owner_id']}_{$fileData->response['doc']['id']}";
+
+        $docData = $fileData->response['audio_message'] ?? $fileData->response['doc'] ?? null;
+        if (empty($docData)) {
+            throw new \Exception('File upload error!', 1);
+        }
+
+        $attachment = "doc{$docData['owner_id']}_{$docData['id']}";
 
         $queryParams = [
             'methodQuery' => 'messages.send',
@@ -226,7 +234,8 @@ class TgVkMessageService extends FromTgMessageService
                 throw new \Exception('Error getting file data!', 1);
             }
 
-            $resultData = app(GetMessagesUploadServerVk::class)->execute($this->botUser->chat_id, $typeMethod);
+            $extraParams = $typeFile === 'audio_message' ? ['type' => 'audio_message'] : [];
+            $resultData = app(GetMessagesUploadServerVk::class)->execute($this->botUser->chat_id, $typeMethod, $extraParams);
             if (empty($resultData->response['upload_url'])) {
                 throw new \Exception('Error getting file upload URL!', 1);
             }

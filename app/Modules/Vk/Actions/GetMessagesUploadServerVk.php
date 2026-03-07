@@ -13,18 +13,18 @@ class GetMessagesUploadServerVk
     /**
      * Get document upload server.
      *
-     * @param int    $chat_id
-     * @param string $typeMethod
+     * @param int                  $chat_id
+     * @param string               $typeMethod
+     * @param array<string, mixed> $extraParams Additional query params (e.g. ['type' => 'audio_message'])
      *
      * @return VkAnswerDto
      */
-    public function execute(int $chat_id, string $typeMethod = 'doc'): VkAnswerDto
+    public function execute(int $chat_id, string $typeMethod = 'doc', array $extraParams = []): VkAnswerDto
     {
         try {
             $methodQuery = $typeMethod . '.getMessagesUploadServer';
-            $dataQuery = [
-                'peer_id' => $chat_id,
-            ];
+            $dataQuery = array_merge(['peer_id' => $chat_id], $extraParams);
+
             return VkMethods::sendQueryVk($methodQuery, $dataQuery);
         } catch (\Throwable $e) {
             return VkAnswerDto::fromData([
