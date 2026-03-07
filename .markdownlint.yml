@@ -1,0 +1,40 @@
+default: true
+
+# Line length — tables and code blocks regularly exceed 80 chars
+MD013: false
+
+# Headings surrounded by blank lines — existing docs don't always have them
+MD022: false
+
+# Duplicate headings — same heading names appear in different sections
+MD024: false
+
+# Fenced code blocks surrounded by blank lines — existing docs skip this
+MD031: false
+
+# Lists surrounded by blank lines — existing docs skip this
+MD032: false
+
+# Inline HTML
+MD033: false
+
+# Bare URLs in text
+MD034: false
+
+# Emphasis used instead of heading — existing docs use bold as pseudo-headings
+MD036: false
+
+# Fenced code blocks should have a language — many plain text blocks exist
+MD040: false
+
+# Unordered list style — existing docs mix asterisks and dashes
+MD004: false
+
+# Multiple consecutive blank lines — some docs have double blank lines
+MD012: false
+
+# Unordered list indentation — some docs use 4-space indent
+MD007: false
+
+# Multiple top-level headings — master-promt.md aggregates multiple docs
+MD025: false
