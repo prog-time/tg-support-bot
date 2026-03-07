@@ -122,7 +122,8 @@ class ConversationResourceTest extends TestCase
         $botUser = BotUser::create(['chat_id' => 100, 'platform' => 'telegram']);
 
         Livewire::test(ViewConversation::class, ['record' => $botUser->getRouteKey()])
-            ->callAction('sendReply', ['text' => 'Hello from admin'])
+            ->set('replyText', 'Hello from admin')
+            ->call('sendReply')
             ->assertHasNoErrors()
             ->assertNotified('Сообщение отправлено');
 
