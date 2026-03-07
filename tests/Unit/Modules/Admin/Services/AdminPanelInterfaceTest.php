@@ -27,7 +27,7 @@ class AdminPanelInterfaceTest extends TestCase
         $this->assertInstanceOf(ManagerInterfaceContract::class, $this->service);
     }
 
-    public function test_notify_incoming_message_is_noop(): void
+    public function test_notify_incoming_message_saves_message_to_db(): void
     {
         $botUser = BotUser::create(['chat_id' => 100, 'platform' => 'telegram']);
 
@@ -37,12 +37,75 @@ class AdminPanelInterfaceTest extends TestCase
             aiTechMessage: false,
             typeSource: 'private',
             chatId: 100,
+            messageId: 42,
             text: 'Hello',
         );
 
-        // Verifies no exception is thrown (method is a no-op, returns void)
-        $this->expectNotToPerformAssertions();
         $this->service->notifyIncomingMessage($botUser, $dto);
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id'  => $botUser->id,
+            'platform'     => 'telegram',
+            'message_type' => 'incoming',
+            'from_id'      => 42,
+            'to_id'        => 0,
+            'text'         => 'Hello',
+        ]);
+    }
+
+    public function test_notify_incoming_message_saves_attachment(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 200, 'platform' => 'telegram']);
+
+        $dto = new TelegramUpdateDto(
+            updateId: 2,
+            typeQuery: 'message',
+            aiTechMessage: false,
+            typeSource: 'private',
+            chatId: 200,
+            messageId: 99,
+            fileId: 'file_abc123',
+            fileType: 'photo',
+        );
+
+        $this->service->notifyIncomingMessage($botUser, $dto);
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id'  => $botUser->id,
+            'message_type' => 'incoming',
+            'from_id'      => 99,
+            'text'         => null,
+        ]);
+
+        $this->assertDatabaseHas('message_attachments', [
+            'file_id'   => 'file_abc123',
+            'file_type' => 'photo',
+        ]);
+    }
+
+    public function test_notify_incoming_message_uses_caption_when_text_is_null(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 300, 'platform' => 'telegram']);
+
+        $dto = new TelegramUpdateDto(
+            updateId: 3,
+            typeQuery: 'message',
+            aiTechMessage: false,
+            typeSource: 'private',
+            chatId: 300,
+            messageId: 55,
+            caption: 'Photo caption',
+            fileId: 'file_xyz',
+            fileType: 'photo',
+        );
+
+        $this->service->notifyIncomingMessage($botUser, $dto);
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id'  => $botUser->id,
+            'message_type' => 'incoming',
+            'text'         => 'Photo caption',
+        ]);
     }
 
     public function test_create_conversation_is_noop(): void

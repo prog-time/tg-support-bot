@@ -4,14 +4,14 @@ namespace App\Modules\Admin\Services;
 
 use App\Contracts\ManagerInterfaceContract;
 use App\Models\BotUser;
+use App\Models\Message;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 
 class AdminPanelInterface implements ManagerInterfaceContract
 {
     /**
-     * In admin_panel mode the incoming message is already persisted by
-     * AbstractSendMessageJob::saveMessage(). Livewire polling will pick
-     * it up on the next interval.
+     * Save the incoming message to the database so Livewire polling
+     * can display it in the admin panel.
      *
      * @param BotUser           $botUser User who sent the message
      * @param TelegramUpdateDto $dto     Message data
@@ -20,7 +20,21 @@ class AdminPanelInterface implements ManagerInterfaceContract
      */
     public function notifyIncomingMessage(BotUser $botUser, TelegramUpdateDto $dto): void
     {
-        // Message is already in DB. Livewire polling refreshes the UI automatically.
+        $message = Message::create([
+            'bot_user_id'  => $botUser->id,
+            'platform'     => $botUser->platform,
+            'message_type' => 'incoming',
+            'from_id'      => $dto->messageId ?? 0,
+            'to_id'        => 0,
+            'text'         => $dto->text ?? $dto->caption ?? null,
+        ]);
+
+        if (!empty($dto->fileId)) {
+            $message->attachments()->create([
+                'file_id'   => $dto->fileId,
+                'file_type' => $dto->fileType ?? 'document',
+            ]);
+        }
     }
 
     /**
