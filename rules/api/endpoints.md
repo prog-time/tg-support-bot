@@ -80,6 +80,24 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | `GET` | `/docs/swagger-v1-json` | OpenAPI JSON |
 | `GET` | `/docs/swagger-v1-ui` | Swagger UI |
 
+### Admin Panel (Filament 3)
+
+> Auth: session-based. Users are stored in the `users` table. Managed by Filament auth.
+> These routes are rendered server-side by Filament/Livewire — no Swagger annotation required.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/admin` | session | Admin panel home (redirects to first resource) |
+| `GET` | `/admin/login` | — | Login form |
+| `POST` | `/admin/login` | — | Authenticate manager |
+| `POST` | `/admin/logout` | session | Log out |
+| `GET` | `/admin/conversations` | session | List all conversations (`ConversationResource`) |
+| `GET` | `/admin/conversations/{id}` | session | View conversation with message history (`ViewConversation`) |
+| `GET` | `/admin/bot-users` | session | List all bot users (`BotUserResource`) |
+| `GET` | `/admin/external-sources` | session | List external sources (`ExternalSourceResource`) |
+| `GET` | `/admin/external-sources/create` | session | Create external source form |
+| `GET` | `/admin/external-sources/{id}/edit` | session | Edit external source form |
+
 ---
 
 ## 4. Middleware Rules

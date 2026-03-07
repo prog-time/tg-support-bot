@@ -19,6 +19,7 @@ The `rules/` directory is the source of truth for all architectural decisions, b
 | User management / banning | `rules/domain/bot-users.md` |
 | AI assistant logic | `rules/domain/ai-assistant.md` |
 | External API integration | `rules/domain/external-sources.md` |
+| Admin panel / manager UI | `rules/domain/admin-panel.md` |
 | Database / migrations | `rules/database/schema.md` |
 | HTTP routes / endpoints | `rules/api/endpoints.md` |
 | Architecture decisions | `rules/process/architecture-design.md` |
@@ -58,6 +59,7 @@ TG Support Bot is a Laravel 12 application for customer support via Telegram and
 | Static Analysis | PHPStan level 6 (larastan) |
 | Code Formatting | Laravel Pint (PSR-12 + Laravel) |
 | Testing | PHPUnit 11 + Mockery |
+| Admin Panel | Filament 3 |
 | Error Tracking | Sentry |
 | Log Aggregation | Loki + Grafana + Promtail |
 | Telegram Logging | prog-time/tg-logger |
@@ -67,15 +69,17 @@ TG Support Bot is a Laravel 12 application for customer support via Telegram and
 ## Architecture
 
 ```
-HTTP Layer          app/Http/Controllers/ + app/Http/Middleware/
+HTTP Layer          app/Http/Controllers/ + app/Modules/*/Controllers/
      ↓
-DTO Layer           app/DTOs/
+DTO Layer           app/DTOs/ + app/Modules/*/DTOs/
      ↓
-Business Logic      app/Services/ + app/Actions/
-     ↓
-Integration         app/TelegramBot/ + app/VkBot/
-     ↓
-Queue Layer         app/Jobs/
+Business Logic      app/Services/ + app/Modules/*/Services/ + app/Actions/
+     ↓              ↓
+Integration         ManagerInterfaceContract
+app/Modules/Telegram/Api/   /          \
+app/Modules/Vk/Api/   TelegramGroupInterface   AdminPanelInterface
+     ↓              (forum topics)         (Filament web panel)
+Queue Layer         app/Modules/*/Jobs/
      ↓
 Data Layer          app/Models/ + PostgreSQL
 ```
@@ -84,22 +88,24 @@ Data Layer          app/Models/ + PostgreSQL
 
 | Layer | Directory | Rule |
 |---|---|---|
-| Controllers | `app/Http/Controllers/` | Thin — receive request, dispatch job or call service, return response |
-| Middleware | `app/Http/Middleware/` | Validate incoming webhooks (Telegram, VK, External API auth) |
-| DTOs | `app/DTOs/` | Parse and type incoming data via static `fromRequest()` |
-| Services | `app/Services/` | Reusable business logic |
-| Actions | `app/Actions/` | Single isolated operations (one action = one thing) |
-| TelegramBot/VkBot | `app/TelegramBot/`, `app/VkBot/` | Direct API calls only |
-| Jobs | `app/Jobs/` | All async operations — message sending, webhooks |
+| Controllers | `app/Http/Controllers/`, `app/Modules/*/Controllers/` | Thin — receive request, dispatch job or call service, return response |
+| Middleware | `app/Modules/*/Middleware/` | Validate incoming webhooks (Telegram, VK, External API auth) |
+| DTOs | `app/DTOs/`, `app/Modules/*/DTOs/` | Parse and type incoming data via static `fromRequest()` |
+| Services | `app/Services/`, `app/Modules/*/Services/` | Reusable business logic |
+| Actions | `app/Actions/`, `app/Modules/*/Actions/` | Single isolated operations (one action = one thing) |
+| Telegram/VK API | `app/Modules/Telegram/Api/`, `app/Modules/Vk/Api/` | Direct API calls only |
+| Admin | `app/Modules/Admin/` | Filament resources, Livewire pages, SendReplyAction |
+| Jobs | `app/Modules/*/Jobs/` | All async operations — message sending, webhooks |
 | Models | `app/Models/` | Data operations only, no business logic, no API calls |
 
 ### Key Patterns
 
-- **Action Pattern** — `app/Actions/` — static `execute()`, one responsibility
-- **Service Pattern** — `app/Services/` — injected, reusable logic
-- **DTO Pattern** — `app/DTOs/` — typed data transfer between layers
+- **Action Pattern** — `app/Modules/*/Actions/` — static `execute()`, one responsibility
+- **Service Pattern** — `app/Services/`, `app/Modules/*/Services/` — injected, reusable logic
+- **DTO Pattern** — `app/DTOs/`, `app/Modules/*/DTOs/` — typed data transfer between layers
 - **Queue Pattern** — all Telegram/VK API sends go through Jobs, never synchronously
 - **Middleware Pattern** — webhook validation before controller runs
+- **Contract Pattern** — `ManagerInterfaceContract` decouples manager UI from business logic
 
 ---
 
@@ -107,22 +113,31 @@ Data Layer          app/Models/ + PostgreSQL
 
 ```
 app/
-├── Actions/          # Isolated operations (Telegram/, Vk/, Ai/, External/)
-├── Contracts/        # Interfaces (AiProviderInterface)
-├── DTOs/             # Data Transfer Objects
+├── Actions/          # Shared isolated operations (Ai/)
+├── Contracts/        # Interfaces (AiProviderInterface, ManagerInterfaceContract)
+├── DTOs/             # Shared Data Transfer Objects (Ai/, Button/, Redis/)
 ├── Enums/            # Enumerations (ButtonType, TelegramError, VkError)
 ├── Helpers/          # Utilities (TelegramHelper, AiHelper, DateHelper)
 ├── Http/
-│   ├── Controllers/  # TelegramBotController, VkBotController, ExternalTrafficController, etc.
-│   ├── Middleware/   # TelegramQuery, VkQuery, ApiQuery
-│   └── Requests/     # Form Requests
-├── Jobs/             # Queue jobs (SendMessage/, TopicCreateJob, SendWebhookMessage)
+│   └── Controllers/  # SimplePage, FilesController, SwaggerController, PreviewController
 ├── Logging/          # LokiHandler
 ├── Models/           # BotUser, Message, ExternalMessage, ExternalSource, AiMessage, etc.
-├── Providers/        # AppServiceProvider
-├── Services/         # Tg/, VK/, TgVk/, TgExternal/, External/, Button/, etc.
-├── TelegramBot/      # TelegramMethods, ParserMethods
-└── VkBot/            # VkMethods
+├── Modules/
+│   ├── Admin/        # Filament 3 admin panel
+│   │   ├── Actions/  # SendReplyAction
+│   │   ├── Filament/
+│   │   │   ├── Pages/       # ConversationPage (Livewire)
+│   │   │   └── Resources/   # ConversationResource, BotUserResource, ExternalSourceResource
+│   │   └── Services/ # AdminPanelInterface (ManagerInterfaceContract implementation)
+│   ├── External/     # External Sources integration
+│   │   ├── Actions/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
+│   ├── Telegram/     # Telegram bot
+│   │   ├── Actions/, Api/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
+│   │   └── Services/TelegramGroupInterface.php  # ManagerInterfaceContract implementation
+│   └── Vk/           # VK bot
+│       ├── Actions/, Api/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
+├── Providers/        # AppServiceProvider (binds ManagerInterfaceContract)
+└── Services/         # Shared services (Ai/, Button/, File/, Swagger/, Webhook/)
 ```
 
 ---
@@ -224,6 +239,14 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 
 - Requests must be authenticated with a bearer token from `external_source_access_tokens`
 - When the team replies to an external user, a webhook is sent to `external_sources.webhook_url`
+
+### Manager Interface
+
+- `MANAGER_INTERFACE=telegram_group` (default) — managers work via Telegram supergroup with forum topics
+- `MANAGER_INTERFACE=admin_panel` — managers work via the `/admin` web panel (Filament 3)
+- Switching: change `.env` + restart the `php-fpm` container (`docker compose restart app`)
+- Does not require `php artisan migrate` or any DB changes
+- See `rules/domain/admin-panel.md` for full rules and `docs/switching-manager-interface.md` for runbook
 
 ---
 

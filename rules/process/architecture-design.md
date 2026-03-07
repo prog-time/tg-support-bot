@@ -27,23 +27,30 @@ If design is missing → stop and design.
 flowchart TD
     A[HTTP Layer\nControllers + Middleware] --> B[DTO Layer\nTelegramUpdateDto, VkUpdateDto, ExternalMessageDto]
     B --> C[Business Logic Layer\nServices + Actions]
-    C --> D[Integration Layer\nTelegramBot/ + VkBot/]
-    C --> E[Queue Layer\nJobs — async operations]
+    C --> MI[ManagerInterfaceContract]
+    MI --> TGI[TelegramGroupInterface\nTelegram forum topics]
+    MI --> API[AdminPanelInterface\nFilament web panel]
+    C --> D[Integration Layer\nModules/Telegram/Api/ + Modules/Vk/Api/]
+    C --> E[Queue Layer\nModules/*/Jobs/ — async operations]
     E --> D
     C --> F[Data Layer\nModels + PostgreSQL]
     D --> G[External APIs\nTelegram API, VK API]
     E --> G
 ```
 
+The `ManagerInterfaceContract` decouples the business logic layer from the manager UI. Switch between implementations by changing `MANAGER_INTERFACE` in `.env` and restarting the `app` container.
+
 ### Layer Responsibilities
 
 | Layer | Directory | Responsibility |
 |---|---|---|
-| HTTP | `app/Http/Controllers/`, `app/Http/Middleware/` | Receive requests, validate with middleware, return responses |
-| DTO | `app/DTOs/` | Parse and type incoming data, pass between layers |
-| Business Logic | `app/Services/`, `app/Actions/` | Business rules, routing, state management |
-| Integration | `app/TelegramBot/`, `app/VkBot/` | Direct API calls to Telegram and VK |
-| Queue | `app/Jobs/` | Async message sending, retries, webhook dispatch |
+| HTTP | `app/Http/Controllers/`, `app/Modules/*/Controllers/` | Receive requests, validate with middleware, return responses |
+| DTO | `app/DTOs/`, `app/Modules/*/DTOs/` | Parse and type incoming data, pass between layers |
+| Business Logic | `app/Services/`, `app/Modules/*/Services/`, `app/Modules/*/Actions/` | Business rules, routing, state management |
+| Manager Interface | `app/Modules/Telegram/Services/TelegramGroupInterface.php`, `app/Modules/Admin/Services/AdminPanelInterface.php` | Notify managers of incoming messages; create conversations |
+| Admin UI | `app/Modules/Admin/Filament/` | Filament resources, Livewire pages, reply form |
+| Integration | `app/Modules/Telegram/Api/`, `app/Modules/Vk/Api/` | Direct API calls to Telegram and VK |
+| Queue | `app/Modules/*/Jobs/` | Async message sending, retries, webhook dispatch |
 | Data | `app/Models/` | Eloquent ORM, database queries only |
 
 ---
@@ -262,6 +269,9 @@ class AiAnswerMessageSender
 | Jobs | `PascalCaseJob`, `handle()` | `SendTelegramMessageJob` |
 | DTOs | `PascalCaseDto`, static `fromRequest()` | `TelegramUpdateDto::fromRequest()` |
 | Models | `PascalCase`, Eloquent conventions | `BotUser`, `AiMessage` |
+| Filament Resources | `PascalCaseResource`, extends `Resource` | `ConversationResource` |
+| Filament Pages | `PascalCase`, extends `Page` or `ViewRecord` | `ConversationPage`, `ViewConversation` |
+| Contracts | `PascalCaseContract` or `PascalCaseInterface` | `ManagerInterfaceContract` |
 
 ---
 

@@ -31,7 +31,8 @@ rules/
 │  ├─ messaging.md                    ← Core messaging domain (Telegram, VK, External)
 │  ├─ bot-users.md                    ← Bot user management domain
 │  ├─ ai-assistant.md                 ← AI assistant integration domain
-│  └─ external-sources.md             ← External source integration domain
+│  ├─ external-sources.md             ← External source integration domain
+│  └─ admin-panel.md                  ← Admin panel domain (Filament 3, ManagerInterfaceContract)
 ├─ api/
 │  └─ endpoints.md                    ← API contract rules and Swagger reference
 └─ process/
@@ -83,9 +84,10 @@ When performing a task, the AI agent **must follow this sequence**:
 | 8 | `domain/external-sources.md` | External integrations domain rules |
 | 9 | `api/endpoints.md` | Understand API contracts. Do not implement endpoints not defined in Swagger |
 | 10 | `process/observability.md` | Ensure logs, metrics, health checks, and request tracing will be included |
-| 11 | `process/ci-cd.md` | Validate pipeline rules. Ensure automated testing and deployment constraints |
-| 12 | `process/security.md` | Read security rules before modifying auth, input handling, or secrets |
-| 13 | `process/testing-strategy.md` | Ensure tests will cover all changes and critical paths |
+| 11 | `domain/admin-panel.md` | Admin panel domain rules — read before modifying `/admin`, Filament resources, or `SendReplyAction` |
+| 12 | `process/ci-cd.md` | Validate pipeline rules. Ensure automated testing and deployment constraints |
+| 13 | `process/security.md` | Read security rules before modifying auth, input handling, or secrets |
+| 14 | `process/testing-strategy.md` | Ensure tests will cover all changes and critical paths |
 
 > **Rule:** Never implement before design and lifecycle steps are confirmed.
 
@@ -100,19 +102,25 @@ DTO Layer (TelegramUpdateDto, VkUpdateDto, ExternalMessageDto)
     ↓
 Business Logic Layer (Services + Actions)
     ↓
-Integration Layer (TelegramBot/, VkBot/)
+ManagerInterfaceContract
+   /                    \
+TelegramGroupInterface   AdminPanelInterface
+(Telegram forum topics)  (Filament web panel /admin)
     ↓
-Queue Layer (Jobs — async processing)
+Integration Layer (Modules/Telegram/Api/, Modules/Vk/Api/)
+    ↓
+Queue Layer (Modules/*/Jobs/ — async processing)
     ↓
 Data Layer (Models + PostgreSQL)
 ```
 
 **Key patterns used in this project:**
-- **Action Pattern** — `app/Actions/` — one action per operation
-- **Service Pattern** — `app/Services/` — reusable business logic
-- **DTO Pattern** — `app/DTOs/` — typed data between layers
-- **Queue Pattern** — `app/Jobs/` — async operations (send messages, webhooks)
+- **Action Pattern** — `app/Modules/*/Actions/` — one action per operation
+- **Service Pattern** — `app/Services/`, `app/Modules/*/Services/` — reusable business logic
+- **DTO Pattern** — `app/DTOs/`, `app/Modules/*/DTOs/` — typed data between layers
+- **Queue Pattern** — `app/Modules/*/Jobs/` — async operations (send messages, webhooks)
 - **Middleware Pattern** — validation of incoming webhooks
+- **Contract Pattern** — `ManagerInterfaceContract` — decouples manager UI from message routing
 
 ---
 
