@@ -11,6 +11,7 @@ storage/framework/views/*
 .env
 .env.*
 !.env.example
-docker/
+docker/*
+!docker/php
 *.md
 tests/
