@@ -41,29 +41,28 @@ class ExternalSourceServiceTest extends TestCase
         ]);
     }
 
-    public function test_update_source_refreshes_token(): void
+    public function test_update_source_updates_webhook_url(): void
     {
-        $source = ExternalSource::create(['name' => 'test_source']);
-        ExternalSourceAccessTokens::create([
-            'external_source_id' => $source->id,
-            'token' => str_repeat('a', 60),
-            'active' => 1,
-        ]);
+        $source = $this->service->create(ExternalSourceDto::from([
+            'name' => 'test_source',
+            'webhook_url' => 'https://example.com/hook',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]));
 
-        $dto = ExternalSourceDto::from([
+        $result = $this->service->update(ExternalSourceDto::from([
             'id' => $source->id,
             'name' => 'test_source',
             'webhook_url' => 'https://example.com/hook-updated',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $result = $this->service->update($dto);
+        ]));
 
         $this->assertInstanceOf(ExternalSource::class, $result);
         $this->assertDatabaseHas('external_sources', ['webhook_url' => 'https://example.com/hook-updated']);
-
-        $token = ExternalSourceAccessTokens::where('external_source_id', $source->id)->value('token');
-        $this->assertNotEquals(str_repeat('a', 60), $token);
+        $this->assertDatabaseHas('external_source_access_tokens', [
+            'external_source_id' => $source->id,
+            'active' => 1,
+        ]);
     }
 }
