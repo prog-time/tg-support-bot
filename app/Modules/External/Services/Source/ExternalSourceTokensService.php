@@ -37,7 +37,7 @@ class ExternalSourceTokensService
                 'updated_at' => date('Y-m-d H:i:s'),
             ];
 
-            $accessTokensItem = $this->externalSourceAccessTokens->where('id', $sourceId)->first();
+            $accessTokensItem = $this->externalSourceAccessTokens->where('external_source_id', $sourceId)->first();
             if (!$accessTokensItem) {
                 $this->externalSourceAccessTokens->create(array_merge($accessTokenData, [
                     'external_source_id' => $sourceId,
