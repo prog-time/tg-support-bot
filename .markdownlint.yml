@@ -38,3 +38,12 @@ MD007: false
 
 # Multiple top-level headings — master-promt.md aggregates multiple docs
 MD025: false
+
+# Table column style — existing tables use varied pipe spacing
+MD060: false
+
+# Link fragments — Russian headings with emoji cause fragment mismatches
+MD051: false
+
+# Ordered list item prefix — some lists use non-sequential numbering
+MD029: false
