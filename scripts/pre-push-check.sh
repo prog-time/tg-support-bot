@@ -16,7 +16,7 @@ fi
 # Laravel / Artisan tests
 # -----------------------------
 echo -e "🧪 Running Laravel tests (php artisan test)..."
-php artisan test --stop-on-failure
+php artisan test
 if [ $? -ne 0 ]; then
     echo -e "❌ Push blocked due to failing tests."
     exit 1

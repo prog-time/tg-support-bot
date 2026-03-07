@@ -17,6 +17,10 @@ class CloseTopic
      */
     public function execute(BotUser $botUser): void
     {
+        if ($botUser->isClosed()) {
+            return;
+        }
+
         $groupId = config('traffic_source.settings.telegram.group_id');
 
         switch ($botUser->platform) {
@@ -41,6 +45,11 @@ class CloseTopic
             'chat_id' => $groupId,
             'message_thread_id' => $botUser->topic_id,
         ]));
+
+        $botUser->update([
+            'is_closed' => true,
+            'closed_at' => now(),
+        ]);
     }
 
     /**

@@ -20,6 +20,8 @@ use phpDocumentor\Reflection\Exception;
  * @property mixed             $lastMessageManager
  * @property ExternalUser|null $externalUser
  * @property bool              $is_banned
+ * @property bool              $is_closed
+ * @property string|null       $closed_at
  */
 class BotUser extends Model
 {
@@ -33,6 +35,8 @@ class BotUser extends Model
         'platform',
         'is_banned',
         'banned_at',
+        'is_closed',
+        'closed_at',
     ];
 
     /**
@@ -249,5 +253,13 @@ class BotUser extends Model
     public function isBanned(): bool
     {
         return $this->is_banned ?? false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isClosed(): bool
+    {
+        return $this->is_closed ?? false;
     }
 }
