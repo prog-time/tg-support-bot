@@ -7,23 +7,24 @@
         {{-- Lightbox --}}
         <template x-teleport="body">
             <div
-                x-show="lightboxOpen"
-                x-transition.opacity
                 x-on:click="lightboxOpen = false"
                 x-on:keydown.escape.window="lightboxOpen = false"
                 class="fixed inset-0 z-[100000] flex items-center justify-center cursor-zoom-out"
-                style="display: none;"
+                :class="lightboxOpen ? 'pointer-events-auto' : 'pointer-events-none'"
+                :style="{ opacity: lightboxOpen ? 1 : 0, transition: 'opacity 300ms ease' }"
+                style="opacity: 0;"
             >
-                <div class="absolute inset-0 bg-black opacity-85"></div>
+                <div class="absolute inset-0 bg-black" style="opacity: 0.85;"></div>
                 <button
                     x-on:click.stop="lightboxOpen = false"
-                    class="fixed top-4 right-5 text-white text-4xl leading-none opacity-80 hover:opacity-100 bg-transparent border-none cursor-pointer z-[100001]"
+                    class="fixed top-16 right-4 text-white text-4xl leading-none opacity-80 hover:opacity-100 bg-transparent border-none cursor-pointer z-[100001]"
                     aria-label="Закрыть"
                 >&times;</button>
                 <img
                     :src="lightboxSrc"
                     x-on:click.stop
-                    class="relative z-[100001] max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl cursor-default block"
+                    class="relative z-[100001] object-contain rounded-lg shadow-2xl cursor-default block"
+                    style="max-width: min(85vw, 960px); max-height: 80vh;"
                     alt="Просмотр изображения"
                 >
             </div>
