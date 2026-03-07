@@ -22,7 +22,7 @@ class TelegramMethods
             $domainQuery = 'https://api.telegram.org/bot' . $token . '/';
             $urlQuery = $domainQuery . $methodQuery;
 
-            if (!empty($dataQuery['uploaded_file'])) {
+            if (!empty($dataQuery['uploaded_file']) || !empty($dataQuery['uploaded_file_path'])) {
                 $resultQuery = ParserMethods::attachQuery($urlQuery, $dataQuery);
             } else {
                 $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
