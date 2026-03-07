@@ -56,7 +56,7 @@ class SendExternalTelegramMessageJob extends AbstractSendMessageJob
                 if ($botUser->topic_id) {
                     $params['message_thread_id'] = $botUser->topic_id;
                     if ($botUser->isClosed()) {
-                        $this->telegramMethods->sendQueryTelegram(
+                        $telegramMethods->sendQueryTelegram(
                             'reopenForumTopic',
                             [
                                 'chat_id' => config('traffic_source.settings.telegram.group_id'),
