@@ -8,8 +8,10 @@ use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Services\Ai\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
@@ -32,6 +34,11 @@ class SendAiTelegramMessageJobTest extends TestCase
         parent::setUp();
 
         Queue::fake();
+
+        Config::set('ai.providers.gigachat.client_secret', 'test_secret');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $this->groupId = time();
         config(['traffic_source.settings.telegram.group_id' => $this->groupId]);

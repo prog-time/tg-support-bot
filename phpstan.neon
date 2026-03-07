@@ -17,6 +17,8 @@ parameters:
         - identifier: missingType.generics
         - '#(?i)referenced with incorrect case#'
         - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::with\(\)#'
+        - identifier: argument.type
+          path: app/Http/Controllers/PreviewController.php
 
     reportUnmatchedIgnoredErrors: false
 

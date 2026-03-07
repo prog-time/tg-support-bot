@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class OpenAiProviderTest extends TestCase
@@ -29,6 +30,9 @@ class OpenAiProviderTest extends TestCase
 
         Config::set('ai.default_provider', 'openai');
         Config::set('ai.providers.openai.api_key', 'test_123');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
