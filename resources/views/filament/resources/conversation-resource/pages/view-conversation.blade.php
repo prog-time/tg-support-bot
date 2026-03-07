@@ -116,7 +116,13 @@
                 </ul>
             </div>
 
-            <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 min-h-64 max-h-[32rem] overflow-y-auto space-y-3">
+            <div
+                class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 overflow-y-auto space-y-3"
+                style="height: 500px; max-height: 90vh;"
+                x-data
+                x-init="$el.scrollTop = $el.scrollHeight"
+                x-on:messages-updated.window="$nextTick(() => $el.scrollTop = $el.scrollHeight)"
+            >
                 @forelse($messages as $message)
                     @php
                         $msgDate   = $message->created_at?->toDateString();

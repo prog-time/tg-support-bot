@@ -81,6 +81,24 @@ class ViewConversation extends ViewRecord
             ->with(['externalMessage', 'attachments'])
             ->orderBy('created_at')
             ->get();
+
+        $this->dispatch('messages-updated');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    /**
+     * Override the page heading to show "Диалог #chat_id".
+     *
+     * @return string
+     */
+    public function getHeading(): string
+    {
+        /** @var BotUser $botUser */
+        $botUser = $this->getRecord();
+
+        return 'Диалог #' . $botUser->chat_id;
     }
 
     /**
