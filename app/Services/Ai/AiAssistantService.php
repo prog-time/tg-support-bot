@@ -7,8 +7,8 @@ namespace App\Services\Ai;
 use App\Contracts\Ai\AiProviderInterface;
 use App\DTOs\Ai\AiRequestDto;
 use App\DTOs\Ai\AiResponseDto;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class AiAssistantService
 {

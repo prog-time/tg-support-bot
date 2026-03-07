@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -13,8 +14,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string               $message_type
  * @property int                  $from_id
  * @property int                  $to_id
+ * @property string|null          $text
  * @property ExternalMessage|null $externalMessage
  * @property BotUser|null         $botUser
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, MessageAttachment> $attachments
  */
 class Message extends Model
 {
@@ -26,6 +29,7 @@ class Message extends Model
         'message_type',
         'from_id',
         'to_id',
+        'text',
     ];
 
     /**
@@ -34,6 +38,14 @@ class Message extends Model
     public function externalMessage(): HasOne
     {
         return $this->hasOne(ExternalMessage::class);
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MessageAttachment::class);
     }
 
     /**

@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Actions\Telegram\DeleteForumTopic;
-use App\DTOs\TGTextMessageDto;
-use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendMessage\SendVkTelegramMessageJob;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\TelegramBot\TelegramMethods;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
@@ -47,6 +47,7 @@ class SendVkTelegramMessageJobTest extends TestCase
             $dto = TelegramAnswerDtoMock::getDto($dtoParams);
 
             // Мокаем ответ от VK
+            /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
             $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
             $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
 
@@ -72,7 +73,7 @@ class SendVkTelegramMessageJobTest extends TestCase
             ]);
         } finally {
             if ($this->botUser->topic_id) {
-                DeleteForumTopic::execute($this->botUser);
+                app(DeleteForumTopic::class)->execute($this->botUser);
             }
         }
     }

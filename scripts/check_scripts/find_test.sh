@@ -9,8 +9,9 @@ EXCLUDE_PATTERNS=(
     "*Models*" "*Resources*" "*Requests*" "*DTO*" "*Dtos*"
     "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
     "*Enum*" "*Exception*" "*migrations*" "*Seeder*"
-    "*Mock*" "*api*" "*Providers*" "*Abstract*"
+    "*Mock*" "*api*" "*Providers*" "*Provider*" "*Abstract*"
     "*resources*" "*Stubs*" "*TestCase*" "*Test*"
+    "*Interface*" "*Factories*"
 )
 
 # -----------------------------

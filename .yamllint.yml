@@ -1,0 +1,24 @@
+extends: default
+
+rules:
+  # Allow long lines — GitHub Actions and docker-compose often exceed 80 chars
+  line-length:
+    max: 200
+    level: warning
+
+  # GitHub Actions uses 'on:' as a mapping key (YAML 1.1 truthy value)
+  truthy:
+    allowed-values: ['true', 'false']
+    check-keys: false
+
+  # Allow single space between comment and content
+  comments:
+    min-spaces-from-content: 1
+
+  # Don't require document start marker (---)
+  document-start: disable
+
+  # Allow spaces inside brackets — GitHub Actions uses [ "main", "develop" ]
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1

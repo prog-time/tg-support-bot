@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.vscode
+node_modules
+bootstrap/cache/*.php
+storage/logs/*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+.env
+.env.*
+!.env.example
+docker/*
+!docker/php
+*.md
+tests/

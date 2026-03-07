@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DeepSeekProviderTest extends TestCase
@@ -29,6 +30,9 @@ class DeepSeekProviderTest extends TestCase
 
         Config::set('ai.default_provider', 'deepseek');
         Config::set('ai.providers.deepseek.client_secret', 'test_123');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $chatId = time();
         $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');

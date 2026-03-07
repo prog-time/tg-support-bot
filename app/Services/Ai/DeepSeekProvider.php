@@ -6,8 +6,8 @@ namespace App\Services\Ai;
 
 use App\DTOs\Ai\AiRequestDto;
 use App\DTOs\Ai\AiResponseDto;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
 class DeepSeekProvider extends BaseAiProvider

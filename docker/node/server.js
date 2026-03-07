@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
                 }
             });
             const data = await response.json();
-            sendResponse("history_messages", data.messages);
+            sendResponse("history_messages", data.messages ?? []);
         } catch (err) {
             console.error("Ошибка при получении истории сообщений:", err);
         }
@@ -76,8 +76,22 @@ io.on('connection', (socket) => {
                 },
                 body: JSON.stringify(msg)
             });
-            const data = await response.json();
-            sendResponse("receive_message", data.result)
+            if (!response.ok) {
+                console.error("Ошибка при отправке сообщения:", response.status, response.statusText);
+                return;
+            }
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const date = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const tempId = now.getTime();
+            sendResponse("receive_message", {
+                message_type: 'incoming',
+                content_type: 'text',
+                text: msg.text,
+                date: date,
+                to_id: tempId,
+                from_id: tempId,
+            });
         } catch (err) {
             console.error("Ошибка при отправке в Laravel API:", err);
         }

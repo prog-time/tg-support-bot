@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Actions\Telegram\DeleteForumTopic;
-use App\DTOs\TelegramUpdateDto;
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendTelegramSimpleQueryJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Jobs\TopicCreateJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -96,7 +96,7 @@ class SendTelegramSimpleQueryJobTest extends TestCase
             'chat_id' => time(),
         ])->first();
         if (isset($botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
     }
 }

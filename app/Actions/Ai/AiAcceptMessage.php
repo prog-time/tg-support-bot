@@ -2,11 +2,11 @@
 
 namespace App\Actions\Ai;
 
-use App\DTOs\TelegramUpdateDto;
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendTelegramMessageJob;
-use Illuminate\Support\Facades\Log;
 use App\Models\BotUser;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
 class AiAcceptMessage extends AiAction

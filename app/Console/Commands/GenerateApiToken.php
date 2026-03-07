@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\DTOs\ExternalSourceDto;
 use App\Models\ExternalSource;
 use App\Models\ExternalSourceAccessTokens;
-use App\Services\External\Source\ExternalSourceService;
+use App\Modules\External\DTOs\ExternalSourceDto;
+use App\Modules\External\Services\Source\ExternalSourceService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -20,6 +20,11 @@ class GenerateApiToken extends Command
     protected $signature = 'app:generate-token {source} {hook_url}';
 
     protected $description = 'Generate token for user, create user if not exists';
+
+    public function __construct(private ExternalSourceService $externalSourceService)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -57,7 +62,7 @@ class GenerateApiToken extends Command
                         'created_at' => date('Y-m-d H:i:s'),
                     ]));
 
-                    $sourceItem = (new ExternalSourceService())->create($sourceData);
+                    $sourceItem = $this->externalSourceService->create($sourceData);
                 } else {
                     $this->info("Updating resource {$sourceName}...");
 
@@ -66,7 +71,7 @@ class GenerateApiToken extends Command
                         'created_at' => date('Y-m-d H:i:s'),
                     ]));
 
-                    (new ExternalSourceService())->update($sourceData);
+                    $this->externalSourceService->update($sourceData);
                 }
 
                 $accessToken = (new ExternalSourceAccessTokens())

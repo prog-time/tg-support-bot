@@ -53,6 +53,7 @@ enum TelegramError: string
 
     /**
      * @param string $description
+     *
      * @return self|null
      */
     public static function fromResponse(string $description): ?self

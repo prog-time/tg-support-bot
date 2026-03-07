@@ -3,8 +3,8 @@
 namespace App\Services\File;
 
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**

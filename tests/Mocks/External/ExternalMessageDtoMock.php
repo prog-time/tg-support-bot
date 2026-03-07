@@ -2,7 +2,7 @@
 
 namespace Tests\Mocks\External;
 
-use App\DTOs\External\ExternalMessageDto;
+use App\Modules\External\DTOs\ExternalMessageDto;
 use Illuminate\Support\Facades\Request;
 
 class ExternalMessageDtoMock

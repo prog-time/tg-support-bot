@@ -2,18 +2,21 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendAiResponseMessageJob;
-use App\Jobs\SendMessage\SendAiTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use App\Modules\Telegram\Jobs\SendAiResponseMessageJob;
+use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class SendAiResponseMessageJobTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $baseProviderUrl;
@@ -22,9 +25,12 @@ class SendAiResponseMessageJobTest extends TestCase
     {
         parent::setUp();
 
-        Message::truncate();
-
         Queue::fake();
+
+        Config::set('ai.providers.gigachat.client_secret', 'test_secret');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $chatId = time();
         $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');
@@ -43,6 +49,10 @@ class SendAiResponseMessageJobTest extends TestCase
         $dto = TelegramUpdateDtoMock::getDto($dtoParams);
 
         Http::fake([
+            'https://ngw.devices.sberbank.ru:9443/api/v2/oauth' => Http::response([
+                'access_token' => 'test_access_token',
+                'expires_at' => time() + 3600,
+            ], 200),
             $this->baseProviderUrl . '/chat/completions' => Http::response([
                 'choices' => [
                     [
@@ -66,18 +76,11 @@ class SendAiResponseMessageJobTest extends TestCase
             ], 200),
         ]);
 
-        $params = TGTextMessageDto::from([
-            'methodQuery' => 'sendMessage',
-            'chat_id' => $this->botUser->chat_id,
-            'text' => $managerTextMessage,
-        ]);
-
         $job = new SendAiResponseMessageJob(
             $this->botUser->id,
             $dto,
-            $params,
         );
-        $job->handle();
+        app()->call([$job, 'handle']);
 
         /** @phpstan-ignore-next-line */
         $pushed = Queue::pushedJobs()[SendAiTelegramMessageJob::class] ?? [];

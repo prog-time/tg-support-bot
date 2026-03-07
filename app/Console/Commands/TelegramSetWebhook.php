@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\TelegramBot\TelegramMethods;
+use App\Modules\Telegram\Api\TelegramMethods;
 use Illuminate\Console\Command;
 
 class TelegramSetWebhook extends Command

@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\Storage;
 abstract class BaseAiProvider implements AiProviderInterface
 {
     protected string $providerName;
+
     protected string $modelName;
+
     protected string $apiKey;
+
     protected string $baseUrl;
+
     protected array $config;
 
     public function __construct(string $providerName)
@@ -65,7 +69,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     {
         $cacheKey = "ai_rate_limit_{$this->providerName}";
         $requests = Cache::get($cacheKey, 0);
-        $limit = config("ai.rate_limit.requests_per_minute", 60);
+        $limit = config('ai.rate_limit.requests_per_minute', 60);
 
         return [
             'current_requests' => $requests,
@@ -84,7 +88,7 @@ abstract class BaseAiProvider implements AiProviderInterface
     {
         $cacheKey = "ai_rate_limit_{$this->providerName}";
         $requests = Cache::get($cacheKey, 0);
-        $limit = config("ai.rate_limit.requests_per_minute", 60);
+        $limit = config('ai.rate_limit.requests_per_minute', 60);
 
         if ($requests >= $limit) {
             return false;
@@ -97,12 +101,13 @@ abstract class BaseAiProvider implements AiProviderInterface
     /**
      * Create AI response DTO.
      *
-     * @param string $response Response text
-     * @param float $confidenceScore Confidence score
-     * @param bool $shouldEscalate Whether to escalate
-     * @param int $tokensUsed Number of tokens
-     * @param float $responseTime Response time
-     * @param array $metadata Metadata
+     * @param string $response        Response text
+     * @param float  $confidenceScore Confidence score
+     * @param bool   $shouldEscalate  Whether to escalate
+     * @param int    $tokensUsed      Number of tokens
+     * @param float  $responseTime    Response time
+     * @param array  $metadata        Metadata
+     *
      * @return AiResponseDto
      */
     protected function createResponse(
@@ -129,6 +134,7 @@ abstract class BaseAiProvider implements AiProviderInterface
      * Determine if request should be escalated.
      *
      * @param float $confidenceScore Confidence score
+     *
      * @return bool
      */
     protected function shouldEscalate(float $confidenceScore): bool

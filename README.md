@@ -216,7 +216,7 @@ REDIS_PASSWORD=secure_redis_password
 TEMPLATE_TOPIC_NAME="{first_name} {last_name} {platform}"
 ```
 
-### Выберите одну из 2 инструкций 
+### Выберите одну из 2 инструкций
 
 Установка на хостинг - https://github.com/prog-time/tg-support-bot/wiki/Инструкция-по-установке-бота-на-хостинг
 

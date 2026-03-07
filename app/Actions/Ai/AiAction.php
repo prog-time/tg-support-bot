@@ -2,8 +2,8 @@
 
 namespace App\Actions\Ai;
 
-use App\DTOs\TelegramUpdateDto;
 use App\Models\AiMessage;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use phpDocumentor\Reflection\Exception;
 
 abstract class AiAction

@@ -2,7 +2,7 @@
 
 namespace Tests\Stubs\Services\ActionService\Edit;
 
-use App\Services\ActionService\Edit\ToTgEditService;
+use App\Modules\Telegram\Services\ActionService\Edit\ToTgEditService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class ToTgEditServiceStub extends ToTgEditService

@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Actions\Telegram\DeleteForumTopic;
-use App\DTOs\TelegramUpdateDto;
-use App\DTOs\TGTextMessageDto;
-use App\Jobs\SendMessage\SendTelegramMessageJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
 use App\Models\Message;
-use App\TelegramBot\TelegramMethods;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Jobs\TopicCreateJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
@@ -43,7 +43,7 @@ class SendTelegramMessageJobTest extends TestCase
     protected function tearDown(): void
     {
         if (isset($this->botUser->topic_id)) {
-            DeleteForumTopic::execute($this->botUser);
+            app(DeleteForumTopic::class)->execute($this->botUser);
         }
 
         parent::tearDown();
@@ -59,7 +59,7 @@ class SendTelegramMessageJobTest extends TestCase
         $dtoParams['result']['text'] = $textMessage;
         $dto = TelegramAnswerDtoMock::getDto($dtoParams);
 
-        // Мокаем ответ от Telegram
+        /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
         $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
         $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
 

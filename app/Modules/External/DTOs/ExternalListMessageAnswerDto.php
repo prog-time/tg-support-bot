@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Modules\External\DTOs;
+
+use Spatie\LaravelData\Data;
+
+/**
+ * DTO for message list result.
+ *
+ * @param string $source
+ * @param string $external_id
+ * @param array  $messages
+ */
+class ExternalListMessageAnswerDto extends Data
+{
+    /**
+     * @param string $source
+     * @param string $external_id
+     * @param array  $messages
+     */
+    public function __construct(
+        public bool $status,
+        public string $source,
+        public string $external_id,
+        public array $messages,
+    ) {
+    }
+}

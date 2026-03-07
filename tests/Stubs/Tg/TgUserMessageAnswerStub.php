@@ -2,7 +2,7 @@
 
 namespace Tests\Stubs\Tg;
 
-use App\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 
 class TgUserMessageAnswerStub extends TelegramUpdateDto
 {

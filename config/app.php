@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Manager Interface
+    |--------------------------------------------------------------------------
+    |
+    | Defines how managers receive incoming messages.
+    | Supported: "telegram_group", "admin_panel"
+    |
+    */
+
+    'manager_interface' => env('MANAGER_INTERFACE', 'telegram_group'),
+
 ];

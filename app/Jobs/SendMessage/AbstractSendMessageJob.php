@@ -2,21 +2,24 @@
 
 namespace App\Jobs\SendMessage;
 
-use App\Actions\Telegram\BanMessage;
-use App\DTOs\External\ExternalMessageDto;
-use App\DTOs\TelegramAnswerDto;
-use App\DTOs\TelegramUpdateDto;
-use App\DTOs\TGTextMessageDto;
-use App\DTOs\Vk\VkUpdateDto;
-use App\Jobs\SendTelegramSimpleQueryJob;
-use App\Jobs\TopicCreateJob;
 use App\Models\BotUser;
-use Illuminate\Support\Facades\Log;
+use App\Modules\External\DTOs\ExternalMessageDto;
+use App\Modules\Telegram\Actions\BanMessage;
+use App\Modules\Telegram\DTOs\TelegramAnswerDto;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Telegram\Jobs\TopicCreateJob;
+use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 abstract class AbstractSendMessageJob implements ShouldQueue
 {
@@ -80,14 +83,14 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         }
 
         if ($response->response_code === 400 && $response->type_error === 'MARKDOWN_ERROR') {
-            Log::channel('loki')->warning("MARKDOWN_ERROR -> switching parse_mode to HTML");
+            Log::channel('loki')->warning('MARKDOWN_ERROR -> switching parse_mode to HTML');
             $this->queryParams->parse_mode = 'html';
             $this->release(1);
             return;
         }
 
         if ($response->response_code === 400 && in_array($response->type_error, ['TOPIC_NOT_FOUND', 'TOPIC_DELETED', 'TOPIC_ID_INVALID'])) {
-            Log::channel('loki')->warning("TOPIC_NOT_FOUND/TOPIC_DELETED -> creating new topic");
+            Log::channel('loki')->warning('TOPIC_NOT_FOUND/TOPIC_DELETED -> creating new topic');
 
             $retryJob = $this->getRetryJobInstance();
             if ($retryJob !== null) {
@@ -104,8 +107,8 @@ abstract class AbstractSendMessageJob implements ShouldQueue
         }
 
         if ($response->response_code === 403) {
-            Log::channel('loki')->warning("403 - user blocked the bot");
-            BanMessage::execute($this->botUserId, $this->updateDto);
+            Log::channel('loki')->warning('403 - user blocked the bot');
+            app(BanMessage::class)->execute($this->botUserId, $this->updateDto);
             return;
         }
 

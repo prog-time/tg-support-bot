@@ -5,10 +5,10 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Установка системных пакетов и Node.js
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git curl zip unzip libpq-dev shellcheck && \
+    apt-get install -y --no-install-recommends git curl zip unzip libpq-dev libicu-dev libzip-dev shellcheck && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
-    docker-php-ext-install pdo pdo_pgsql pgsql && \
+    docker-php-ext-install pdo pdo_pgsql pgsql intl zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Настройки PHP
@@ -23,6 +23,9 @@ WORKDIR /var/www
 
 # Копируем проект
 COPY . .
+
+# Очищаем кэш фреймворка до установки зависимостей
+RUN rm -f bootstrap/cache/*.php
 
 # Права доступа на storage и bootstrap/cache
 RUN mkdir -p storage/logs \

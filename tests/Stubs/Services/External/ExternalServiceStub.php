@@ -2,7 +2,7 @@
 
 namespace Tests\Stubs\Services\External;
 
-use App\Services\External\ExternalService;
+use App\Modules\External\Services\ExternalService;
 use Tests\Traits\HasGettersForHasTemplate;
 
 class ExternalServiceStub extends ExternalService

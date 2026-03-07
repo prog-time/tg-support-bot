@@ -13,6 +13,7 @@ interface AiProviderInterface
      * Process user message and generate AI response.
      *
      * @param AiRequestDto $request Request DTO
+     *
      * @return AiResponseDto|null AI response DTO
      */
     public function processMessage(AiRequestDto $request): ?AiResponseDto;

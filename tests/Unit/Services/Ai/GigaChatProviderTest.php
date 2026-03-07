@@ -6,8 +6,10 @@ use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
 use App\Services\Ai\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class GigaChatProviderTest extends TestCase
@@ -25,6 +27,11 @@ class GigaChatProviderTest extends TestCase
         parent::setUp();
 
         Queue::fake();
+
+        Config::set('ai.providers.gigachat.client_secret', 'test_secret');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 

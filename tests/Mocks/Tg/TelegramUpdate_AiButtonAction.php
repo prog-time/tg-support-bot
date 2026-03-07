@@ -2,8 +2,8 @@
 
 namespace Tests\Mocks\Tg;
 
-use App\DTOs\TelegramUpdateDto;
 use App\Models\BotUser;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Support\Facades\Request;
 
 class TelegramUpdate_AiButtonAction extends TelegramUpdateDto

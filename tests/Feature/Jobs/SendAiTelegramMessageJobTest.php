@@ -3,18 +3,22 @@
 namespace Tests\Feature\Jobs;
 
 use App\DTOs\Ai\AiRequestDto;
-use App\Jobs\SendMessage\SendAiTelegramMessageJob;
-use App\Jobs\SendMessage\SendTelegramMessageJob;
 use App\Models\BotUser;
-use App\Models\Message;
+use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Services\Ai\AiAssistantService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
 class SendAiTelegramMessageJobTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ?BotUser $botUser;
 
     private string $baseProviderUrl;
@@ -29,9 +33,12 @@ class SendAiTelegramMessageJobTest extends TestCase
     {
         parent::setUp();
 
-        Message::truncate();
-
         Queue::fake();
+
+        Config::set('ai.providers.gigachat.client_secret', 'test_secret');
+
+        Storage::fake('prompts');
+        Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $this->groupId = time();
         config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
@@ -51,6 +58,10 @@ class SendAiTelegramMessageJobTest extends TestCase
         $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot. 123';
 
         Http::fake([
+            'https://ngw.devices.sberbank.ru:9443/api/v2/oauth' => Http::response([
+                'access_token' => 'test_access_token',
+                'expires_at' => time() + 3600,
+            ], 200),
             'https://api.telegram.org/*' => Http::response([
                 'ok' => true,
                 'result' => [

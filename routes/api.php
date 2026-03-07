@@ -1,66 +1,11 @@
 <?php
 
-use App\Http\Controllers\AiTelegramBotController;
-use App\Http\Controllers\ExternalTrafficController;
 use App\Http\Controllers\FilesController;
-use App\Http\Controllers\TelegramBotController;
-use App\Http\Controllers\VkBotController;
-use App\Middleware\ApiQuery;
-use App\Middleware\TelegramQuery;
-use App\Middleware\VkQuery;
-use App\TelegramBot\TelegramMethods;
 use Illuminate\Support\Facades\Route;
 
-Route::group([
-    'prefix' => 'telegram',
-], function () {
-    Route::post('ai/bot', [AiTelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
-
-    Route::post('bot', [TelegramBotController::class, 'bot_query'])->middleware(TelegramQuery::class);
-
-    Route::get('set_webhook', function () {
-        $queryParams = [
-            'url' => config('app.url') . '/api/telegram/bot',
-            'max_connections' => 40,
-            'drop_pending_updates' => true,
-            'secret_token' => config('traffic_source.settings.telegram.secret_key'),
-        ];
-        $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
-
-        return response()->json($result->rawData);
-    });
-});
-
-Route::group([
-    'prefix' => 'vk',
-], function () {
-    Route::post('bot', [VkBotController::class, 'bot_query'])->middleware(VkQuery::class);
-});
-
-Route::group([
-    'prefix' => 'external',
-    'middleware' => ApiQuery::class,
-], function () {
-    Route::group([
-        'prefix' => '{external_id}',
-    ], function () {
-        Route::group([
-            'prefix' => 'messages',
-        ], function () {
-            Route::get('/{id_message}', [ExternalTrafficController::class, 'show'])->name('show');
-            Route::get('/', [ExternalTrafficController::class, 'index'])->name('index');
-            Route::post('/', [ExternalTrafficController::class, 'store'])->name('store');
-            Route::put('/', [ExternalTrafficController::class, 'update'])->name('update');
-            Route::delete('/', [ExternalTrafficController::class, 'destroy'])->name('destroy');
-        });
-
-        Route::group([
-            'prefix' => 'files',
-        ], function () {
-            Route::post('/', [ExternalTrafficController::class, 'sendFile'])->name('file_send');
-        });
-    });
-});
+// Telegram routes are registered by App\Modules\Telegram\TelegramServiceProvider
+// VK routes are registered by App\Modules\Vk\VkServiceProvider
+// External routes are registered by App\Modules\External\ExternalServiceProvider
 
 Route::group([
     'prefix' => 'files',
