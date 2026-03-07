@@ -52,8 +52,8 @@ _Enforced in:_ `ConversationPage::getPollingInterval()`, `ViewConversation::getP
 **BR-005** — Every reply sent via `SendReplyAction` must be persisted to the `messages` table as `message_type = 'outgoing'` before dispatching the queue job.
 _Enforced in:_ `SendReplyAction::execute()` — `Message::create([..., 'message_type' => 'outgoing', ...])`
 
-**BR-006** — In `admin_panel` mode, incoming messages are saved to the DB by the existing job pipeline. `AdminPanelInterface::notifyIncomingMessage()` is a no-op. Livewire polling picks up new messages automatically.
-_Enforced in:_ `AdminPanelInterface::notifyIncomingMessage()` — empty body
+**BR-006** — In `admin_panel` mode, `AdminPanelInterface::notifyIncomingMessage()` saves the incoming message (and optional attachment) directly to the `messages` table. No Telegram group forwarding is performed. Livewire polling picks up new messages automatically.
+_Enforced in:_ `AdminPanelInterface::notifyIncomingMessage()` — creates `Message` + `MessageAttachment` records
 
 **BR-007** — In `admin_panel` mode, `AdminPanelInterface::createConversation()` is a no-op. No Telegram forum topic is created. The conversation is visible in `ConversationResource` automatically once the `BotUser` record exists.
 _Enforced in:_ `AdminPanelInterface::createConversation()` — empty body
@@ -66,8 +66,7 @@ _Enforced in:_ `AdminPanelInterface::createConversation()` — empty body
 flowchart TD
     UserMsg[User sends message\nTelegram / VK / External] -->|webhook / REST| Controller
     Controller --> DTO[DTO parsing]
-    DTO --> Job[AbstractSendMessageJob\nsaveMessage to DB]
-    Job --> AdminPanelInterface[AdminPanelInterface::notifyIncomingMessage\nnoop]
+    DTO --> AdminPanelInterface[AdminPanelInterface::notifyIncomingMessage\nsaves Message + attachment to DB]
     AdminPanelInterface --> DB[(messages table)]
 
     Manager[Manager opens /admin] -->|Livewire polling 5s| ConversationPage
