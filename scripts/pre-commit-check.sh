@@ -18,11 +18,11 @@ done < <(git diff --cached --name-only --diff-filter=A || true)
 #done
 
 echo "Checking Dockerfiles with Hadolint..."
-bash scripts/check_scripts/ssh_start_hadolint.sh "${ALL_FILE_ARRAY[@]}"
+bash scripts/check_scripts/check_hadolint.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 echo "Checking shell scripts with ShellCheck..."
-bash scripts/check_scripts/ssh_start_shellcheck.sh "${ALL_FILE_ARRAY[@]}"
+bash scripts/check_scripts/check_shellcheck.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 echo "Checking for tests..."
