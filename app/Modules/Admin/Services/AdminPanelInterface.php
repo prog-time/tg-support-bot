@@ -21,17 +21,17 @@ class AdminPanelInterface implements ManagerInterfaceContract
     public function notifyIncomingMessage(BotUser $botUser, TelegramUpdateDto $dto): void
     {
         $message = Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => $botUser->platform,
+            'bot_user_id' => $botUser->id,
+            'platform' => $botUser->platform,
             'message_type' => 'incoming',
-            'from_id'      => $dto->messageId ?? 0,
-            'to_id'        => 0,
-            'text'         => $dto->text ?? $dto->caption ?? null,
+            'from_id' => $dto->messageId ?? 0,
+            'to_id' => 0,
+            'text' => $dto->text ?? $dto->caption ?? null,
         ]);
 
         if (!empty($dto->fileId)) {
             $message->attachments()->create([
-                'file_id'   => $dto->fileId,
+                'file_id' => $dto->fileId,
                 'file_type' => $dto->fileType ?? 'document',
             ]);
         }

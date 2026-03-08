@@ -44,12 +44,12 @@ class AdminPanelInterfaceTest extends TestCase
         $this->service->notifyIncomingMessage($botUser, $dto);
 
         $this->assertDatabaseHas('messages', [
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 42,
-            'to_id'        => 0,
-            'text'         => 'Hello',
+            'from_id' => 42,
+            'to_id' => 0,
+            'text' => 'Hello',
         ]);
     }
 
@@ -71,14 +71,14 @@ class AdminPanelInterfaceTest extends TestCase
         $this->service->notifyIncomingMessage($botUser, $dto);
 
         $this->assertDatabaseHas('messages', [
-            'bot_user_id'  => $botUser->id,
+            'bot_user_id' => $botUser->id,
             'message_type' => 'incoming',
-            'from_id'      => 99,
-            'text'         => null,
+            'from_id' => 99,
+            'text' => null,
         ]);
 
         $this->assertDatabaseHas('message_attachments', [
-            'file_id'   => 'file_abc123',
+            'file_id' => 'file_abc123',
             'file_type' => 'photo',
         ]);
     }
@@ -102,9 +102,9 @@ class AdminPanelInterfaceTest extends TestCase
         $this->service->notifyIncomingMessage($botUser, $dto);
 
         $this->assertDatabaseHas('messages', [
-            'bot_user_id'  => $botUser->id,
+            'bot_user_id' => $botUser->id,
             'message_type' => 'incoming',
-            'text'         => 'Photo caption',
+            'text' => 'Photo caption',
         ]);
     }
 
