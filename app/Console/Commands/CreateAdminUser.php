@@ -40,23 +40,23 @@ class CreateAdminUser extends Command
             : UserRole::Manager->value;
 
         $validator = Validator::make([
-            'name'                  => $name,
-            'email'                 => $email,
-            'password'              => $password,
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
             'password_confirmation' => $passwordConfirm,
         ], [
-            'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['required', 'email', 'unique:users,email'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['required'],
         ], [
-            'name.required'         => 'Name is required.',
-            'email.required'        => 'Email is required.',
-            'email.email'           => 'Email must be a valid address.',
-            'email.unique'          => 'A user with this email already exists.',
-            'password.required'     => 'Password is required.',
-            'password.min'          => 'Password must be at least 8 characters.',
-            'password.confirmed'    => 'Passwords do not match.',
+            'name.required' => 'Name is required.',
+            'email.required' => 'Email is required.',
+            'email.email' => 'Email must be a valid address.',
+            'email.unique' => 'A user with this email already exists.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Passwords do not match.',
         ]);
 
         if ($validator->fails()) {
@@ -68,10 +68,10 @@ class CreateAdminUser extends Command
         }
 
         User::create([
-            'name'     => $name,
-            'email'    => $email,
+            'name' => $name,
+            'email' => $email,
             'password' => bcrypt($password),
-            'role'     => $role,
+            'role' => $role,
         ]);
 
         $this->newLine();

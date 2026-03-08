@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int    $id
- * @property int    $message_id
- * @property string $file_id
- * @property string $file_type
+ * @property int         $id
+ * @property int         $message_id
+ * @property string      $file_id
+ * @property string      $file_type
  * @property string|null $file_name
  * @property-read Message $message
  */

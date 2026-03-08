@@ -20,9 +20,9 @@ class SendReplyAction
     /**
      * Send a manager reply to the user via the appropriate platform.
      *
-     * @param BotUser          $botUser Target user
-     * @param string           $text    Message text (may be empty when file is provided)
-     * @param UploadedFile|null $file   Optional file attachment
+     * @param BotUser           $botUser Target user
+     * @param string            $text    Message text (may be empty when file is provided)
+     * @param UploadedFile|null $file    Optional file attachment
      *
      * @return void
      */
@@ -39,8 +39,8 @@ class SendReplyAction
 
         match (true) {
             $botUser->platform === 'telegram' => self::sendTelegramReply($botUser, $text, $file, $message),
-            $botUser->platform === 'vk'       => self::sendVkReply($botUser, $text, $file),
-            default                           => self::sendExternalReply($botUser, $text),
+            $botUser->platform === 'vk' => self::sendVkReply($botUser, $text, $file),
+            default => self::sendExternalReply($botUser, $text),
         };
     }
 
@@ -65,8 +65,8 @@ class SendReplyAction
                 return;
             }
 
-            $ext      = $file->getClientOriginalExtension();
-            $dir      = storage_path('app/temp_attachments');
+            $ext = $file->getClientOriginalExtension();
+            $dir = storage_path('app/temp_attachments');
             $destPath = $dir . '/' . Str::uuid() . ($ext ? '.' . $ext : '');
 
             if (!is_dir($dir)) {
@@ -92,8 +92,8 @@ class SendReplyAction
         SendTelegramSimpleQueryJob::dispatch(
             TGTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
-                'chat_id'     => $botUser->chat_id,
-                'text'        => $text,
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
             ])
         );
     }
@@ -114,9 +114,9 @@ class SendReplyAction
         SendVkSimpleMessageJob::dispatch(
             VkTextMessageDto::from([
                 'methodQuery' => 'messages.send',
-                'peer_id'     => $botUser->chat_id,
-                'message'     => $text,
-                'attachment'  => $attachment,
+                'peer_id' => $botUser->chat_id,
+                'message' => $text,
+                'attachment' => $attachment,
             ])
         );
     }

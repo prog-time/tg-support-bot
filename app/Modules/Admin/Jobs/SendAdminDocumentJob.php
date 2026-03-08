@@ -36,15 +36,15 @@ class SendAdminDocumentJob implements ShouldQueue
     {
         try {
             $response = TelegramMethods::sendQueryTelegram('sendDocument', [
-                'chat_id'            => $this->chatId,
-                'caption'            => $this->caption,
+                'chat_id' => $this->chatId,
+                'caption' => $this->caption,
                 'uploaded_file_path' => $this->filePath,
             ]);
 
             if (!$response->ok) {
                 Log::channel('loki')->error('SendAdminDocumentJob: Telegram rejected document', [
                     'response_code' => $response->response_code,
-                    'type_error'    => $response->type_error,
+                    'type_error' => $response->type_error,
                 ]);
                 return;
             }
@@ -52,7 +52,7 @@ class SendAdminDocumentJob implements ShouldQueue
             $result = $response->rawData['result'] ?? [];
 
             // Telegram returns 'document' for all files sent via sendDocument
-            $fileId   = $result['document']['file_id'] ?? null;
+            $fileId = $result['document']['file_id'] ?? null;
             $fileName = $result['document']['file_name'] ?? $this->originalName;
 
             $fileType = str_starts_with($this->mimeType, 'image/') ? 'photo' : 'document';
@@ -60,7 +60,7 @@ class SendAdminDocumentJob implements ShouldQueue
             if ($fileId) {
                 $message = Message::find($this->dbMessageId);
                 $message?->attachments()->create([
-                    'file_id'   => $fileId,
+                    'file_id' => $fileId,
                     'file_type' => $fileType,
                     'file_name' => $fileName,
                 ]);
