@@ -3,6 +3,7 @@ services:
         build: .
         container_name: pet
         user: root
+        restart: always
         depends_on:
             - pgdb
             - redis
