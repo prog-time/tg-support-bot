@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b08c8e7448fdc585a041694fd44bbb72",
+    "content-hash": "cee61ae4a657cb73aa4e86ca10e0bf10",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5400,6 +5400,64 @@
                 "source": "https://github.com/phpstan/phpdoc-parser/tree/2.1.0"
             },
             "time": "2025-02-19T13:28:12+00:00"
+        },
+        {
+            "name": "prog-time/max-php-sdk",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/prog-time/max-php-sdk.git",
+                "reference": "c5f32f6e38c53627004e2c367a43e69fdace2654"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/prog-time/max-php-sdk/zipball/c5f32f6e38c53627004e2c367a43e69fdace2654",
+                "reference": "c5f32f6e38c53627004e2c367a43e69fdace2654",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.0",
+                "php": "^8.1",
+                "psr/log": "^3.0"
+            },
+            "require-dev": {
+                "dg/bypass-finals": "^1.4",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^10.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MaxBotApi\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ilya Lyashchuk",
+                    "email": "iliya-rabota97@mail.ru",
+                    "homepage": "https://lyashchuk.pro",
+                    "role": "Developer"
+                }
+            ],
+            "description": "PHP SDK for the Max messenger Bot API",
+            "homepage": "https://github.com/prog-time/max-php-sdk",
+            "keywords": [
+                "Messenger",
+                "api",
+                "bot",
+                "max",
+                "max-bot",
+                "sdk"
+            ],
+            "support": {
+                "issues": "https://github.com/prog-time/max-php-sdk/issues",
+                "source": "https://github.com/prog-time/max-php-sdk/tree/1.0.0"
+            },
+            "time": "2026-02-21T22:38:52+00:00"
         },
         {
             "name": "prog-time/tg-logger",
