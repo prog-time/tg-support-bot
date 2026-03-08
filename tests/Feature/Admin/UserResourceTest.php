@@ -56,9 +56,9 @@ class UserResourceTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseHas('users', [
-            'name'  => 'New Manager',
+            'name' => 'New Manager',
             'email' => 'manager@example.com',
-            'role'  => 'manager',
+            'role' => 'manager',
         ]);
     }
 
@@ -115,7 +115,7 @@ class UserResourceTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('users', [
-            'id'   => $user->id,
+            'id' => $user->id,
             'name' => 'New Name',
         ]);
     }
@@ -131,7 +131,7 @@ class UserResourceTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('users', [
-            'id'       => $user->id,
+            'id' => $user->id,
             'password' => $oldHash,
         ]);
     }
@@ -173,7 +173,7 @@ class UserResourceTest extends TestCase
 
     public function test_role_badge_shown_in_table(): void
     {
-        $admin   = User::factory()->create(['name' => 'Admin User']);
+        $admin = User::factory()->create(['name' => 'Admin User']);
         $manager = User::factory()->manager()->create(['name' => 'Manager User']);
 
         Livewire::test(ListUsers::class)

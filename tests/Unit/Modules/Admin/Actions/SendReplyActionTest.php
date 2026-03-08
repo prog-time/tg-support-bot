@@ -27,9 +27,9 @@ class SendReplyActionTest extends TestCase
 
         $this->assertDatabaseHas('messages', [
             'bot_user_id' => $botUser->id,
-            'platform'     => 'telegram',
+            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'text'         => 'Hello Telegram',
+            'text' => 'Hello Telegram',
         ]);
     }
 
@@ -56,9 +56,9 @@ class SendReplyActionTest extends TestCase
 
         $this->assertDatabaseHas('messages', [
             'bot_user_id' => $botUser->id,
-            'platform'     => 'vk',
+            'platform' => 'vk',
             'message_type' => 'outgoing',
-            'text'         => 'Hello VK',
+            'text' => 'Hello VK',
         ]);
     }
 

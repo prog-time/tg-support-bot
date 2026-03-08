@@ -19,8 +19,10 @@ class AiActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->action = new class extends AiAction {
-            public function execute(TelegramUpdateDto $update): void {}
+        $this->action = new class () extends AiAction {
+            public function execute(TelegramUpdateDto $update): void
+            {
+            }
         };
     }
 
@@ -37,8 +39,8 @@ class AiActionTest extends TestCase
 
         $aiMessage = AiMessage::create([
             'bot_user_id' => $botUser->id,
-            'message_id'  => '123',
-            'text_ai'     => 'AI response',
+            'message_id' => '123',
+            'text_ai' => 'AI response',
         ]);
 
         $result = $this->action->getMessageDataByCallbackData('ai_message_edit_123');

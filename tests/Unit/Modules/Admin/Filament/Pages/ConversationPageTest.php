@@ -45,21 +45,21 @@ class ConversationPageTest extends TestCase
         $botUser = BotUser::create(['chat_id' => 1, 'platform' => 'telegram']);
 
         Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 1,
-            'to_id'        => 0,
-            'text'         => 'Hello',
+            'from_id' => 1,
+            'to_id' => 0,
+            'text' => 'Hello',
         ]);
 
         Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'from_id'      => 0,
-            'to_id'        => 1,
-            'text'         => 'Hi back',
+            'from_id' => 0,
+            'to_id' => 1,
+            'text' => 'Hi back',
         ]);
 
         $component = Livewire::test(ConversationPage::class, ['botUserId' => $botUser->id]);
@@ -79,21 +79,21 @@ class ConversationPageTest extends TestCase
         $botUser2 = BotUser::create(['chat_id' => 2, 'platform' => 'telegram']);
 
         Message::create([
-            'bot_user_id'  => $botUser1->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser1->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 1,
-            'to_id'        => 0,
-            'text'         => 'User 1 message',
+            'from_id' => 1,
+            'to_id' => 0,
+            'text' => 'User 1 message',
         ]);
 
         Message::create([
-            'bot_user_id'  => $botUser2->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser2->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 2,
-            'to_id'        => 0,
-            'text'         => 'User 2 message',
+            'from_id' => 2,
+            'to_id' => 0,
+            'text' => 'User 2 message',
         ]);
 
         $component = Livewire::test(ConversationPage::class, ['botUserId' => $botUser1->id]);
@@ -108,23 +108,23 @@ class ConversationPageTest extends TestCase
         $botUser = BotUser::create(['chat_id' => 1, 'platform' => 'telegram']);
 
         $first = Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 1,
-            'to_id'        => 0,
-            'text'         => 'First',
-            'created_at'   => now()->subMinutes(5),
+            'from_id' => 1,
+            'to_id' => 0,
+            'text' => 'First',
+            'created_at' => now()->subMinutes(5),
         ]);
 
         $second = Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'from_id'      => 0,
-            'to_id'        => 1,
-            'text'         => 'Second',
-            'created_at'   => now(),
+            'from_id' => 0,
+            'to_id' => 1,
+            'text' => 'Second',
+            'created_at' => now(),
         ]);
 
         $messages = Livewire::test(ConversationPage::class, ['botUserId' => $botUser->id])
@@ -148,9 +148,9 @@ class ConversationPageTest extends TestCase
             ->assertNotified('Сообщение отправлено');
 
         $this->assertDatabaseHas('messages', [
-            'bot_user_id'  => $botUser->id,
+            'bot_user_id' => $botUser->id,
             'message_type' => 'outgoing',
-            'text'         => 'Hello!',
+            'text' => 'Hello!',
         ]);
 
         Queue::assertPushed(SendTelegramSimpleQueryJob::class);
@@ -184,7 +184,7 @@ class ConversationPageTest extends TestCase
             ->call('sendReply');
 
         $this->assertDatabaseMissing('messages', [
-            'bot_user_id'  => $botUser->id,
+            'bot_user_id' => $botUser->id,
             'message_type' => 'outgoing',
         ]);
 

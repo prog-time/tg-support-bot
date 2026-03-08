@@ -61,21 +61,21 @@ class ConversationResourceTest extends TestCase
         $botUser = BotUser::create(['chat_id' => 1, 'platform' => 'telegram']);
 
         Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 1,
-            'to_id'        => 0,
-            'text'         => 'Test message',
+            'from_id' => 1,
+            'to_id' => 0,
+            'text' => 'Test message',
         ]);
 
         Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'from_id'      => 0,
-            'to_id'        => 1,
-            'text'         => 'Reply message',
+            'from_id' => 0,
+            'to_id' => 1,
+            'text' => 'Reply message',
         ]);
 
         Livewire::test(ViewConversation::class, ['record' => $botUser->getRouteKey()])
@@ -88,23 +88,23 @@ class ConversationResourceTest extends TestCase
         $botUser = BotUser::create(['chat_id' => 1, 'platform' => 'telegram']);
 
         $first = Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'incoming',
-            'from_id'      => 1,
-            'to_id'        => 0,
-            'text'         => 'First',
-            'created_at'   => now()->subMinutes(5),
+            'from_id' => 1,
+            'to_id' => 0,
+            'text' => 'First',
+            'created_at' => now()->subMinutes(5),
         ]);
 
         $second = Message::create([
-            'bot_user_id'  => $botUser->id,
-            'platform'     => 'telegram',
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'from_id'      => 0,
-            'to_id'        => 1,
-            'text'         => 'Second',
-            'created_at'   => now(),
+            'from_id' => 0,
+            'to_id' => 1,
+            'text' => 'Second',
+            'created_at' => now(),
         ]);
 
         Livewire::test(ViewConversation::class, ['record' => $botUser->getRouteKey()])
@@ -128,9 +128,9 @@ class ConversationResourceTest extends TestCase
             ->assertNotified('Сообщение отправлено');
 
         $this->assertDatabaseHas('messages', [
-            'bot_user_id'  => $botUser->id,
+            'bot_user_id' => $botUser->id,
             'message_type' => 'outgoing',
-            'text'         => 'Hello from admin',
+            'text' => 'Hello from admin',
         ]);
     }
 

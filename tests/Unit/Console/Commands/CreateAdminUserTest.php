@@ -23,9 +23,9 @@ class CreateAdminUserTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertDatabaseHas('users', [
-            'name'  => 'John Admin',
+            'name' => 'John Admin',
             'email' => 'john@example.com',
-            'role'  => UserRole::Admin->value,
+            'role' => UserRole::Admin->value,
         ]);
     }
 
@@ -41,7 +41,7 @@ class CreateAdminUserTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'jane@example.com',
-            'role'  => UserRole::Manager->value,
+            'role' => UserRole::Manager->value,
         ]);
     }
 

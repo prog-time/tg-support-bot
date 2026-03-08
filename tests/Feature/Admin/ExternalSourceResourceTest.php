@@ -56,7 +56,7 @@ class ExternalSourceResourceTest extends TestCase
         $this->assertNotNull($source);
         $this->assertDatabaseHas('external_source_access_tokens', [
             'external_source_id' => $source->id,
-            'active'             => true,
+            'active' => true,
         ]);
     }
 
@@ -74,8 +74,8 @@ class ExternalSourceResourceTest extends TestCase
 
         ExternalSourceAccessTokens::create([
             'external_source_id' => $source->id,
-            'token'              => 'old-token-value-that-is-exactly-sixty-characters-long-here!!',
-            'active'             => true,
+            'token' => 'old-token-value-that-is-exactly-sixty-characters-long-here!!',
+            'active' => true,
         ]);
 
         Livewire::test(EditExternalSource::class, ['record' => $source->getRouteKey()])
@@ -96,8 +96,8 @@ class ExternalSourceResourceTest extends TestCase
 
         ExternalSourceAccessTokens::create([
             'external_source_id' => $source->id,
-            'token'              => 'old-token-value-that-is-exactly-sixty-characters-long-here!!',
-            'active'             => true,
+            'token' => 'old-token-value-that-is-exactly-sixty-characters-long-here!!',
+            'active' => true,
         ]);
 
         Livewire::test(EditExternalSource::class, ['record' => $source->getRouteKey()])

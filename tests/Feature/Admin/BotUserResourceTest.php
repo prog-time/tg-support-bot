@@ -52,8 +52,8 @@ class BotUserResourceTest extends TestCase
     public function test_can_unban_user(): void
     {
         $user = BotUser::create([
-            'chat_id'   => 100,
-            'platform'  => 'telegram',
+            'chat_id' => 100,
+            'platform' => 'telegram',
             'is_banned' => true,
             'banned_at' => now(),
         ]);
@@ -69,8 +69,8 @@ class BotUserResourceTest extends TestCase
     public function test_ban_action_hidden_for_already_banned_user(): void
     {
         $user = BotUser::create([
-            'chat_id'   => 100,
-            'platform'  => 'telegram',
+            'chat_id' => 100,
+            'platform' => 'telegram',
             'is_banned' => true,
             'banned_at' => now(),
         ]);
