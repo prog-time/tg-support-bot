@@ -9,7 +9,7 @@ namespace App\Enums;
  */
 enum UserRole: string
 {
-    case Admin   = 'admin';
+    case Admin = 'admin';
     case Manager = 'manager';
 
     /**
@@ -20,7 +20,7 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
-            self::Admin   => 'Администратор',
+            self::Admin => 'Администратор',
             self::Manager => 'Менеджер',
         };
     }
@@ -33,7 +33,7 @@ enum UserRole: string
     public function color(): string
     {
         return match ($this) {
-            self::Admin   => 'danger',
+            self::Admin => 'danger',
             self::Manager => 'info',
         };
     }
