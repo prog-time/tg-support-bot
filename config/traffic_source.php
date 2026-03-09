@@ -20,5 +20,10 @@ return [
             'secret_key' => env('VK_SECRET_CODE', ''),
             'confirm_code' => env('VK_CONFIRM_CODE', ''),
         ],
+
+        'max' => [
+            'token' => env('MAX_TOKEN', ''),
+            'secret_key' => env('MAX_SECRET_KEY', ''),
+        ],
     ],
 ];
