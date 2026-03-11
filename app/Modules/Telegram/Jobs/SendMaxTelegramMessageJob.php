@@ -9,6 +9,7 @@ use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SendMaxTelegramMessageJob extends AbstractSendMessageJob
@@ -93,6 +94,32 @@ class SendMaxTelegramMessageJob extends AbstractSendMessageJob
                     ),
                 ])->dispatch($this->botUserId);
                 return;
+            }
+
+            // Max CDN URLs cannot be downloaded by Telegram directly.
+            // Download the file ourselves and send via multipart upload.
+            $fileField = match ($methodQuery) {
+                'sendDocument' => 'document',
+                'sendPhoto' => 'photo',
+                'sendVoice' => 'voice',
+                default => null,
+            };
+
+            if ($fileField !== null && isset($params[$fileField]) && str_starts_with((string) $params[$fileField], 'http')) {
+                $fileUrl = $params[$fileField];
+                unset($params[$fileField]);
+
+                $fileResponse = Http::get($fileUrl);
+                if ($fileResponse->failed()) {
+                    throw new \RuntimeException("Failed to download from Max CDN: status={$fileResponse->status()}");
+                }
+
+                $urlPath = (string) parse_url($fileUrl, PHP_URL_PATH);
+                $extension = pathinfo($urlPath, PATHINFO_EXTENSION);
+                $tempPath = sys_get_temp_dir() . '/' . uniqid('max_', true) . ($extension ? '.' . $extension : '');
+                file_put_contents($tempPath, $fileResponse->body());
+
+                $params['uploaded_file_path'] = $tempPath;
             }
 
             $response = $this->telegramMethods->sendQueryTelegram(
