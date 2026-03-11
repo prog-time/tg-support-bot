@@ -96,6 +96,8 @@ class TelegramHelper
             return 'sticker';
         } elseif (!empty($data['message']['video_note'])) {
             return 'video_note';
+        } elseif (!empty($data['message']['contact'])) {
+            return 'contact';
         }
 
         return null;

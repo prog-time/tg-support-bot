@@ -35,6 +35,8 @@ class TgMaxMessageService extends FromTgMessageService
                 $this->sendDocument();
             } elseif (!empty($this->update->fileId) && $this->update->fileType === 'voice') {
                 $this->sendVoice();
+            } elseif ($this->update->fileType === 'contact' && !empty($this->update->contact)) {
+                $this->sendContact();
             } elseif (!empty($text)) {
                 $this->sendMessage($text);
             }
@@ -187,6 +189,23 @@ class TgMaxMessageService extends FromTgMessageService
      */
     protected function sendContact(): void
     {
-        //
+        $contact = $this->update->contact;
+
+        $firstName = $contact['first_name'] ?? '';
+        $lastName = $contact['last_name'] ?? '';
+        $phone = $contact['phone_number'] ?? '';
+
+        $name = trim("{$firstName} {$lastName}");
+        $text = "📞 Контакт\nИмя: {$name}\nТелефон: {$phone}";
+
+        SendMaxMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            MaxTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'user_id' => (int) $this->botUser->chat_id,
+                'text' => $text,
+            ]),
+        );
     }
 }

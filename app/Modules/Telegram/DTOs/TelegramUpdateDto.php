@@ -28,6 +28,7 @@ use Spatie\LaravelData\Data;
  * @property string|null $username
  * @property string|null $callbackData
  * @property array|null  $location
+ * @property array|null  $contact
  * @property array|null  $rawData
 */
 class TelegramUpdateDto extends Data
@@ -53,6 +54,7 @@ class TelegramUpdateDto extends Data
         public ?string $username = null,
         public ?string $callbackData = null,
         public ?array  $location = null,
+        public ?array  $contact = null,
         public ?array  $rawData = null
     ) {
     }
@@ -100,6 +102,7 @@ class TelegramUpdateDto extends Data
                 username: self::extractUsername($data, $type),
                 callbackData: $data['callback_query']['data'] ?? null,
                 location: $data['message']['location'] ?? null,
+                contact: $data['message']['contact'] ?? null,
                 rawData: $data
             );
         } catch (\Throwable $e) {
