@@ -3,7 +3,6 @@
 namespace Tests\Unit\Modules\External\Services\Source;
 
 use App\Models\ExternalSource;
-use App\Models\ExternalSourceAccessTokens;
 use App\Modules\External\DTOs\ExternalSourceDto;
 use App\Modules\External\Services\Source\ExternalSourceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

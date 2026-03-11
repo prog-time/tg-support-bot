@@ -23,7 +23,14 @@ class TelegramMethods
             $urlQuery = $domainQuery . $methodQuery;
 
             if (!empty($dataQuery['uploaded_file']) || !empty($dataQuery['uploaded_file_path'])) {
-                $resultQuery = ParserMethods::attachQuery($urlQuery, $dataQuery);
+                $attachType = match ($methodQuery) {
+                    'sendPhoto' => 'photo',
+                    'sendVoice' => 'voice',
+                    'sendAudio' => 'audio',
+                    'sendVideo' => 'video',
+                    default => 'document',
+                };
+                $resultQuery = ParserMethods::attachQuery($urlQuery, $dataQuery, $attachType);
             } else {
                 $resultQuery = ParserMethods::postQuery($urlQuery, $dataQuery);
             }

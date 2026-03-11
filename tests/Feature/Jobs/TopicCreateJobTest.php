@@ -50,15 +50,15 @@ class TopicCreateJobTest extends TestCase
 
         Http::fake([
             'https://api.telegram.org/bot*/getChat*' => Http::response([
-                'ok'     => true,
+                'ok' => true,
                 'result' => [
-                    'id'         => $this->botUser->chat_id,
+                    'id' => $this->botUser->chat_id,
                     'first_name' => 'Test',
-                    'username'   => 'testuser',
+                    'username' => 'testuser',
                 ],
             ], 200),
             'https://api.telegram.org/bot*/createForumTopic*' => Http::response([
-                'ok'     => true,
+                'ok' => true,
                 'result' => [
                     'message_thread_id' => $topicId,
                 ],

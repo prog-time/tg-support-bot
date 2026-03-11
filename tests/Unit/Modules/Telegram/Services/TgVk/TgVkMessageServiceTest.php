@@ -223,7 +223,7 @@ class TgVkMessageServiceTest extends TestCase
             'https://api.telegram.org/bot*/getFile*' => Http::response([
                 'ok' => true,
                 'result' => [
-                    'file_id'   => 'voice_file_id',
+                    'file_id' => 'voice_file_id',
                     'file_path' => $fileName,
                 ],
             ], 200),
@@ -240,7 +240,7 @@ class TgVkMessageServiceTest extends TestCase
 
             'https://api.vk.com/method/docs.save*' => Http::response([
                 'response' => [
-                    'type'          => 'audio_message',
+                    'type' => 'audio_message',
                     'audio_message' => ['id' => 42, 'owner_id' => 123],
                 ],
             ], 200),
@@ -248,8 +248,8 @@ class TgVkMessageServiceTest extends TestCase
 
         $payload = $this->basicPayload;
         $payload['message']['voice'] = [
-            'file_id'   => 'voice_file_id',
-            'duration'  => 5,
+            'file_id' => 'voice_file_id',
+            'duration' => 5,
             'mime_type' => 'audio/ogg',
         ];
         unset($payload['message']['text']);

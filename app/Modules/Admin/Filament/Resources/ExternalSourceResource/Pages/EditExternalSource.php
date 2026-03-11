@@ -86,5 +86,4 @@ class EditExternalSource extends EditRecord
             DeleteAction::make(),
         ];
     }
-
 }

@@ -4,11 +4,13 @@ namespace App\Jobs\SendMessage;
 
 use App\Models\BotUser;
 use App\Modules\External\DTOs\ExternalMessageDto;
+use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Telegram\Actions\BanMessage;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
+use App\Modules\Telegram\Jobs\SendMaxTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
@@ -141,6 +143,14 @@ abstract class AbstractSendMessageJob implements ShouldQueue
 
             if ($this->updateDto instanceof VkUpdateDto) {
                 return new SendVkTelegramMessageJob(
+                    $this->botUserId,
+                    $this->updateDto,
+                    $this->queryParams,
+                );
+            }
+
+            if ($this->updateDto instanceof MaxUpdateDto) {
+                return new SendMaxTelegramMessageJob(
                     $this->botUserId,
                     $this->updateDto,
                     $this->queryParams,

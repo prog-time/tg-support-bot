@@ -1,12 +1,16 @@
 #!/bin/bash
+# ------------------------------------------------------------------------------
+# Runs ShellCheck on shell scripts using local shellcheck binary.
+# Scans provided .sh files and validates them.
+# Reports warnings and errors using ShellCheck severity level "warning".
+# Fails if any script contains issues.
+# ------------------------------------------------------------------------------
+
 set -e
 
 # -----------------------------------------
 # Configuration
 # -----------------------------------------
-DOCKER_SERVICE="app"
-PROJECT_DIR="/home/multichat"
-
 # ShellCheck exclusions
 EXCLUDED_RULES=(
     "SC2053"
@@ -15,10 +19,10 @@ EXCLUDED_RULES=(
 
 ALL_FILES=("$@")
 
-# -----------------------------------------
-# Run ShellCheck
-# -----------------------------------------
-cd "$PROJECT_DIR" || { echo "Cannot cd to $PROJECT_DIR"; exit 1; }
+if ! command -v shellcheck >/dev/null 2>&1; then
+    echo "shellcheck is not installed. Skipping."
+    exit 0
+fi
 
 # Build exclude string from array
 EXCLUDE_STRING=""
@@ -40,19 +44,18 @@ for FILE in "${ALL_FILES[@]}"; do
 
     echo "Checking $FILE..."
 
+    rc=0
     if [[ -n "$EXCLUDE_STRING" ]]; then
-        output=$(docker compose exec -T "$DOCKER_SERVICE" \
-            shellcheck --severity=warning --exclude="$EXCLUDE_STRING" "$FILE" 2>&1) || rc=$?
+        output=$(shellcheck --severity=warning --exclude="$EXCLUDE_STRING" "$FILE" 2>&1) || rc=$?
     else
-        output=$(docker compose exec -T "$DOCKER_SERVICE" \
-            shellcheck --severity=warning "$FILE" 2>&1) || rc=$?
+        output=$(shellcheck --severity=warning "$FILE" 2>&1) || rc=$?
     fi
 
     if [[ -n "$output" ]]; then
         echo "$output"
     fi
 
-    if [[ "${rc:-0}" -ne 0 ]]; then
+    if [[ "$rc" -ne 0 ]]; then
         ERROR_FOUND=1
     fi
 done

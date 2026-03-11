@@ -17,6 +17,7 @@ use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\Tg\TgEditMessageService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
+use App\Modules\Telegram\Services\TgMax\TgMaxMessageService;
 use App\Modules\Telegram\Services\TgVk\TgVkEditService;
 use App\Modules\Telegram\Services\TgVk\TgVkMessageService;
 use Illuminate\Http\Request;
@@ -114,6 +115,10 @@ class TelegramBotController
                     $this->controllerPlatformVk();
                     break;
 
+                case 'max':
+                    $this->controllerPlatformMax();
+                    break;
+
                 case 'ignore':
                     return;
 
@@ -174,6 +179,23 @@ class TelegramBotController
 
             case 'edited_message':
                 (new TgVkEditService($this->dataHook))->handleUpdate();
+                break;
+
+            default:
+                throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
+        }
+    }
+
+    /**
+     * Controller Max message.
+     *
+     * @return void
+     */
+    private function controllerPlatformMax(): void
+    {
+        switch ($this->dataHook->typeQuery) {
+            case 'message':
+                (new TgMaxMessageService($this->dataHook))->handleUpdate();
                 break;
 
             default:

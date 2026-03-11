@@ -1,4 +1,12 @@
 #!/bin/bash
+
+# ------------------------------------------------------------------------------
+# Runs Hadolint on Dockerfiles passed as arguments.
+# Only files named Dockerfile* are checked.
+# Ignores specified Hadolint rules.
+# Fails if any Dockerfile contains issues.
+# ------------------------------------------------------------------------------
+
 set -e
 
 # -----------------------------------------

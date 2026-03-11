@@ -107,9 +107,9 @@ class ViewConversation extends ViewRecord
     protected function getViewData(): array
     {
         return [
-            'botUser'           => $this->getRecord(),
-            'messages'          => $this->chatMessages,
-            'telegramUsername'  => $this->telegramUsername,
+            'botUser' => $this->getRecord(),
+            'messages' => $this->chatMessages,
+            'telegramUsername' => $this->telegramUsername,
         ];
     }
 
@@ -121,7 +121,7 @@ class ViewConversation extends ViewRecord
     public function sendReply(): void
     {
         $this->validate([
-            'replyText'  => ['nullable', 'string', 'required_without:attachment'],
+            'replyText' => ['nullable', 'string', 'required_without:attachment'],
             'attachment' => ['nullable', 'file', 'max:51200'],
         ]);
 
