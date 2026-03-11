@@ -40,6 +40,10 @@ class MaxMethods
                     fileToken: $params['file_token'],
                     text: $params['text'] ?? '',
                 ),
+                'sendAudio' => $this->sendAudioMessage(
+                    userId: $params['user_id'],
+                    fileToken: $params['file_token'],
+                ),
                 default => throw new \RuntimeException("Unknown method: {$methodQuery}", 1),
             };
 
@@ -55,8 +59,8 @@ class MaxMethods
                 'MaxMethods::sendQuery failed | ' . get_class($e) . ': ' . $e->getMessage(),
                 [
                     'methodQuery' => $methodQuery,
-                    'file'        => $e->getFile(),
-                    'line'        => $e->getLine(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
                 ]
             );
 
@@ -101,11 +105,52 @@ class MaxMethods
 
         Log::channel('loki')->info('MaxMethods::sendImageMessage response', [
             'status' => $response->status(),
-            'body'   => $response->body(),
+            'body' => $response->body(),
         ]);
 
         if ($response->failed()) {
             throw new \RuntimeException('Max sendImage failed: ' . $response->body(), 1);
+        }
+
+        $data = $response->json();
+
+        return $data['message']['body']['mid'] ?? '';
+    }
+
+    /**
+     * Send a message with an audio attachment via Max API.
+     *
+     * @param int    $userId    Target Max user ID.
+     * @param string $fileToken Upload token received from the Max upload server.
+     *
+     * @return string Message ID returned by the API.
+     *
+     * @throws \RuntimeException On API or network error.
+     */
+    private function sendAudioMessage(int $userId, string $fileToken): string
+    {
+        $token = config('traffic_source.settings.max.token');
+        $baseUrl = 'https://platform-api.max.ru';
+
+        $body = [
+            'attachments' => [
+                [
+                    'type' => 'audio',
+                    'payload' => ['token' => $fileToken],
+                ],
+            ],
+        ];
+
+        $response = Http::withHeaders(['Authorization' => $token])
+            ->post("{$baseUrl}/messages?user_id={$userId}", $body);
+
+        Log::channel('loki')->info('MaxMethods::sendAudioMessage response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Max sendAudio failed: ' . $response->body(), 1);
         }
 
         $data = $response->json();
@@ -144,7 +189,7 @@ class MaxMethods
 
         Log::channel('loki')->info('MaxMethods::sendFileMessage response', [
             'status' => $response->status(),
-            'body'   => $response->body(),
+            'body' => $response->body(),
         ]);
 
         if ($response->failed()) {

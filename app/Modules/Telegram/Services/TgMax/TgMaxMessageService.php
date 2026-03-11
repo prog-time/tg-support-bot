@@ -33,6 +33,8 @@ class TgMaxMessageService extends FromTgMessageService
                 $this->sendPhoto();
             } elseif (!empty($this->update->fileId) && $this->update->fileType === 'document') {
                 $this->sendDocument();
+            } elseif (!empty($this->update->fileId) && $this->update->fileType === 'voice') {
+                $this->sendVoice();
             } elseif (!empty($text)) {
                 $this->sendMessage($text);
             }
@@ -136,10 +138,32 @@ class TgMaxMessageService extends FromTgMessageService
 
     /**
      * @return void
+     *
+     * @throws \Exception
      */
     protected function sendVoice(): void
     {
-        //
+        $telegramFileUrl = TelegramHelper::getFileTelegramPath($this->update->fileId);
+        if (empty($telegramFileUrl)) {
+            throw new \Exception('Failed to get Telegram file URL', 1);
+        }
+
+        $filename = basename(parse_url($telegramFileUrl, PHP_URL_PATH)) . '.ogg';
+        $token = app(UploadFileMax::class)->execute($telegramFileUrl, $filename, 'audio');
+
+        if (empty($token)) {
+            throw new \Exception('Failed to upload audio to Max', 1);
+        }
+
+        SendMaxMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            MaxTextMessageDto::from([
+                'methodQuery' => 'sendAudio',
+                'user_id' => (int) $this->botUser->chat_id,
+                'file_token' => $token,
+            ]),
+        );
     }
 
     /**
