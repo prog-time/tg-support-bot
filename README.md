@@ -5,7 +5,7 @@
 [![Laravel](https://img.shields.io/badge/Laravel-12.0+-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-Телеграм бот для объединения сообщений из **Telegram**, **ВКонтакте** и **сторонних API источников** в единую систему технической поддержки.
+Телеграм бот для объединения сообщений из **Telegram**, **ВКонтакте**, **Max** и **сторонних API источников** в единую систему технической поддержки.
 
 Сообщения отправляются в Telegram-группу, где под каждого пользователя создаётся отдельная **чат-тема (топик)**.
 
@@ -53,10 +53,14 @@
 └─────────────┘         │             │         └─────────────────┘
                         │             │
 ┌─────────────┐         │   TG Bot    │         ┌─────────────────┐
-│  Website    │────────▶│   Server    │◀────────│  External API   │
-│   Widget    │         │             │         │    Sources      │
+│    Max      │────────▶│   Server    │◀────────│  External API   │
+│   Users     │         │             │         │    Sources      │
 └─────────────┘         │             │         └─────────────────┘
-                        └──────┬──────┘
+                        │             │
+┌─────────────┐         │             │
+│  Website    │────────▶│             │
+│   Widget    │         │             │
+└─────────────┘         └──────┬──────┘
                                │
                                ▼
                     ┌──────────────────────┐
@@ -86,6 +90,7 @@
 ### Мультиканальность
 - **Telegram**: Полная поддержка Telegram Bot API
 - **ВКонтакте**: Интеграция с VK API для сообщений сообщества
+- **Max**: Интеграция с мессенджером Max (экосистема VK/Mail.ru)
 - **Website Widget**: Готовый виджет живого чата для встраивания на сайт
 - **External API**: REST API для подключения сторонних источников
 
@@ -131,6 +136,7 @@
 **External APIs:**
 - Telegram Bot API
 - VK API
+- Max Bot API
 - OpenAI API / DeepSeek / GigaChat (AI)
 
 **DevOps:**
@@ -182,6 +188,13 @@
 2. Настройте API: Настройки → API → Создать ключ
 3. Получите `VK_TOKEN`, `VK_CONFIRM_CODE`, `VK_SECRET_CODE`
 
+**Для Max (опционально):**
+1. Напишите боту `@metabot` в мессенджере Max
+2. Отправьте `/newbot` и следуйте инструкциям
+3. Получите токен бота → `MAX_TOKEN`
+4. Придумайте произвольный секретный ключ → `MAX_SECRET_KEY`
+5. Зарегистрируйте вебхук: подробная инструкция в [`docs/connecting-max-bot.md`](./docs/connecting-max-bot.md)
+
 ### Конфигурация .env
 
 ```env
@@ -199,6 +212,10 @@ TELEGRAM_SECRET_KEY="your_random_secret_key"
 VK_TOKEN="your_vk_token"
 VK_CONFIRM_CODE="12345678"
 VK_SECRET_CODE="your_vk_secret"
+
+# Max (опционально)
+MAX_TOKEN="your_max_bot_token"
+MAX_SECRET_KEY="your_max_secret_key"
 
 # База данных
 DB_CONNECTION=pgsql
@@ -412,6 +429,15 @@ SENTRY_TRACES_SAMPLE_RATE=0.1
 - ✅ Текстовые сообщения
 - ✅ Файлы (изображения, документы)
 
+### Max
+- ✅ Текстовые сообщения
+- ✅ Фото
+- ✅ Документы / файлы
+- ✅ Голосовые сообщения (аудио)
+- ✅ Видео (пересылается как документ)
+- ✅ Контакты (пересылаются как текст с именем и телефоном)
+- ✅ Геопозиция (пересылается как текст с координатами и ссылкой на Google Maps)
+
 ### External API
 - ✅ Все типы через API (определяется параметром `message_type`)
 
@@ -549,6 +575,8 @@ docker exec -it nginx certbot renew --dry-run
 ## Документация
 
 **Wiki**: [https://github.com/prog-time/tg-support-bot/wiki/](https://github.com/prog-time/tg-support-bot/wiki/)
+
+**Подключение Max**: [`docs/connecting-max-bot.md`](./docs/connecting-max-bot.md)
 
 **API Documentation**: `https://yourdomain.com/api/documentation` (Swagger)
 
