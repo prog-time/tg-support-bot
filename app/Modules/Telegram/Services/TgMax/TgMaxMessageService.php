@@ -37,6 +37,8 @@ class TgMaxMessageService extends FromTgMessageService
                 $this->sendVoice();
             } elseif ($this->update->fileType === 'contact' && !empty($this->update->contact)) {
                 $this->sendContact();
+            } elseif (!empty($this->update->location)) {
+                $this->sendLocation();
             } elseif (!empty($text)) {
                 $this->sendMessage($text);
             }
@@ -135,7 +137,20 @@ class TgMaxMessageService extends FromTgMessageService
      */
     protected function sendLocation(): void
     {
-        //
+        $lat = $this->update->location['latitude'];
+        $lon = $this->update->location['longitude'];
+
+        $text = "📍 Геопозиция\nШирота: {$lat}\nДолгота: {$lon}\nhttps://maps.google.com/?q={$lat},{$lon}";
+
+        SendMaxMessageJob::dispatch(
+            $this->botUser->id,
+            $this->update,
+            MaxTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'user_id' => (int) $this->botUser->chat_id,
+                'text' => $text,
+            ]),
+        );
     }
 
     /**
