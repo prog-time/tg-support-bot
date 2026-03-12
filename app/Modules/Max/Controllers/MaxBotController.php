@@ -4,6 +4,7 @@ namespace App\Modules\Max\Controllers;
 
 use App\Models\BotUser;
 use App\Modules\Max\Actions\SendBannedMessageMax;
+use App\Modules\Max\Actions\SendStartMessageMax;
 use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Max\Services\MaxMessageService;
 use Illuminate\Http\Request;
@@ -22,6 +23,14 @@ class MaxBotController
     public function bot_query(Request $request): Response
     {
         if ($request->input('update_type') === 'bot_started') {
+            $userId = $request->input('user.user_id');
+            if (!empty($userId)) {
+                $botUser = (new BotUser())->getUserByChatId((int) $userId, 'max');
+                if (!$botUser->isBanned()) {
+                    app(SendStartMessageMax::class)->execute($botUser);
+                }
+            }
+
             return response('ok', 200);
         }
 

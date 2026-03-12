@@ -56,7 +56,7 @@ curl -X POST "https://platform-api.max.ru/subscriptions" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://ВАШ_ДОМЕН/api/max/bot",
-    "update_types": ["message_created"],
+    "update_types": ["message_created", "bot_started"],
     "secret": "ВАШ_MAX_SECRET_KEY"
   }'
 ```
@@ -111,7 +111,7 @@ curl "https://platform-api.max.ru/subscriptions" \
     {
       "url": "https://ваш-домен.com/api/max/bot",
       "time": 1700000000000,
-      "update_types": ["message_created"]
+      "update_types": ["message_created", "bot_started"]
     }
   ]
 }
