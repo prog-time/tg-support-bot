@@ -106,6 +106,36 @@ readonly class ButtonDto
     }
 
     /**
+     * Convert button to Max keyboard format.
+     *
+     * @return array<string, mixed>
+     */
+    public function toMaxButton(): array
+    {
+        return match ($this->type) {
+            ButtonType::CALLBACK => [
+                'type' => 'callback',
+                'text' => $this->text,
+                'payload' => $this->value ?? $this->text,
+            ],
+            ButtonType::URL => [
+                'type' => 'link',
+                'text' => $this->text,
+                'url' => $this->value ?? '',
+            ],
+            ButtonType::PHONE => [
+                'type' => 'request_contact',
+                'text' => $this->text,
+            ],
+            default => [
+                'type' => 'callback',
+                'text' => $this->text,
+                'payload' => $this->text,
+            ],
+        };
+    }
+
+    /**
      * Convert button to VK keyboard format.
      *
      * @return array<string, mixed>

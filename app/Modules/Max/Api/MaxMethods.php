@@ -26,10 +26,16 @@ class MaxMethods
             ));
 
             $messageId = match ($methodQuery) {
-                'sendMessage' => $client->messages->send(
-                    text: $params['text'] ?? '',
-                    userId: $params['user_id'] ?? null,
-                )->messageId,
+                'sendMessage' => empty($params['keyboard'])
+                    ? $client->messages->send(
+                        text: $params['text'] ?? '',
+                        userId: $params['user_id'] ?? null,
+                    )->messageId
+                    : $this->sendMessageWithKeyboard(
+                        userId: $params['user_id'],
+                        text: $params['text'] ?? '',
+                        keyboard: $params['keyboard'],
+                    ),
                 'sendImage' => $this->sendImageMessage(
                     userId: $params['user_id'],
                     fileToken: $params['file_token'],
@@ -72,6 +78,49 @@ class MaxMethods
                 'response' => null,
             ]);
         }
+    }
+
+    /**
+     * Send a message with an inline keyboard via Max API.
+     *
+     * @param int    $userId   Target Max user ID.
+     * @param string $text     Message text.
+     * @param array  $keyboard Nested array of button rows from KeyboardBuilder::buildMaxKeyboard().
+     *
+     * @return string Message ID returned by the API.
+     *
+     * @throws \RuntimeException On API or network error.
+     */
+    private function sendMessageWithKeyboard(int $userId, string $text, array $keyboard): string
+    {
+        $token = config('traffic_source.settings.max.token');
+        $baseUrl = 'https://platform-api.max.ru';
+
+        $body = [
+            'text' => $text,
+            'attachments' => [
+                [
+                    'type' => 'inline_keyboard',
+                    'payload' => ['buttons' => $keyboard],
+                ],
+            ],
+        ];
+
+        $response = Http::withHeaders(['Authorization' => $token])
+            ->post("{$baseUrl}/messages?user_id={$userId}", $body);
+
+        Log::channel('loki')->info('MaxMethods::sendMessageWithKeyboard response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Max sendMessage with keyboard failed: ' . $response->body(), 1);
+        }
+
+        $data = $response->json();
+
+        return $data['message']['body']['mid'] ?? '';
     }
 
     /**

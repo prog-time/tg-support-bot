@@ -84,6 +84,11 @@ abstract class AbstractSendMessageJob implements ShouldQueue
             return;
         }
 
+        if ($response->response_code === 400 && $response->type_error === 'MESSAGE_TEXT_IS_EMPTY') {
+            Log::channel('loki')->warning('MESSAGE_TEXT_IS_EMPTY -> message not sent');
+            return;
+        }
+
         if ($response->response_code === 400 && $response->type_error === 'MARKDOWN_ERROR') {
             Log::channel('loki')->warning('MARKDOWN_ERROR -> switching parse_mode to HTML');
             $this->queryParams->parse_mode = 'html';

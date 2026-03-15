@@ -214,6 +214,12 @@ class TgMessageService extends FromTgMessageService
             $parsedMessage = $buttonParser->parse($text);
             $text = $parsedMessage->text;
             $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
+
+            // Telegram rejects sendMessage with empty text.
+            // When manager sends only button syntax, use a non-breaking space.
+            if ($text === '' && $keyboard !== null) {
+                $text = "\u{200B}";
+            }
         }
 
         $this->messageParamsDTO->text = $text;
