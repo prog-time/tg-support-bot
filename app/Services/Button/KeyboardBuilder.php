@@ -96,6 +96,33 @@ class KeyboardBuilder
     }
 
     /**
+     * Create Max inline keyboard from parsed message.
+     *
+     * @param ParsedMessageDto $parsedMessage Parsed message
+     *
+     * @return array<int, array<int, array<string, mixed>>>|null
+     */
+    public function buildMaxKeyboard(ParsedMessageDto $parsedMessage): ?array
+    {
+        if (!$parsedMessage->hasButtons()) {
+            return null;
+        }
+
+        $buttons = [];
+        $buttonsByRows = $this->groupButtonsByRows($parsedMessage->buttons);
+
+        foreach ($buttonsByRows as $rowButtons) {
+            $row = [];
+            foreach ($rowButtons as $button) {
+                $row[] = $button->toMaxButton();
+            }
+            $buttons[] = $row;
+        }
+
+        return $buttons;
+    }
+
+    /**
      * Create VK keyboard from parsed message.
      *
      * @param ParsedMessageDto $parsedMessage Parsed message
