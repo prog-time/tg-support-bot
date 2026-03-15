@@ -8,6 +8,8 @@ use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use App\Services\Button\ButtonParser;
+use App\Services\Button\KeyboardBuilder;
 use Illuminate\Support\Facades\Log;
 
 class TgMaxMessageService extends FromTgMessageService
@@ -58,13 +60,22 @@ class TgMaxMessageService extends FromTgMessageService
      */
     protected function sendMessage(string $text = ''): void
     {
+        $parsedMessage = (new ButtonParser())->parse($text);
+        $keyboard = (new KeyboardBuilder())->buildMaxKeyboard($parsedMessage);
+
+        $cleanText = $parsedMessage->text;
+        if ($cleanText === '' && $keyboard !== null) {
+            $cleanText = "\u{200B}";
+        }
+
         SendMaxMessageJob::dispatch(
             $this->botUser->id,
             $this->update,
             MaxTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
                 'user_id' => (int) $this->botUser->chat_id,
-                'text' => $text,
+                'text' => $cleanText,
+                'keyboard' => $keyboard,
             ]),
         );
     }

@@ -205,10 +205,15 @@ class TgVkMessageService extends FromTgMessageService
         $parsedMessage = $buttonParser->parse($this->update->text);
         $keyboard = $keyboardBuilder->buildVkKeyboard($parsedMessage);
 
+        $text = $parsedMessage->text;
+        if ($text === '' && $keyboard !== null) {
+            $text = "\u{200B}";
+        }
+
         $queryParams = [
             'methodQuery' => 'messages.send',
             'peer_id' => $this->botUser->chat_id,
-            'message' => $parsedMessage->text,
+            'message' => $text,
             'keyboard' => $keyboard ? json_encode($keyboard) : null,
         ];
 
