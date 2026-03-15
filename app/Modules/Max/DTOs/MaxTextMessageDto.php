@@ -12,6 +12,7 @@ class MaxTextMessageDto extends Data
         public ?string $text = null,
         public ?string $attachment_url = null,
         public ?string $file_token = null,
+        public ?array $keyboard = null,
     ) {
     }
 
