@@ -15,6 +15,8 @@
 
 ## Демонстрация
 
+**Документация:** [https://docs.tg-support-bot.ru/](https://docs.tg-support-bot.ru/)
+
 **Презентация работы бота:** [https://youtu.be/hIpYreHOxIk](https://youtu.be/hIpYreHOxIk)
 
 **Инструкция по установке через Docker Compose:** [https://youtu.be/ZAtP9qJ5q9M](https://youtu.be/ZAtP9qJ5q9M)
