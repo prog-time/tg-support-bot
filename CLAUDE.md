@@ -340,8 +340,8 @@ tests/
 
 | Hook | Script | What it checks |
 |---|---|---|
-| `pre-commit` | `scripts/pre-commit-check.sh` | Laravel Pint formatting |
-| `pre-push` | `scripts/pre-push-check.sh` | PHPStan level 6 + PHPUnit |
+| `pre-commit` | `linting/pre-commit-check.sh` | Laravel Pint formatting |
+| `pre-push` | `linting/pre-push-check.sh` | PHPStan level 6 + PHPUnit |
 
 Never bypass hooks with `--no-verify`.
 

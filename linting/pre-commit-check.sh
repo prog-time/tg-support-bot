@@ -18,15 +18,15 @@ done < <(git diff --cached --name-only --diff-filter=A || true)
 #done
 
 echo "Checking Dockerfiles with Hadolint..."
-bash scripts/check_scripts/check_hadolint.sh "${ALL_FILE_ARRAY[@]}"
+bash linting/check_scripts/check_hadolint.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 echo "Checking shell scripts with ShellCheck..."
-bash scripts/check_scripts/check_shellcheck.sh "${ALL_FILE_ARRAY[@]}"
+bash linting/check_scripts/check_shellcheck.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 echo "Checking for tests..."
-bash scripts/check_scripts/find_test.sh "${ALL_FILE_ARRAY[@]}"
+bash linting/check_scripts/find_test.sh "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 # -----------------------------
@@ -35,11 +35,11 @@ echo "----------"
 echo "Running type checks (PHPStan)..."
 
 # NEW FILES
-bash scripts/check_scripts/check_phpstan.sh strict "${NEW_FILE_ARRAY[@]}"
+bash linting/check_scripts/check_phpstan.sh strict "${NEW_FILE_ARRAY[@]}"
 echo "----------"
 
 # MODIFIED FILES
-bash scripts/check_scripts/check_phpstan.sh lenient "${ALL_FILE_ARRAY[@]}"
+bash linting/check_scripts/check_phpstan.sh lenient "${ALL_FILE_ARRAY[@]}"
 echo "----------"
 
 # -----------------------------
@@ -47,10 +47,10 @@ echo "----------"
 # -----------------------------
 echo "Fixing code style (Pint)..."
 if [ ${#PHP_ALL_FILE_ARRAY[@]} -gt 0 ]; then
-    bash scripts/check_scripts/check_pint.sh "${PHP_ALL_FILE_ARRAY[@]}"
+    bash linting/check_scripts/check_pint.sh "${PHP_ALL_FILE_ARRAY[@]}"
 fi
 echo "----------"
 
 echo "🧑🏻‍💻 Running tests..."
-bash scripts/check_scripts/start_tests.sh "${ALL_FILE_ARRAY[@]}"
+bash linting/check_scripts/start_tests.sh "${ALL_FILE_ARRAY[@]}"
 echo

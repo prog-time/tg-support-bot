@@ -124,7 +124,7 @@ cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
 set -e
 
-bash scripts/pre-commit-check.sh
+bash linting/pre-commit-check.sh
 EOF
 
 # Сделайте файл исполняемым
@@ -139,7 +139,7 @@ cat > .git/hooks/pre-push << 'EOF'
 #!/bin/bash
 set -e
 
-bash scripts/pre-push-check.sh
+bash linting/pre-push-check.sh
 EOF
 
 # Сделайте файл исполняемым
