@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Swagger\SwaggerGenerateService;
+use App\Modules\Api\Services\SwaggerGenerateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
