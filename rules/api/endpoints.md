@@ -29,8 +29,8 @@ The project uses **L5-Swagger** (darkaonline/l5-swagger) to generate OpenAPI doc
 | Swagger UI | `GET /docs/swagger-v1-ui` |
 | Swagger JSON | `GET /docs/swagger-v1-json` |
 | Annotations | PHP docblocks in Controllers and DTOs |
-| Generator service | `app/Services/Swagger/SwaggerGenerateService.php` |
-| Controller | `app/Http/Controllers/SwaggerController.php` |
+| Generator service | `app/Modules/Api/Services/SwaggerGenerateService.php` |
+| Controller | `app/Modules/Api/Controllers/SwaggerController.php` |
 
 The generated JSON is the authoritative OpenAPI file. Do not write a separate `openapi.yaml` — L5-Swagger generates it from annotations.
 
