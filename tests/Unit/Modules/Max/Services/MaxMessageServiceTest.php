@@ -108,7 +108,7 @@ class MaxMessageServiceTest extends TestCase
             [
                 'type' => 'file',
                 'payload' => [
-                    'url'      => 'https://example.com/test.pdf',
+                    'url' => 'https://example.com/test.pdf',
                     'filename' => 'test.pdf',
                 ],
             ],
