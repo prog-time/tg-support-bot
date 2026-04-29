@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Services\File\FileService;
+use App\Modules\Api\Services\FileService;
 use phpDocumentor\Reflection\Exception;
 
 class TelegramHelper

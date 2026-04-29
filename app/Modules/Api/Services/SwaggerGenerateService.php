@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Swagger;
+namespace App\Modules\Api\Services;
 
 use Illuminate\Support\Facades\File;
 

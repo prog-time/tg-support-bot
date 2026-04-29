@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\Api\Controllers;
 
 use Illuminate\Contracts\View\View;
 
@@ -18,6 +18,9 @@ class SimplePage
         }
     }
 
+    /**
+     * @return View
+     */
     public function liveChatPromo(): View
     {
         return view('site.live_chat_promo');

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\Api\Controllers;
 
-use App\Services\File\FileService;
+use App\Modules\Api\Services\FileService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Class FilesController
  *
- * @package App\Http\Controllers
+ * @package App\Modules\Api\Controllers
  */
 class FilesController
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Services\File;
+namespace Tests\Unit\Modules\Api\Services;
 
-use App\Services\File\FileService;
+use App\Modules\Api\Services\FileService;
 use Illuminate\Http\Response as LaravelResponse;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;

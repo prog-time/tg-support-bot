@@ -64,7 +64,7 @@ class SendMaxMessageJob extends AbstractSendMessageJob
                 if (str_contains($response->error_message ?? '', 'attachment.not.ready')) {
                     Log::channel('loki')->info('SendMaxMessageJob: attachment not ready, retrying', [
                         'attempt' => $attempt + 1,
-                        'delay'   => $delay,
+                        'delay' => $delay,
                     ]);
                     sleep($delay);
                     $response = $this->maxMethods->sendQuery(

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\File;
+namespace App\Modules\Api\Services;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Class FileService
  *
- * @package App\Http\Services
+ * @package App\Modules\Api\Services
  */
 class FileService
 {

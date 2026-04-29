@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\Api\Controllers;
 
 use Illuminate\Console\Application;
 use Illuminate\Contracts\View\Factory;

@@ -7,5 +7,6 @@ return [
     App\Modules\Telegram\TelegramServiceProvider::class,
     App\Modules\Vk\VkServiceProvider::class,
     App\Modules\Max\MaxServiceProvider::class,
+    App\Modules\Api\ApiServiceProvider::class,
     App\Providers\AppServiceProvider::class,
 ];
