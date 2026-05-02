@@ -2,9 +2,9 @@
 
 namespace App\Modules\Telegram\Controllers;
 
-use App\Actions\Ai\AiAcceptMessage;
-use App\Actions\Ai\AiCancelMessage;
 use App\Models\BotUser;
+use App\Modules\Ai\Actions\AiAcceptMessage;
+use App\Modules\Ai\Actions\AiCancelMessage;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Http\Request;
 
