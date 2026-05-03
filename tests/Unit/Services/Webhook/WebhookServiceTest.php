@@ -3,33 +3,50 @@
 namespace Tests\Unit\Services\Webhook;
 
 use App\Services\Webhook\WebhookService;
+use Illuminate\Support\Facades\Http;
 use Tests\Mocks\External\ExternalMessageAnswerDtoMock;
 use Tests\TestCase;
 
 class WebhookServiceTest extends TestCase
 {
-    private int $externalId;
+    private string $url;
+
+    private array $dataMessage;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->externalId = time();
-    }
-
-    public function testWebhookService(): void
-    {
-        $url = 'https://node.tg-support-bot.ru/push-message';
+        $this->url = 'https://node.tg-support-bot.ru/push-message';
 
         $saveMessageData = ExternalMessageAnswerDtoMock::getDto();
 
-        $dataMessage = [
+        $this->dataMessage = [
             'type_query' => 'send_message',
-            'externalId' => $this->externalId,
+            'externalId' => time(),
             'message' => $saveMessageData->result->toArray(),
         ];
+    }
 
-        $result = (new WebhookService())->sendMessage($url, $dataMessage);
-        $this->assertNotEmpty($result);
+    public function test_send_message_returns_body_on_success(): void
+    {
+        Http::fake([
+            $this->url => Http::response('{"ok":true}', 200),
+        ]);
+
+        $result = (new WebhookService())->sendMessage($this->url, $this->dataMessage);
+
+        $this->assertSame('{"ok":true}', $result);
+    }
+
+    public function test_send_message_returns_null_on_failure(): void
+    {
+        Http::fake([
+            $this->url => Http::response('error', 500),
+        ]);
+
+        $result = (new WebhookService())->sendMessage($this->url, $this->dataMessage);
+
+        $this->assertNull($result);
     }
 }
