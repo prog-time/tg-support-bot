@@ -58,6 +58,51 @@ class AiAssistantService
     }
 
     /**
+     * Generate a direct reply text for auto-reply mode (AI_AUTO_REPLY=true).
+     *
+     * Uses the same provider selection and context window logic as processMessage().
+     * The reply text is returned as a plain string so the caller can dispatch
+     * a send job without creating an AiMessage draft record.
+     *
+     * @param int    $userId      Bot user ID (used for context cache key)
+     * @param string $platform    Platform identifier (e.g. 'telegram')
+     * @param string $userMessage Incoming user message text
+     *
+     * @return string|null Generated reply text, or null on failure
+     */
+    public function generateReply(int $userId, string $platform, string $userMessage): ?string
+    {
+        try {
+            $this->provider = $this->getDefaultProvider(null);
+
+            $context = $this->getUserContext($userId, $platform);
+
+            $request = new AiRequestDto(
+                message: $userMessage,
+                userId: $userId,
+                platform: $platform,
+                context: $context,
+                provider: config('ai.default_provider', 'openai'),
+                forceEscalation: false
+            );
+
+            $response = $this->provider->processMessage($request);
+
+            if ($response === null) {
+                return null;
+            }
+
+            $this->updateUserContext($userId, $platform, $userMessage, $response);
+
+            return $response->response;
+        } catch (\Throwable $e) {
+            Log::channel('loki')->error($e->getMessage(), ['source' => 'ai_generate_reply_error']);
+
+            return null;
+        }
+    }
+
+    /**
      * Initialize available AI providers.
      *
      * @return void

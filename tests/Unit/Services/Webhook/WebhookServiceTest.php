@@ -9,52 +9,49 @@ use Tests\TestCase;
 
 class WebhookServiceTest extends TestCase
 {
-    private int $externalId;
+    private string $url;
+
+    private array $dataMessage;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->externalId = time();
-    }
-
-    public function testWebhookService(): void
-    {
-        $url = 'https://node.tg-support-bot.ru/push-message';
-
-        Http::fake([
-            $url => Http::response('{"status":"ok"}', 200),
-        ]);
+        $this->url = 'https://node.tg-support-bot.ru/push-message';
 
         $saveMessageData = ExternalMessageAnswerDtoMock::getDto();
 
-        $dataMessage = [
+        $this->dataMessage = [
             'type_query' => 'send_message',
-            'externalId' => $this->externalId,
+            'externalId' => time(),
             'message' => $saveMessageData->result->toArray(),
         ];
+    }
 
-        $result = (new WebhookService())->sendMessage($url, $dataMessage);
+    public function test_send_message_returns_body_on_success(): void
+    {
+        Http::fake([
+            $this->url => Http::response('{"ok":true}', 200),
+        ]);
 
-        $this->assertNotEmpty($result);
-        $this->assertSame('{"status":"ok"}', $result);
+        $result = (new WebhookService())->sendMessage($this->url, $this->dataMessage);
 
-        Http::assertSent(function ($request) use ($url, $dataMessage) {
-            return $request->url() === $url
+        $this->assertSame('{"ok":true}', $result);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === $this->url
                 && $request->method() === 'POST'
-                && $request->data() === $dataMessage;
+                && $request->data() === $this->dataMessage;
         });
     }
 
-    public function testWebhookServiceReturnsNullOnFailure(): void
+    public function test_send_message_returns_null_on_failure(): void
     {
-        $url = 'https://node.tg-support-bot.ru/push-message';
-
         Http::fake([
-            $url => Http::response('Server error', 500),
+            $this->url => Http::response('error', 500),
         ]);
 
-        $result = (new WebhookService())->sendMessage($url, ['type_query' => 'send_message']);
+        $result = (new WebhookService())->sendMessage($this->url, $this->dataMessage);
 
         $this->assertNull($result);
     }
