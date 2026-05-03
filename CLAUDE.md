@@ -232,8 +232,14 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 ### AI Assistant
 
 - AI is disabled by default (`AI_ENABLED=false`)
-- AI drafts must be reviewed and accepted/cancelled by a manager before sending (unless `AI_AUTO_REPLY=true`)
+- AI runs through a **separate Telegram bot** (`TELEGRAM_AI_BOT_TOKEN`) that is added to the same supergroup
+- The AI bot webhook URL is `POST /api/ai-bot/webhook`, protected by `AiBotQuery` middleware (`TELEGRAM_AI_BOT_SECRET`)
+- `AI_AUTO_REPLY=false` (default): AI posts a draft with "Accept / Cancel" inline buttons; manager reviews before sending
+- `AI_AUTO_REPLY=true`: AI posts the reply directly to the topic; it is immediately sent to the user via `SendReplyAction`
+- The AI bot only replies to messages whose `from.id` equals `TELEGRAM_BOT_ID` (forwarded user messages from the main bot)
+- The AI bot does NOT reply when `MANAGER_INTERFACE=admin_panel`
 - Supported providers: OpenAI, DeepSeek, GigaChat (set via `AI_DEFAULT_PROVIDER`)
+- Register the AI bot webhook with: `docker exec -it pet php artisan ai-bot:set-webhook`
 
 ### External Sources
 
@@ -252,7 +258,8 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 
 ## Security Rules
 
-- All Telegram webhooks validated by `TelegramQuery` middleware (`X-Telegram-Bot-Api-Secret-Token`)
+- All main bot Telegram webhooks validated by `TelegramQuery` middleware (`X-Telegram-Bot-Api-Secret-Token` vs `TELEGRAM_SECRET_KEY`)
+- AI bot webhook validated by `AiBotQuery` middleware (`X-Telegram-Bot-Api-Secret-Token` vs `TELEGRAM_AI_BOT_SECRET`)
 - All VK webhooks validated by `VkQuery` middleware
 - All External API requests validated by `ApiQuery` middleware (bearer token)
 - Never pass raw `Request` objects to Services or Actions — use DTOs
