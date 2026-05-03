@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Actions\Ai;
+namespace Tests\Unit\Modules\Ai\Actions;
 
-use App\Actions\Ai\AiAcceptMessage;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\Ai\Actions\AiAcceptMessage;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;

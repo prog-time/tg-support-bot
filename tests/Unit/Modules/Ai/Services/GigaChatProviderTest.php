@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Services\Ai;
+namespace Tests\Unit\Modules\Ai\Services;
 
-use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
-use App\Services\Ai\AiAssistantService;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\Services\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;

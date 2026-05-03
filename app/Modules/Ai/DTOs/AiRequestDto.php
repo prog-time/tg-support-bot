@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DTOs\Ai;
+namespace App\Modules\Ai\DTOs;
 
 class AiRequestDto
 {

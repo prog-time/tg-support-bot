@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ai;
+namespace App\Modules\Ai\Services;
 
-use App\DTOs\Ai\AiRequestDto;
-use App\DTOs\Ai\AiResponseDto;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\DTOs\AiResponseDto;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;

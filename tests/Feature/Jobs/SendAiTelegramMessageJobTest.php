@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\Services\AiAssistantService;
 use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
-use App\Services\Ai\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;

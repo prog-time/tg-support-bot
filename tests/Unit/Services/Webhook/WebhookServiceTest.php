@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Webhook;
 
 use App\Services\Webhook\WebhookService;
+use Illuminate\Support\Facades\Http;
 use Tests\Mocks\External\ExternalMessageAnswerDtoMock;
 use Tests\TestCase;
 
@@ -21,6 +22,10 @@ class WebhookServiceTest extends TestCase
     {
         $url = 'https://node.tg-support-bot.ru/push-message';
 
+        Http::fake([
+            $url => Http::response('{"status":"ok"}', 200),
+        ]);
+
         $saveMessageData = ExternalMessageAnswerDtoMock::getDto();
 
         $dataMessage = [
@@ -30,6 +35,27 @@ class WebhookServiceTest extends TestCase
         ];
 
         $result = (new WebhookService())->sendMessage($url, $dataMessage);
+
         $this->assertNotEmpty($result);
+        $this->assertSame('{"status":"ok"}', $result);
+
+        Http::assertSent(function ($request) use ($url, $dataMessage) {
+            return $request->url() === $url
+                && $request->method() === 'POST'
+                && $request->data() === $dataMessage;
+        });
+    }
+
+    public function testWebhookServiceReturnsNullOnFailure(): void
+    {
+        $url = 'https://node.tg-support-bot.ru/push-message';
+
+        Http::fake([
+            $url => Http::response('Server error', 500),
+        ]);
+
+        $result = (new WebhookService())->sendMessage($url, ['type_query' => 'send_message']);
+
+        $this->assertNull($result);
     }
 }

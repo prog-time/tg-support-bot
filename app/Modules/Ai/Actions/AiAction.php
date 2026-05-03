@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\Ai;
+namespace App\Modules\Ai\Actions;
 
 use App\Models\AiMessage;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;

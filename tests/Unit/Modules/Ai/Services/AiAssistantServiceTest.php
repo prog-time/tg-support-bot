@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\Ai;
+namespace Tests\Unit\Modules\Ai\Services;
 
-use App\DTOs\Ai\AiRequestDto;
-use App\DTOs\Ai\AiResponseDto;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\DTOs\AiResponseDto;
 use Tests\TestCase;
 
 class AiAssistantServiceTest extends TestCase

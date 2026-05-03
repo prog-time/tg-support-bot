@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Actions\Ai;
+namespace Tests\Unit\Modules\Ai\Actions;
 
-use App\Actions\Ai\AiAction;
 use App\Models\AiMessage;
 use App\Models\BotUser;
+use App\Modules\Ai\Actions\AiAction;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
