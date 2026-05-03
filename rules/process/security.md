@@ -22,21 +22,30 @@ Security is not optional or deferred.
 
 ### Telegram Webhooks
 
-All Telegram requests must be validated by `TelegramQuery` middleware:
+All Telegram requests must be validated by the appropriate middleware before the controller runs.
 
+**Main bot** — `TelegramQuery` middleware:
 - Validates `X-Telegram-Bot-Api-Secret-Token` header against `TELEGRAM_SECRET_KEY` env variable
-- Rejects invalid requests with `401`
-- Never process Telegram webhooks without this validation
+- Rejects invalid requests with `403`
+- Applies to: `POST /api/telegram/bot` and `POST /api/telegram/ai/bot`
+
+**AI bot** — `AiBotQuery` middleware (`app/Modules/Ai/Middleware/AiBotQuery.php`):
+- Validates `X-Telegram-Bot-Api-Secret-Token` header against `TELEGRAM_AI_BOT_SECRET` env variable
+- Rejects missing or invalid tokens with `403`
+- Applies to: `POST /api/ai-bot/webhook`
 
 ```php
-// ✅ Correct — middleware validates before controller runs
+// ✅ Correct — each bot has its own middleware and secret
 Route::post('/api/telegram/bot', [TelegramBotController::class, 'bot_query'])
-    ->middleware('telegram.query');
+    ->middleware(TelegramQuery::class);
+
+Route::post('/api/ai-bot/webhook', [AiBotController::class, 'handle'])
+    ->middleware(AiBotQuery::class);
 ```
 
 ```php
 // ❌ Incorrect — unprotected webhook endpoint
-Route::post('/api/telegram/bot', [TelegramBotController::class, 'bot_query']);
+Route::post('/api/ai-bot/webhook', [AiBotController::class, 'handle']);
 ```
 
 ### VK Webhooks
@@ -124,8 +133,10 @@ $token = '1234567890:AABBcc_my_telegram_token_here';
 ```
 
 **Secrets in this project:**
-- `TELEGRAM_TOKEN` — Telegram bot token
-- `TELEGRAM_SECRET_KEY` — webhook validation secret
+- `TELEGRAM_TOKEN` — Telegram main bot token
+- `TELEGRAM_SECRET_KEY` — main bot webhook validation secret
+- `TELEGRAM_AI_BOT_TOKEN` — AI bot token
+- `TELEGRAM_AI_BOT_SECRET` — AI bot webhook validation secret
 - `VK_TOKEN` — VK API token
 - `VK_SECRET_CODE` — VK webhook secret
 - `OPENAI_API_KEY`, `DEEPSEEK_CLIENT_SECRET`, `GIGACHAT_CLIENT_SECRET` — AI providers
