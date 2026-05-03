@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Services\Ai;
+namespace Tests\Unit\Modules\Ai\Services;
 
-use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
-use App\Services\Ai\AiAssistantService;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\Services\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class DeepSeekProviderTest extends TestCase
+class OpenAiProviderTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -28,17 +28,16 @@ class DeepSeekProviderTest extends TestCase
 
         Queue::fake();
 
-        Config::set('ai.default_provider', 'deepseek');
-        Config::set('ai.providers.deepseek.client_secret', 'test_123');
+        Config::set('ai.default_provider', 'openai');
+        Config::set('ai.providers.openai.api_key', 'test_123');
 
         Storage::fake('prompts');
         Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
-        $chatId = time();
-        $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');
+        $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
-        $this->provider = 'deepseek';
-        $this->baseProviderUrl = config('ai.providers.deepseek.base_url');
+        $this->provider = 'openai';
+        $this->baseProviderUrl = config('ai.providers.openai.base_url');
     }
 
     public function test_successful_process_message(): void
@@ -47,11 +46,11 @@ class DeepSeekProviderTest extends TestCase
         $answerMessage = 'Привет! Я здесь, чтобы помочь тебе с проектом TG Support Bot.';
 
         Http::fake([
-            $this->baseProviderUrl => Http::response([
-                'id' => 'chatcmpl-test',
+            $this->baseProviderUrl . '/chat/completions' => Http::response([
+                'id' => 'chatcmpl-123',
                 'object' => 'chat.completion',
                 'created' => time(),
-                'model' => 'deepseek-chat',
+                'model' => 'gpt-4o-mini',
                 'choices' => [
                     [
                         'index' => 0,
@@ -63,9 +62,9 @@ class DeepSeekProviderTest extends TestCase
                     ],
                 ],
                 'usage' => [
-                    'prompt_tokens' => 120,
-                    'completion_tokens' => 20,
-                    'total_tokens' => 140,
+                    'prompt_tokens' => 42,
+                    'completion_tokens' => 18,
+                    'total_tokens' => 60,
                 ],
             ], 200),
         ]);

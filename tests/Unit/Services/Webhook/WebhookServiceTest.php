@@ -37,6 +37,12 @@ class WebhookServiceTest extends TestCase
         $result = (new WebhookService())->sendMessage($this->url, $this->dataMessage);
 
         $this->assertSame('{"ok":true}', $result);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === $this->url
+                && $request->method() === 'POST'
+                && $request->data() === $this->dataMessage;
+        });
     }
 
     public function test_send_message_returns_null_on_failure(): void

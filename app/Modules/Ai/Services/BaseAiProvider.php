@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ai;
+namespace App\Modules\Ai\Services;
 
-use App\Contracts\Ai\AiProviderInterface;
-use App\DTOs\Ai\AiResponseDto;
+use App\Modules\Ai\Contracts\AiProviderInterface;
+use App\Modules\Ai\DTOs\AiResponseDto;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 

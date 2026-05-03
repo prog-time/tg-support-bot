@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Modules\Ai\Jobs;
 
-use App\DTOs\Ai\AiResponseDto;
 use App\Models\AiMessage;
 use App\Models\BotUser;
+use App\Modules\Ai\DTOs\AiResponseDto;
 use App\Modules\Ai\Jobs\SendAiDraftJob;
+use App\Modules\Ai\Services\AiAssistantService;
 use App\Modules\Ai\Services\AiBotApi;
-use App\Services\Ai\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;

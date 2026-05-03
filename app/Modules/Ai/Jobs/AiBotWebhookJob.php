@@ -3,9 +3,9 @@
 namespace App\Modules\Ai\Jobs;
 
 use App\Models\BotUser;
+use App\Modules\Ai\Services\AiAssistantService;
 use App\Modules\Ai\Services\ShouldAiReply;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
-use App\Services\Ai\AiAssistantService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

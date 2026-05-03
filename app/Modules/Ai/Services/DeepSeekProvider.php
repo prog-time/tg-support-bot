@@ -2,23 +2,25 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ai;
+namespace App\Modules\Ai\Services;
 
-use App\DTOs\Ai\AiRequestDto;
-use App\DTOs\Ai\AiResponseDto;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\DTOs\AiResponseDto;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
-class OpenAiProvider extends BaseAiProvider
+class DeepSeekProvider extends BaseAiProvider
 {
+    private ?string $accessToken = null;
+
     public function __construct()
     {
-        parent::__construct('openai');
+        parent::__construct('deepseek');
     }
 
     /**
-     * Process user message through OpenAI API.
+     * Process user message through DeepSeek API.
      *
      * @param AiRequestDto $request Request DTO
      *
@@ -30,6 +32,8 @@ class OpenAiProvider extends BaseAiProvider
             if (!$this->checkRateLimit()) {
                 throw new Exception('OpenAI rate limit exceeded');
             }
+
+            $this->ensureValidToken();
 
             $response = $this->makeApiCall($request);
 
@@ -46,11 +50,59 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Make API call to OpenAI.
+     * Check if provider is available and properly configured.
      *
+     * @return bool
+     */
+    public function isAvailable(): bool
+    {
+        return !empty($this->config['client_secret']) &&
+               !empty($this->config['base_url']);
+    }
+
+    /**
+     * Get provider name.
+     *
+     * @return string
+     */
+    public function getProviderName(): string
+    {
+        return 'deepseek';
+    }
+
+    /**
+     * Get model name.
+     *
+     * @return string
+     */
+    public function getModelName(): string
+    {
+        return $this->config['model'] ?? 'deepseek-chat';
+    }
+
+    /**
+     * Ensure access token is valid.
+     *
+     * @throws \Exception
+     */
+    private function ensureValidToken(): void
+    {
+        if ($this->accessToken > time()) {
+            return;
+        }
+
+        $this->refreshAccessToken();
+    }
+
+    private function refreshAccessToken(): void
+    {
+        $this->accessToken = $this->config['client_secret'];
+    }
+
+    /**
      * @param AiRequestDto $request Request DTO
      *
-     * @return array OpenAI API response
+     * @return array DeepSeek API response
      *
      * @throws \Exception
      */
@@ -59,28 +111,27 @@ class OpenAiProvider extends BaseAiProvider
         $messages = $this->buildMessages($request);
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Authorization' => 'Bearer ' . $this->accessToken,
             'Content-Type' => 'application/json',
-        ])->post($this->baseUrl . '/chat/completions', [
-            'model' => $this->modelName,
+        ])->post($this->config['base_url'], [
+            'model' => $this->config['model'] ?? 'deepseek-chat',
             'messages' => $messages,
             'max_tokens' => (int)$this->config['max_tokens'],
             'temperature' => (float)$this->config['temperature'],
+            'stream' => false,
         ]);
 
         if (!$response->successful()) {
-            throw new \Exception('OpenAI API request failed: ' . $response->body());
+            throw new \Exception('DeepSeek API request failed: ' . $response->body());
         }
 
         return $response->json();
     }
 
     /**
-     * Build messages array for OpenAI API.
-     *
      * @param AiRequestDto $request Request DTO
      *
-     * @return array Messages array in OpenAI format
+     * @return array Messages array in DeepSeek format
      */
     private function buildMessages(AiRequestDto $request): array
     {
@@ -107,9 +158,9 @@ class OpenAiProvider extends BaseAiProvider
     }
 
     /**
-     * Parse OpenAI API response and create DTO.
+     * Parse DeepSeek API response and create DTO.
      *
-     * @param array        $response OpenAI API response
+     * @param array        $response DeepSeek API response
      * @param AiRequestDto $request  Original request
      *
      * @return AiResponseDto AI response DTO
@@ -135,6 +186,7 @@ class OpenAiProvider extends BaseAiProvider
                 'finish_reason' => $response['choices'][0]['finish_reason'] ?? null,
                 'model' => $response['model'] ?? null,
                 'parsed_content' => $parsedContent,
+                'provider' => 'DeepSeek',
             ]
         );
     }
@@ -169,15 +221,5 @@ class OpenAiProvider extends BaseAiProvider
             'confidence_score' => $confidenceScore,
             'should_escalate' => $shouldEscalate,
         ];
-    }
-
-    /**
-     * Check if provider is available and properly configured.
-     *
-     * @return bool
-     */
-    public function isAvailable(): bool
-    {
-        return !empty($this->config['api_key']) && !empty($this->config['base_url']);
     }
 }

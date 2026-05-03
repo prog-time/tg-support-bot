@@ -2,9 +2,9 @@
 
 namespace App\Modules\Telegram\Controllers;
 
-use App\Actions\Ai\EditAiMessage;
 use App\Contracts\ManagerInterfaceContract;
 use App\Models\BotUser;
+use App\Modules\Ai\Actions\EditAiMessage;
 use App\Modules\Telegram\Actions\BannedContactMessage;
 use App\Modules\Telegram\Actions\CloseTopic;
 use App\Modules\Telegram\Actions\SendAiAnswerMessage;

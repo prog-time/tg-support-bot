@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Contracts\Ai;
+namespace App\Modules\Ai\Contracts;
 
-use App\DTOs\Ai\AiRequestDto;
-use App\DTOs\Ai\AiResponseDto;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\DTOs\AiResponseDto;
 
 interface AiProviderInterface
 {
