@@ -82,17 +82,6 @@ services:
         networks:
             - pet
 
-    redisinsight:
-        image: redislabs/redisinsight:latest
-        container_name: redisinsight
-        ports:
-            - ${REDISINSIGHT_PORT}
-        volumes:
-            - ./docker/redisinsight:/db
-        restart: always
-        networks:
-            - pet
-
     grafana:
         image: grafana/grafana:latest
         container_name: grafana
@@ -144,18 +133,6 @@ services:
         container_name: loki
         ports:
             - ${LOKI_PORT}
-        networks:
-            - pet
-
-    promtail:
-        image: grafana/promtail:2.9.1
-        container_name: promtail
-        volumes:
-            - ./docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
-            - ./docker/nginx/logs:/var/log/nginx
-        command: -config.file=/etc/promtail/config.yml
-        depends_on:
-            - loki
         networks:
             - pet
 

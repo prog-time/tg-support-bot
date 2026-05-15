@@ -4,42 +4,68 @@ namespace App\Modules\Ai\Services;
 
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use Illuminate\Support\Facades\Log;
 
 class ShouldAiReply
 {
     /**
-     * Determine whether the AI bot should reply to the given update.
+     * Determine whether AI should generate a reply for an incoming user message
+     * processed by the main Telegram bot.
      *
      * Rules (all must pass):
      * 1. AI is globally enabled (AI_ENABLED=true).
-     * 2. The message arrived in a supergroup topic (chat.type=supergroup, message_thread_id present).
-     * 3. The sender is the main Telegram bot (from.id === TELEGRAM_BOT_ID), i.e. a forwarded user message.
-     * 4. The bot user exists, is not banned, and is not closed.
+     * 2. Manager interface is telegram_group (admin_panel does not use AI here).
+     * 3. Message arrived from a private chat with the main bot.
+     * 4. Update type is a regular message (not callback, edited, etc.).
+     * 5. Text is non-empty and not a slash-command (/start, /contact, etc.).
+     * 6. Bot user exists, is not banned, is not closed.
      *
      * @param TelegramUpdateDto $update
      * @param BotUser|null      $botUser
      *
      * @return bool
      */
-    public function shouldReply(TelegramUpdateDto $update, ?BotUser $botUser): bool
+    public function shouldGenerateForUserMessage(TelegramUpdateDto $update, ?BotUser $botUser): bool
     {
-        // Rule 1: AI must be globally enabled
         if (!$this->isAiEnabled()) {
+            $this->logSkip('ai_disabled', $update, $botUser);
             return false;
         }
 
-        // Rule 2: Message must be from within a supergroup topic
-        if (!$this->isSupergroupTopic($update)) {
+        if (!$this->isTelegramGroupInterface()) {
+            $this->logSkip('manager_interface_not_telegram_group', $update, $botUser, [
+                'manager_interface' => config('app.manager_interface'),
+            ]);
             return false;
         }
 
-        // Rule 3: Sender must be the main bot (forwarded user message), not manager, not AI bot itself
-        if (!$this->isFromMainBot($update)) {
+        if ($update->typeSource !== 'private') {
+            $this->logSkip('not_private_chat', $update, $botUser, [
+                'type_source' => $update->typeSource,
+            ]);
             return false;
         }
 
-        // Rule 4: Bot user must exist and not be banned
+        if ($update->typeQuery !== 'message') {
+            $this->logSkip('not_message_query', $update, $botUser, [
+                'type_query' => $update->typeQuery,
+            ]);
+            return false;
+        }
+
+        if (!$this->isReplyableText($update->text)) {
+            $this->logSkip('empty_or_command_text', $update, $botUser, [
+                'text_preview' => $update->text === null ? null : mb_substr($update->text, 0, 50),
+            ]);
+            return false;
+        }
+
         if (!$this->isUserActive($botUser)) {
+            $this->logSkip('user_inactive', $update, $botUser, [
+                'bot_user_found' => $botUser !== null,
+                'is_banned' => $botUser?->isBanned(),
+                'is_closed' => $botUser?->isClosed(),
+            ]);
             return false;
         }
 
@@ -47,8 +73,6 @@ class ShouldAiReply
     }
 
     /**
-     * Check if AI is globally enabled.
-     *
      * @return bool
      */
     public function isAiEnabled(): bool
@@ -57,44 +81,35 @@ class ShouldAiReply
     }
 
     /**
-     * Check if the update originates from a supergroup forum topic.
-     *
-     * @param TelegramUpdateDto $update
-     *
      * @return bool
      */
-    public function isSupergroupTopic(TelegramUpdateDto $update): bool
+    public function isTelegramGroupInterface(): bool
     {
-        return $update->typeSource === 'supergroup'
-            && $update->messageThreadId !== null;
+        return config('app.manager_interface') === 'telegram_group';
     }
 
     /**
-     * Check if the message sender is the main Telegram bot.
+     * Text must be non-empty and not a slash-command.
      *
-     * Comparing from.id to TELEGRAM_BOT_ID identifies forwarded user messages
-     * and prevents the AI bot from responding to manager messages or its own messages.
-     *
-     * @param TelegramUpdateDto $update
+     * @param string|null $text
      *
      * @return bool
      */
-    public function isFromMainBot(TelegramUpdateDto $update): bool
+    public function isReplyableText(?string $text): bool
     {
-        $mainBotId = (int) config('traffic_source.settings.telegram.bot_id', 0);
-        if ($mainBotId === 0) {
+        if ($text === null) {
             return false;
         }
 
-        $rawData = $update->rawData;
-        $fromId = (int) ($rawData['message']['from']['id'] ?? 0);
+        $trimmed = trim($text);
+        if ($trimmed === '') {
+            return false;
+        }
 
-        return $fromId === $mainBotId;
+        return !str_starts_with($trimmed, '/');
     }
 
     /**
-     * Check if the bot user is active (exists, not banned, not closed).
-     *
      * @param BotUser|null $botUser
      *
      * @return bool
@@ -106,5 +121,26 @@ class ShouldAiReply
         }
 
         return !$botUser->isBanned() && !$botUser->isClosed();
+    }
+
+    /**
+     * Log the reason AI generation was skipped.
+     *
+     * @param string            $reason
+     * @param TelegramUpdateDto $update
+     * @param BotUser|null      $botUser
+     * @param array             $extra
+     *
+     * @return void
+     */
+    private function logSkip(string $reason, TelegramUpdateDto $update, ?BotUser $botUser, array $extra = []): void
+    {
+        Log::channel('loki')->info("ShouldAiReply: skipped [{$reason}]", array_merge([
+            'source' => 'ai_should_reply_skipped',
+            'reason' => $reason,
+            'bot_user_id' => $botUser?->id,
+            'chat_id' => $update->chatId,
+            'message_thread_id' => $update->messageThreadId,
+        ], $extra));
     }
 }

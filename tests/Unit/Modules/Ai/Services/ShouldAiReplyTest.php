@@ -5,226 +5,209 @@ namespace Tests\Unit\Modules\Ai\Services;
 use App\Models\BotUser;
 use App\Modules\Ai\Services\ShouldAiReply;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ShouldAiReplyTest extends TestCase
 {
-    use RefreshDatabase;
-
-    private ShouldAiReply $service;
-
-    private int $mainBotId;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service = new ShouldAiReply();
-        $this->mainBotId = 999;
+        Log::shouldReceive('channel')->andReturnSelf();
+        Log::shouldReceive('info')->andReturnNull();
+        Log::shouldReceive('warning')->andReturnNull();
+    }
 
-        config([
-            'ai.enabled' => true,
-            'traffic_source.settings.telegram.bot_id' => $this->mainBotId,
+    private function makeUpdate(
+        ?string $text = 'привет',
+        string $typeSource = 'private',
+        string $typeQuery = 'message'
+    ): TelegramUpdateDto {
+        return new TelegramUpdateDto(
+            updateId: 1,
+            typeQuery: $typeQuery,
+            aiTechMessage: false,
+            typeSource: $typeSource,
+            chatId: 100,
+            text: $text,
+        );
+    }
+
+    private function makeBotUser(bool $banned = false, bool $closed = false): BotUser
+    {
+        $botUser = new BotUser();
+        $botUser->forceFill([
+            'id' => 1,
+            'is_banned' => $banned,
+            'is_closed' => $closed,
         ]);
-    }
-
-    /**
-     * Build a TelegramUpdateDto for a supergroup message whose sender is the main bot.
-     *
-     * @param array $overrides
-     *
-     * @return TelegramUpdateDto
-     */
-    private function makeSupergroupUpdateFromMainBot(array $overrides = []): TelegramUpdateDto
-    {
-        $params = array_merge([
-            'update_id' => 1,
-            'message' => [
-                'message_id' => 10,
-                'from' => [
-                    'id' => $this->mainBotId,
-                    'is_bot' => true,
-                    'first_name' => 'MainBot',
-                    'username' => 'main_bot',
-                ],
-                'chat' => [
-                    'id' => -100123456789,
-                    'title' => 'Support Group',
-                    'type' => 'supergroup',
-                ],
-                'message_thread_id' => 42,
-                'date' => time(),
-                'text' => 'User message forwarded by main bot',
-            ],
-        ], $overrides);
-
-        $request = Request::create('/api/ai-bot/webhook', 'POST', $params);
-
-        return TelegramUpdateDto::fromRequest($request);
-    }
-
-    /**
-     * Build an active, non-banned BotUser with a topic.
-     *
-     * @return BotUser
-     */
-    private function makeActiveBotUser(): BotUser
-    {
-        $botUser = BotUser::getUserByChatId(time(), 'telegram');
-        $botUser->topic_id = 42;
-        $botUser->is_banned = false;
-        $botUser->is_closed = false;
-        $botUser->save();
 
         return $botUser;
     }
 
-    public function test_returns_true_when_all_rules_pass(): void
+    public function test_returns_true_on_happy_path(): void
     {
-        $update = $this->makeSupergroupUpdateFromMainBot();
-        $botUser = $this->makeActiveBotUser();
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $this->assertTrue($this->service->shouldReply($update, $botUser));
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            $this->makeBotUser(),
+        );
+
+        $this->assertTrue($result);
     }
 
-    public function test_returns_false_when_ai_globally_disabled(): void
+    public function test_returns_false_when_ai_disabled(): void
     {
-        config(['ai.enabled' => false]);
+        config([
+            'ai.enabled' => false,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $update = $this->makeSupergroupUpdateFromMainBot();
-        $botUser = $this->makeActiveBotUser();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            $this->makeBotUser(),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
     }
 
-    public function test_returns_false_when_message_not_in_supergroup(): void
+    public function test_returns_false_for_admin_panel_interface(): void
     {
-        // Private chat message
-        $params = [
-            'update_id' => 1,
-            'message' => [
-                'message_id' => 10,
-                'from' => [
-                    'id' => $this->mainBotId,
-                    'is_bot' => true,
-                    'first_name' => 'MainBot',
-                    'username' => 'main_bot',
-                ],
-                'chat' => [
-                    'id' => 111,
-                    'type' => 'private',
-                ],
-                'date' => time(),
-                'text' => 'hello',
-            ],
-        ];
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'admin_panel',
+        ]);
 
-        $request = Request::create('/api/ai-bot/webhook', 'POST', $params);
-        $update = TelegramUpdateDto::fromRequest($request);
-        $botUser = $this->makeActiveBotUser();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            $this->makeBotUser(),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
     }
 
-    public function test_returns_false_when_message_missing_thread_id(): void
+    public function test_returns_false_for_non_private_chat(): void
     {
-        // Supergroup but no message_thread_id (not a topic message)
-        $params = [
-            'update_id' => 1,
-            'message' => [
-                'message_id' => 10,
-                'from' => [
-                    'id' => $this->mainBotId,
-                    'is_bot' => true,
-                    'first_name' => 'MainBot',
-                    'username' => 'main_bot',
-                ],
-                'chat' => [
-                    'id' => -100123456789,
-                    'title' => 'Support Group',
-                    'type' => 'supergroup',
-                ],
-                'date' => time(),
-                'text' => 'hello',
-            ],
-        ];
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $request = Request::create('/api/ai-bot/webhook', 'POST', $params);
-        $update = TelegramUpdateDto::fromRequest($request);
-        $botUser = $this->makeActiveBotUser();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(typeSource: 'supergroup'),
+            $this->makeBotUser(),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
     }
 
-    public function test_returns_false_when_sender_is_not_main_bot(): void
+    public function test_returns_false_for_callback_query(): void
     {
-        // Sender is a manager (human), not the main bot
-        $params = [
-            'update_id' => 1,
-            'message' => [
-                'message_id' => 10,
-                'from' => [
-                    'id' => 77777,  // different id — this is a manager
-                    'is_bot' => false,
-                    'first_name' => 'Manager',
-                    'username' => 'manager_user',
-                ],
-                'chat' => [
-                    'id' => -100123456789,
-                    'title' => 'Support Group',
-                    'type' => 'supergroup',
-                ],
-                'message_thread_id' => 42,
-                'date' => time(),
-                'text' => 'Reply from manager',
-            ],
-        ];
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $request = Request::create('/api/ai-bot/webhook', 'POST', $params);
-        $update = TelegramUpdateDto::fromRequest($request);
-        $botUser = $this->makeActiveBotUser();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(typeQuery: 'callback_query'),
+            $this->makeBotUser(),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
+    }
+
+    public function test_returns_false_for_slash_command(): void
+    {
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
+
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(text: '/start'),
+            $this->makeBotUser(),
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function test_returns_false_for_empty_text(): void
+    {
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
+
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(text: '   '),
+            $this->makeBotUser(),
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function test_returns_false_for_null_text(): void
+    {
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
+
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(text: null),
+            $this->makeBotUser(),
+        );
+
+        $this->assertFalse($result);
     }
 
     public function test_returns_false_when_bot_user_is_null(): void
     {
-        $update = $this->makeSupergroupUpdateFromMainBot();
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $this->assertFalse($this->service->shouldReply($update, null));
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            null,
+        );
+
+        $this->assertFalse($result);
     }
 
-    public function test_returns_false_when_user_is_banned(): void
+    public function test_returns_false_when_bot_user_is_banned(): void
     {
-        $update = $this->makeSupergroupUpdateFromMainBot();
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $botUser = $this->makeActiveBotUser();
-        $botUser->is_banned = true;
-        $botUser->save();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            $this->makeBotUser(banned: true),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
     }
 
-    public function test_returns_false_when_user_topic_is_closed(): void
+    public function test_returns_false_when_bot_user_is_closed(): void
     {
-        $update = $this->makeSupergroupUpdateFromMainBot();
+        config([
+            'ai.enabled' => true,
+            'app.manager_interface' => 'telegram_group',
+        ]);
 
-        $botUser = $this->makeActiveBotUser();
-        $botUser->is_closed = true;
-        $botUser->save();
+        $result = (new ShouldAiReply())->shouldGenerateForUserMessage(
+            $this->makeUpdate(),
+            $this->makeBotUser(closed: true),
+        );
 
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
-    }
-
-    public function test_returns_false_when_main_bot_id_is_zero(): void
-    {
-        config(['traffic_source.settings.telegram.bot_id' => 0]);
-
-        $update = $this->makeSupergroupUpdateFromMainBot();
-        $botUser = $this->makeActiveBotUser();
-
-        $this->assertFalse($this->service->shouldReply($update, $botUser));
+        $this->assertFalse($result);
     }
 }
