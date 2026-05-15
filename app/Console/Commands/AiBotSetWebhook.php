@@ -38,7 +38,7 @@ class AiBotSetWebhook extends Command
         $queryParams = [
             'url' => $url,
             'secret_token' => $secret,
-            'allowed_updates' => ['message'],
+            'allowed_updates' => ['callback_query'],
             'drop_pending_updates' => true,
         ];
 
