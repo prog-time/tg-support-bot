@@ -240,6 +240,9 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - The AI bot does NOT reply when `MANAGER_INTERFACE=admin_panel`
 - Supported providers: OpenAI, DeepSeek, GigaChat (set via `AI_DEFAULT_PROVIDER`)
 - Register the AI bot webhook with: `docker exec -it pet php artisan ai-bot:set-webhook`
+- AI conversation history is sourced from the `messages` table (no Redis cache), bounded by `AI_MAX_CONTEXT_TOKENS` (default 3000) using a `mb_strlen / 4` token heuristic with sliding-window trimming
+- AI system prompt lives in `resources/ai/system-prompt.blade.php` (Blade template — variables only, no `@if`/`@foreach`/`@include`/`@php`); path is configured by `config/ai.php @ system_prompt_path`
+- AI drafts NEVER write to `messages` (only to `ai_messages`); a `messages` row appears only when the message is actually sent to the user — this invariant is what makes "any outgoing row = delivered" safe for the chat-history assembler
 
 ### External Sources
 

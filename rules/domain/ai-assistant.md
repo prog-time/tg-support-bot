@@ -65,8 +65,8 @@ _Enforced in:_ `config/ai.php @ disable_timeout` (timeout applied in AiAction fl
 **BR-008** — AI responses must never exceed the token limits defined per provider in config.
 _Enforced in:_ `config/ai.php @ providers.*.max_tokens`
 
-**BR-009** — The AI must use a maximum of `max_context_messages` recent messages as conversation context.
-_Enforced in:_ `config/ai.php @ max_context_messages` (default: 10)
+**BR-009** — The AI conversation context is sourced from the `messages` table by `bot_user_id` (incoming → `role: user` excluding slash-commands; any outgoing → `role: assistant`). The window is bounded by `max_context_tokens` (token budget) using a `mb_strlen / 4` heuristic with a sliding window from the newest entries; older entries that would exceed the budget are dropped. Redis-backed context (`ai_context_*`) is no longer used.
+_Enforced in:_ `app/Modules/Ai/Services/AiChatHistoryService.php`; `config/ai.php @ max_context_tokens` (default: 3000)
 
 **BR-010** — If AI confidence is below `confidence_threshold`, the message must be escalated to a human manager.
 _Enforced in:_ `config/ai.php @ confidence_threshold` (default: 0.8)
@@ -80,8 +80,14 @@ _Enforced in:_ `app/Modules/Ai/Jobs/AiBotWebhookJob.php`
 **BR-013** — To identify forwarded user messages, the AI bot checks that the sender's `from.id` equals `TELEGRAM_BOT_ID` (the main bot's numeric Telegram ID). This value must be set in `.env` manually when configuring the webhook.
 _Enforced in:_ `app/Modules/Ai/Services/ShouldAiReply.php @ isFromMainBot()`
 
-**BR-014** — `generateReply()` uses the same Redis context window (`ai_context_{platform}_{userId}`, `max_context_messages` entries) as `processMessage()`. No separate context store is used.
-_Enforced in:_ `app/Services/Ai/AiAssistantService.php @ generateReply()`
+**BR-014** — `generateReply()` and `processMessage()` share the same DB-backed history pipeline through `AiChatHistoryService::buildForBotUser($userId, $userMessage)`. The current incoming user message is passed as `$excludeLastUserText` so it is dropped from the assembled history when `SendTelegramMessageJob` has already inserted it (race-safe in both directions: when the row exists the duplicate is dropped, when it does not nothing happens).
+_Enforced in:_ `app/Modules/Ai/Services/AiAssistantService.php`, `app/Modules/Ai/Services/AiChatHistoryService.php`
+
+**BR-015** — The AI system prompt is rendered from the Blade template at `resources/ai/system-prompt.blade.php` with variables `botName`, `platform`, `today`. The template MUST NOT contain Blade logic directives (`@if`, `@foreach`, `@include`, `@php`) — only variable substitutions. Path is configurable via `config('ai.system_prompt_path')`. The loader (`AiSystemPromptLoader`) is bound as a singleton and memoizes rendered output for the request lifetime.
+_Enforced in:_ `app/Modules/Ai/Services/AiSystemPromptLoader.php`; `app/Modules/Ai/AiServiceProvider.php` (singleton binding); `resources/ai/system-prompt.blade.php`
+
+**BR-016** — Only messages that were actually delivered to the user may appear in the AI's assistant-history. The invariant: AI drafts (`SendAiDraftJob`, `SendAiReplyJob`) write **only** to `ai_messages`, never to `messages`. A row in `messages` (regardless of `message_type=outgoing` reason — Accept, manual manager reply, etc.) appears only when `AbstractSendMessageJob::handle()` actually sends the message. Cancel never creates a `messages` row. Any future AI-flow change that violates this is a regression.
+_Enforced in:_ `app/Modules/Ai/Jobs/SendAiDraftJob.php`, `app/Modules/Ai/Jobs/SendAiReplyJob.php`, `app/Jobs/SendMessage/AbstractSendMessageJob.php`
 
 ---
 
