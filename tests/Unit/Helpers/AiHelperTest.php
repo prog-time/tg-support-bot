@@ -17,9 +17,18 @@ class AiHelperTest extends TestCase
         $this->assertEquals($expected, AiHelper::preparedAiAnswer($managerText, $aiText));
     }
 
+    public function test_prepares_ai_answer_without_instruction_when_manager_text_empty(): void
+    {
+        $aiText = 'Готово';
+
+        $expected = "🤖 Ответ от AI: \nГотово \n\n";
+
+        $this->assertEquals($expected, AiHelper::preparedAiAnswer('', $aiText));
+    }
+
     public function test_prepares_ai_reply_markup_correctly(): void
     {
-        $messageId = '123';
+        $messageId = 123;
         $aiText = 'Готово';
 
         $expected = [
