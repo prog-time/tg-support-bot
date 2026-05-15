@@ -3,6 +3,7 @@
 namespace App\Modules\Ai;
 
 use App\Modules\Ai\Contracts\AiProviderInterface;
+use App\Modules\Ai\Services\AiSystemPromptLoader;
 use App\Modules\Ai\Services\DeepSeekProvider;
 use App\Modules\Ai\Services\GigaChatProvider;
 use App\Modules\Ai\Services\OpenAiProvider;
@@ -18,6 +19,8 @@ class AiServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(AiSystemPromptLoader::class);
+
         $this->app->bind(AiProviderInterface::class, function () {
             return match (config('ai.default_provider')) {
                 'openai' => $this->app->make(OpenAiProvider::class),
