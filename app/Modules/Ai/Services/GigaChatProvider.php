@@ -166,7 +166,7 @@ class GigaChatProvider extends BaseAiProvider
         $messages = [
             [
                 'role' => 'system',
-                'content' => $this->buildSystemPrompt(),
+                'content' => $this->buildSystemPrompt($request),
             ],
         ];
 
