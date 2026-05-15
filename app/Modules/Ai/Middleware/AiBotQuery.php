@@ -36,6 +36,14 @@ class AiBotQuery
 
             return $next($request);
         } catch (\Throwable $e) {
+            Log::channel('loki')->warning('AiBotQuery: rejected with 403', [
+                'source' => 'ai_bot_forbidden',
+                'reason' => $e->getMessage(),
+                'has_secret_header' => $request->hasHeader('X-Telegram-Bot-Api-Secret-Token'),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
             return response()->json([
                 'message' => 'Access is forbidden',
             ], Response::HTTP_FORBIDDEN);
