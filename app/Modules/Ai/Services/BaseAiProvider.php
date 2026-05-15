@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Ai\Services;
 
 use App\Modules\Ai\Contracts\AiProviderInterface;
+use App\Modules\Ai\DTOs\AiRequestDto;
 use App\Modules\Ai\DTOs\AiResponseDto;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 
 abstract class BaseAiProvider implements AiProviderInterface
 {
@@ -144,12 +144,23 @@ abstract class BaseAiProvider implements AiProviderInterface
     }
 
     /**
-     * Build system prompt for AI.
+     * Build the rendered system prompt for the given request.
+     *
+     * Delegates to {@see AiSystemPromptLoader::render()} with the minimum
+     * set of variables exposed to the Blade template: `botName`, `platform`,
+     * `today`. The loader is resolved through the container so its
+     * per-request memoization is shared across providers.
+     *
+     * @param AiRequestDto $request
      *
      * @return string
      */
-    protected function buildSystemPrompt(): string
+    protected function buildSystemPrompt(AiRequestDto $request): string
     {
-        return Storage::disk('prompts')->get('basic.txt');
+        return app(AiSystemPromptLoader::class)->render([
+            'botName' => (string) config('app.name', 'AI Bot'),
+            'platform' => $request->platform,
+            'today' => now()->toDateString(),
+        ]);
     }
 }
