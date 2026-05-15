@@ -119,7 +119,34 @@ abstract class AbstractSendMessageJob implements ShouldQueue
             return;
         }
 
-        Log::channel('loki')->error('Unknown error', ['response' => (array)$response]);
+        if ($response->response_code === 400 && in_array($response->type_error, ['TOPIC_NOT_MODIFIED', 'MESSAGE_NOT_MODIFIED'])) {
+            Log::channel('loki')->info("{$response->type_error} -> no-op, skipping", [
+                'job' => static::class,
+                'bot_user_id' => $this->botUserId,
+            ]);
+            return;
+        }
+
+        $description = $response->rawData['description'] ?? null;
+
+        Log::channel('loki')->error(
+            sprintf(
+                'Unhandled Telegram API error [code=%s, type=%s]',
+                $response->response_code ?? 'null',
+                $response->type_error ?? 'null',
+            ),
+            [
+                'job' => static::class,
+                'bot_user_id' => $this->botUserId,
+                'type_message' => $this->typeMessage,
+                'response_code' => $response->response_code,
+                'type_error' => $response->type_error,
+                'description' => $description,
+                'message_thread_id' => $response->message_thread_id,
+                'chat_id' => $response->chat_id,
+                'raw_response' => $response->rawData,
+            ],
+        );
     }
 
     /**
