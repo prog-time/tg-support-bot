@@ -4,12 +4,11 @@ namespace App\Modules\Ai\Jobs;
 
 use App\Models\AiMessage;
 use App\Models\BotUser;
+use App\Modules\Ai\Actions\DeliverAiAnswerToUser;
 use App\Modules\Ai\DTOs\AiRequestDto;
 use App\Modules\Ai\Services\AiAssistantService;
 use App\Modules\Ai\Services\AiBotApi;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
-use App\Modules\Telegram\DTOs\TGTextMessageDto;
-use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,13 +28,14 @@ class SendAiReplyJob implements ShouldQueue
     public int $timeout = 30;
 
     /**
-     * @param int               $botUserId   BotUser primary key
-     * @param TelegramUpdateDto $updateDto   Parsed webhook update from the main bot
-     * @param string            $userMessage Original user message text to send to AI
+     * @param int                    $botUserId   BotUser primary key
+     * @param TelegramUpdateDto|null $updateDto   Parsed webhook update; null when AI is triggered
+     *                                            from a non-Telegram source (e.g. VK/Max).
+     * @param string                 $userMessage Original user message text to send to AI
      */
     public function __construct(
         public readonly int $botUserId,
-        public readonly TelegramUpdateDto $updateDto,
+        public readonly ?TelegramUpdateDto $updateDto,
         public readonly string $userMessage,
     ) {
     }
@@ -58,10 +58,22 @@ class SendAiReplyJob implements ShouldQueue
                 throw new \RuntimeException('BotUser not found: ' . $this->botUserId, 1);
             }
 
+            // For brand-new VK/Max users the supergroup topic may still be in flight;
+            // wait for it before we try to post the AI reply marker into thread_id=null.
+            if (empty($botUser->topic_id)) {
+                Log::channel('loki')->info('SendAiReplyJob: topic_id not ready, releasing', [
+                    'source' => 'send_ai_reply_topic_pending',
+                    'bot_user_id' => $botUser->id,
+                    'platform' => $botUser->platform,
+                ]);
+                $this->release(5);
+                return;
+            }
+
             $aiRequest = new AiRequestDto(
                 message: $this->userMessage,
                 userId: $this->botUserId,
-                platform: 'telegram',
+                platform: $botUser->platform ?? 'telegram',
                 provider: config('ai.default_provider'),
                 forceEscalation: false
             );
@@ -91,22 +103,15 @@ class SendAiReplyJob implements ShouldQueue
                 'text_manager' => $replyText,
             ]);
 
-            SendTelegramMessageJob::dispatch(
-                $botUser->id,
-                $this->updateDto,
-                TGTextMessageDto::from([
-                    'methodQuery' => 'sendMessage',
-                    'typeSource' => 'private',
-                    'chat_id' => $botUser->chat_id,
-                    'text' => $replyText,
-                    'parse_mode' => 'html',
-                ]),
-                'outgoing',
-            );
+            $delivered = app(DeliverAiAnswerToUser::class)->execute($botUser, $replyText, $this->updateDto);
+            if (!$delivered) {
+                throw new \RuntimeException('AI auto-reply delivery skipped: unsupported platform', 1);
+            }
 
             Log::channel('loki')->info('SendAiReplyJob: AI reply delivered', [
                 'source' => 'ai_reply_sent',
                 'bot_user_id' => $botUser->id,
+                'platform' => $botUser->platform,
                 'supergroup_message_id' => $supergroupResponse->message_id,
             ]);
         } catch (\Throwable $e) {

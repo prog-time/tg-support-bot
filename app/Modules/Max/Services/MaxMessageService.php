@@ -3,6 +3,9 @@
 namespace App\Modules\Max\Services;
 
 use App\Models\BotUser;
+use App\Modules\Ai\Jobs\SendAiDraftJob;
+use App\Modules\Ai\Jobs\SendAiReplyJob;
+use App\Modules\Ai\Services\ShouldAiReply;
 use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendMaxTelegramMessageJob;
@@ -220,6 +223,37 @@ class MaxMessageService extends ToTgMessageService
             $this->update,
             $dto,
         );
+
+        $this->maybeDispatchAi($this->update->text);
+    }
+
+    /**
+     * Trigger AI generation for an incoming Max text message, when gating allows.
+     *
+     * The draft/auto-reply job is dispatched without a TelegramUpdateDto — the
+     * jobs derive the platform from BotUser and assemble the supergroup post
+     * and the platform-specific user delivery themselves.
+     *
+     * @param string|null $text
+     *
+     * @return void
+     */
+    protected function maybeDispatchAi(?string $text): void
+    {
+        if ($this->botUser === null) {
+            return;
+        }
+
+        $shouldAiReply = app(ShouldAiReply::class);
+        if (!$shouldAiReply->shouldGenerateForBotUserText($this->botUser, $text)) {
+            return;
+        }
+
+        if ((bool) config('ai.auto_reply', false)) {
+            SendAiReplyJob::dispatch($this->botUser->id, null, (string) $text);
+        } else {
+            SendAiDraftJob::dispatch($this->botUser->id, null, (string) $text);
+        }
     }
 
     /**

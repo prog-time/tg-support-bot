@@ -28,7 +28,7 @@ class SendMaxMessageJob extends AbstractSendMessageJob
 
     public function __construct(
         int $botUserId,
-        TelegramUpdateDto $updateDto,
+        ?TelegramUpdateDto $updateDto,
         MaxTextMessageDto $queryParams,
         mixed $maxMethods = null,
     ) {
@@ -102,16 +102,19 @@ class SendMaxMessageJob extends AbstractSendMessageJob
      */
     protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
+        $hasUpdateDto = $this->updateDto instanceof TelegramUpdateDto;
+
         $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
-            'from_id' => $this->updateDto->messageId,
+            'from_id' => $hasUpdateDto ? $this->updateDto->messageId : 0,
             'to_id' => 0,
-            'text' => $this->updateDto->text ?? $this->updateDto->caption ?? null,
+            'text' => $this->queryParams->text
+                ?? ($hasUpdateDto ? ($this->updateDto->text ?? $this->updateDto->caption) : null),
         ]);
 
-        if (!empty($this->updateDto->fileId)) {
+        if ($hasUpdateDto && !empty($this->updateDto->fileId)) {
             $message->attachments()->create([
                 'file_id' => $this->updateDto->fileId,
                 'file_type' => $this->updateDto->fileType ?? 'document',

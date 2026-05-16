@@ -28,13 +28,14 @@ class SendAiDraftJob implements ShouldQueue
     public int $timeout = 30;
 
     /**
-     * @param int               $botUserId   BotUser primary key
-     * @param TelegramUpdateDto $updateDto   Parsed webhook update
-     * @param string            $userMessage Original user message text to send to AI
+     * @param int                    $botUserId   BotUser primary key
+     * @param TelegramUpdateDto|null $updateDto   Parsed webhook update; null when AI is triggered
+     *                                            from a non-Telegram source (e.g. VK/Max).
+     * @param string                 $userMessage Original user message text to send to AI
      */
     public function __construct(
         public readonly int $botUserId,
-        public readonly TelegramUpdateDto $updateDto,
+        public readonly ?TelegramUpdateDto $updateDto,
         public readonly string $userMessage,
     ) {
     }
@@ -56,11 +57,24 @@ class SendAiDraftJob implements ShouldQueue
                 throw new \RuntimeException('BotUser not found: ' . $this->botUserId, 1);
             }
 
+            // The draft is posted into the supergroup forum topic of this user.
+            // For brand-new VK/Max users the topic may still be in flight via
+            // TopicCreateJob — retry shortly so we don't post into thread_id=null.
+            if (empty($botUser->topic_id)) {
+                Log::channel('loki')->info('SendAiDraftJob: topic_id not ready, releasing', [
+                    'source' => 'send_ai_draft_topic_pending',
+                    'bot_user_id' => $botUser->id,
+                    'platform' => $botUser->platform,
+                ]);
+                $this->release(5);
+                return;
+            }
+
             // Generate AI draft text using the existing service
             $aiRequest = new AiRequestDto(
                 message: $this->userMessage,
                 userId: $this->botUserId,
-                platform: 'telegram',
+                platform: $botUser->platform ?? 'telegram',
                 provider: config('ai.default_provider'),
                 forceEscalation: false
             );

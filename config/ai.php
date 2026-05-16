@@ -56,7 +56,8 @@ return [
     */
 
     'confidence_threshold' => env('AI_CONFIDENCE_THRESHOLD', 0.8),
-    'max_context_messages' => env('AI_MAX_CONTEXT_MESSAGES', 10),
+    'max_context_tokens' => env('AI_MAX_CONTEXT_TOKENS', 3000),
+    'system_prompt_path' => resource_path('ai/system-prompt.blade.php'),
     'auto_escalation' => env('AI_AUTO_ESCALATION', true),
     'enable_logging' => env('AI_ENABLE_LOGGING', true),
 

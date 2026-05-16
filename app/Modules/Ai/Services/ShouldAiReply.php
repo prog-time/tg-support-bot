@@ -73,6 +73,51 @@ class ShouldAiReply
     }
 
     /**
+     * Determine whether AI should generate a reply for an incoming message
+     * received from a non-Telegram source (VK, Max, etc.).
+     *
+     * Reuses the AI-enabled, manager-interface, replyable-text and user-active
+     * checks from the Telegram path, but does not depend on a TelegramUpdateDto.
+     *
+     * @param BotUser|null $botUser
+     * @param string|null  $text
+     *
+     * @return bool
+     */
+    public function shouldGenerateForBotUserText(?BotUser $botUser, ?string $text): bool
+    {
+        if (!$this->isAiEnabled()) {
+            $this->logExternalSkip('ai_disabled', $botUser);
+            return false;
+        }
+
+        if (!$this->isTelegramGroupInterface()) {
+            $this->logExternalSkip('manager_interface_not_telegram_group', $botUser, [
+                'manager_interface' => config('app.manager_interface'),
+            ]);
+            return false;
+        }
+
+        if (!$this->isReplyableText($text)) {
+            $this->logExternalSkip('empty_or_command_text', $botUser, [
+                'text_preview' => $text === null ? null : mb_substr($text, 0, 50),
+            ]);
+            return false;
+        }
+
+        if (!$this->isUserActive($botUser)) {
+            $this->logExternalSkip('user_inactive', $botUser, [
+                'bot_user_found' => $botUser !== null,
+                'is_banned' => $botUser?->isBanned(),
+                'is_closed' => $botUser?->isClosed(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * @return bool
      */
     public function isAiEnabled(): bool
@@ -141,6 +186,26 @@ class ShouldAiReply
             'bot_user_id' => $botUser?->id,
             'chat_id' => $update->chatId,
             'message_thread_id' => $update->messageThreadId,
+        ], $extra));
+    }
+
+    /**
+     * Log the reason AI generation was skipped for an external (non-TG) update.
+     *
+     * @param string       $reason
+     * @param BotUser|null $botUser
+     * @param array        $extra
+     *
+     * @return void
+     */
+    private function logExternalSkip(string $reason, ?BotUser $botUser, array $extra = []): void
+    {
+        Log::channel('loki')->info("ShouldAiReply: skipped [{$reason}]", array_merge([
+            'source' => 'ai_should_reply_skipped',
+            'reason' => $reason,
+            'bot_user_id' => $botUser?->id,
+            'platform' => $botUser?->platform,
+            'topic_id' => $botUser?->topic_id,
         ], $extra));
     }
 }
