@@ -3,6 +3,9 @@
 namespace App\Modules\Vk\Services;
 
 use App\Models\BotUser;
+use App\Modules\Ai\Jobs\SendAiDraftJob;
+use App\Modules\Ai\Jobs\SendAiReplyJob;
+use App\Modules\Ai\Services\ShouldAiReply;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
 use App\Modules\Telegram\Services\ActionService\Send\ToTgMessageService;
@@ -95,6 +98,37 @@ class VkMessageService extends ToTgMessageService
             $this->update,
             $this->messageParamsDTO,
         );
+
+        $this->maybeDispatchAi($this->update->text);
+    }
+
+    /**
+     * Trigger AI generation for an incoming VK text message, when gating allows.
+     *
+     * The draft/auto-reply job is dispatched without a TelegramUpdateDto — the
+     * jobs derive the platform from BotUser and assemble the supergroup post
+     * and the platform-specific user delivery themselves.
+     *
+     * @param string|null $text
+     *
+     * @return void
+     */
+    protected function maybeDispatchAi(?string $text): void
+    {
+        if ($this->botUser === null) {
+            return;
+        }
+
+        $shouldAiReply = app(ShouldAiReply::class);
+        if (!$shouldAiReply->shouldGenerateForBotUserText($this->botUser, $text)) {
+            return;
+        }
+
+        if ((bool) config('ai.auto_reply', false)) {
+            SendAiReplyJob::dispatch($this->botUser->id, null, (string) $text);
+        } else {
+            SendAiDraftJob::dispatch($this->botUser->id, null, (string) $text);
+        }
     }
 
     /**

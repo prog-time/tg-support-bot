@@ -60,7 +60,7 @@ class SendVkTelegramMessageJob extends AbstractSendMessageJob
                     ]
                 );
 
-                if ($response->isTopicNotFound || $response->type_error === 'TOPIC_NOT_MODIFIED') {
+                if ($response->isTopicNotFound) {
                     $botUser->update([
                         'topic_id' => null,
                     ]);

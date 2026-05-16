@@ -243,6 +243,8 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - AI conversation history is sourced from the `messages` table (no Redis cache), bounded by `AI_MAX_CONTEXT_TOKENS` (default 3000) using a `mb_strlen / 4` token heuristic with sliding-window trimming
 - AI system prompt lives in `resources/ai/system-prompt.blade.php` (Blade template — variables only, no `@if`/`@foreach`/`@include`/`@php`); path is configured by `config/ai.php @ system_prompt_path`
 - AI drafts NEVER write to `messages` (only to `ai_messages`); a `messages` row appears only when the message is actually sent to the user — this invariant is what makes "any outgoing row = delivered" safe for the chat-history assembler
+- AI runs across all user platforms (`telegram`, `vk`, `max`). Triggers: `TelegramBotController::maybeDispatchAi()` for TG, `VkMessageService::maybeDispatchAi()` for VK, `MaxMessageService::maybeDispatchAi()` for Max. Triggering is text-only — attachments do not start AI. Gating still goes through `ShouldAiReply` (TG-DTO and platform-agnostic variants share the same rules: AI_ENABLED, `MANAGER_INTERFACE=telegram_group`, replyable text, user active)
+- Final delivery of an AI answer to the user (Accept and auto-reply) is routed by `BotUser.platform` through `App\Modules\Ai\Actions\DeliverAiAnswerToUser` → `SendTelegramMessageJob` / `SendVkMessageJob` / `SendMaxMessageJob`. The Accept callback still edits the supergroup draft via `SendTelegramMessageJob` using the AI bot token regardless of user platform
 
 ### External Sources
 

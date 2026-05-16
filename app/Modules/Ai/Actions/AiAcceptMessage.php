@@ -51,18 +51,14 @@ class AiAcceptMessage extends AiAction
                 'incoming',
             );
 
-            SendTelegramMessageJob::dispatch(
-                $botUser->id,
-                $update,
-                TGTextMessageDto::from([
-                    'methodQuery' => 'sendMessage',
-                    'typeSource' => 'private',
-                    'chat_id' => $botUser->chat_id,
-                    'text' => $messageData->text_ai,
-                    'parse_mode' => 'html',
-                ]),
-                'outgoing',
-            );
+            Log::channel('loki')->info('AiAcceptMessage: delivering AI answer to user', [
+                'source' => 'ai_accept_deliver',
+                'bot_user_id' => $botUser->id,
+                'platform' => $botUser->platform,
+                'ai_message_id' => $messageData->message_id,
+            ]);
+
+            app(DeliverAiAnswerToUser::class)->execute($botUser, $messageData->text_ai, $update);
         } catch (\Throwable $e) {
             Log::channel('loki')->error($e->getMessage(), ['source' => 'ai_error']);
         }

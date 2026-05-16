@@ -89,6 +89,15 @@ _Enforced in:_ `app/Modules/Ai/Services/AiSystemPromptLoader.php`; `app/Modules/
 **BR-016** — Only messages that were actually delivered to the user may appear in the AI's assistant-history. The invariant: AI drafts (`SendAiDraftJob`, `SendAiReplyJob`) write **only** to `ai_messages`, never to `messages`. A row in `messages` (regardless of `message_type=outgoing` reason — Accept, manual manager reply, etc.) appears only when `AbstractSendMessageJob::handle()` actually sends the message. Cancel never creates a `messages` row. Any future AI-flow change that violates this is a regression.
 _Enforced in:_ `app/Modules/Ai/Jobs/SendAiDraftJob.php`, `app/Modules/Ai/Jobs/SendAiReplyJob.php`, `app/Jobs/SendMessage/AbstractSendMessageJob.php`
 
+**BR-017** — AI runs across all supported user platforms (`telegram`, `vk`, `max`). The trigger for incoming user messages is platform-specific (TG: `TelegramBotController::maybeDispatchAi()`; VK: `VkMessageService::maybeDispatchAi()`; Max: `MaxMessageService::maybeDispatchAi()`), but the gating logic shares `ShouldAiReply` (the TG-DTO variant `shouldGenerateForUserMessage()` and the platform-agnostic variant `shouldGenerateForBotUserText()` enforce the same AI-enabled / manager-interface-telegram-group / replyable-text / user-active checks). Triggering is text-only — attachments do not start AI.
+_Enforced in:_ `app/Modules/Ai/Services/ShouldAiReply.php`, `app/Modules/Telegram/Controllers/TelegramBotController.php`, `app/Modules/Vk/Services/VkMessageService.php`, `app/Modules/Max/Services/MaxMessageService.php`
+
+**BR-018** — Final delivery of an AI answer to the end user (both after manager Accept and in auto-reply mode) is routed by `BotUser.platform` through `App\Modules\Ai\Actions\DeliverAiAnswerToUser`: `telegram → SendTelegramMessageJob`, `vk → SendVkMessageJob`, `max → SendMaxMessageJob`. The editing of the AI bot draft inside the supergroup topic (Accept callback) stays on `SendTelegramMessageJob` with the AI bot token regardless of user platform — that side is always Telegram. Unsupported platforms log `ai_deliver_unsupported_platform` and skip delivery.
+_Enforced in:_ `app/Modules/Ai/Actions/DeliverAiAnswerToUser.php`, `app/Modules/Ai/Actions/AiAcceptMessage.php`, `app/Modules/Ai/Jobs/SendAiReplyJob.php`
+
+**BR-019** — `SendAiDraftJob` and `SendAiReplyJob` post the AI marker into the supergroup forum topic of the `BotUser`. The `BotUser.topic_id` may still be in flight when the AI job runs (VK/Max users hit `TopicCreateJob` asynchronously on their first message). In that case the AI job releases itself back to the queue with a short delay instead of posting into `message_thread_id=null`. The job retries (`$tries = 3`) until the topic exists, then proceeds.
+_Enforced in:_ `app/Modules/Ai/Jobs/SendAiDraftJob.php`, `app/Modules/Ai/Jobs/SendAiReplyJob.php`
+
 ---
 
 ## 4. AI Response State Machine
