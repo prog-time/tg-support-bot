@@ -121,7 +121,7 @@ class SendAiTelegramMessageJobTest extends TestCase
             forceEscalation: false
         );
 
-        $aiService = new AiAssistantService();
+        $aiService = $this->app->make(AiAssistantService::class);
         $aiResponse = $aiService->processMessage($aiRequest);
 
         $job = new SendAiTelegramMessageJob(
