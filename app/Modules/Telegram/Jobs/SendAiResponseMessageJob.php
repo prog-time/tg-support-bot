@@ -2,11 +2,11 @@
 
 namespace App\Modules\Telegram\Jobs;
 
-use App\DTOs\Ai\AiRequestDto;
 use App\Jobs\SendMessage\AbstractSendMessageJob;
 use App\Models\BotUser;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\Services\AiAssistantService;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
-use App\Services\Ai\AiAssistantService;
 use Illuminate\Support\Facades\Log;
 
 class SendAiResponseMessageJob extends AbstractSendMessageJob

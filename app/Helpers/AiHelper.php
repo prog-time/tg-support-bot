@@ -12,7 +12,12 @@ class AiHelper
      */
     public static function preparedAiAnswer(string $managerText, string $aiText): string
     {
-        $textMessage = "📄 Инструкция: \n{$managerText}  \n\n";
+        $textMessage = '';
+
+        if ($managerText !== '') {
+            $textMessage .= "📄 Инструкция: \n{$managerText}  \n\n";
+        }
+
         $textMessage .= "🤖 Ответ от AI: \n{$aiText} \n\n";
 
         return $textMessage;

@@ -3,13 +3,14 @@
 namespace Tests\Feature\Jobs;
 
 use App\Models\BotUser;
+use App\Modules\Ai\Services\AiSystemPromptLoader;
 use App\Modules\Telegram\Jobs\SendAiResponseMessageJob;
 use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
@@ -29,13 +30,20 @@ class SendAiResponseMessageJobTest extends TestCase
 
         Config::set('ai.providers.gigachat.client_secret', 'test_secret');
 
-        Storage::fake('prompts');
-        Storage::disk('prompts')->put('basic.txt', 'System prompt');
+        $loader = Mockery::mock(AiSystemPromptLoader::class);
+        $loader->shouldReceive('render')->andReturn('System prompt');
+        $this->app->instance(AiSystemPromptLoader::class, $loader);
 
         $chatId = time();
         $this->botUser = BotUser::getUserByChatId($chatId, 'telegram');
 
         $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     public function test_success_send_creates_message_record(): void

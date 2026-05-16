@@ -2,16 +2,17 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\DTOs\Ai\AiRequestDto;
 use App\Models\BotUser;
+use App\Modules\Ai\DTOs\AiRequestDto;
+use App\Modules\Ai\Services\AiAssistantService;
+use App\Modules\Ai\Services\AiSystemPromptLoader;
 use App\Modules\Telegram\Jobs\SendAiTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
-use App\Services\Ai\AiAssistantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\Mocks\Tg\TelegramUpdateDtoMock;
 use Tests\TestCase;
 
@@ -37,8 +38,9 @@ class SendAiTelegramMessageJobTest extends TestCase
 
         Config::set('ai.providers.gigachat.client_secret', 'test_secret');
 
-        Storage::fake('prompts');
-        Storage::disk('prompts')->put('basic.txt', 'System prompt');
+        $loader = Mockery::mock(AiSystemPromptLoader::class);
+        $loader->shouldReceive('render')->andReturn('System prompt');
+        $this->app->instance(AiSystemPromptLoader::class, $loader);
 
         $this->groupId = time();
         config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
@@ -50,6 +52,12 @@ class SendAiTelegramMessageJobTest extends TestCase
 
         $this->provider = 'gigachat';
         $this->baseProviderUrl = config('ai.providers.gigachat.base_url');
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     public function test_success_send_creates_message_record(): void
@@ -121,7 +129,7 @@ class SendAiTelegramMessageJobTest extends TestCase
             forceEscalation: false
         );
 
-        $aiService = new AiAssistantService();
+        $aiService = $this->app->make(AiAssistantService::class);
         $aiResponse = $aiService->processMessage($aiRequest);
 
         $job = new SendAiTelegramMessageJob(

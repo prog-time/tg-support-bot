@@ -20,13 +20,13 @@ Every change must pass automated checks before merging or deploying.
 
 ## 2. Git Hooks (Local)
 
-The project uses git hooks managed in `scripts/`:
+The project uses git hooks managed in `linting/`:
 
 | Hook | Script | What it does |
 |---|---|---|
-| `pre-commit` | `scripts/pre-commit-check.sh` | Runs Laravel Pint (code formatting check) |
-| `pre-push` | `scripts/pre-push-check.sh` | Runs PHPStan + PHPUnit |
-| `prepare-commit-msg` | `scripts/prepare-commit-msg-check.sh` | Validates commit message format |
+| `pre-commit` | `linting/pre-commit-check.sh` | Runs Laravel Pint (code formatting check) |
+| `pre-push` | `linting/pre-push-check.sh` | Runs PHPStan + PHPUnit |
+| `prepare-commit-msg` | `linting/prepare-commit-msg-check.sh` | Validates commit message format |
 
 ### Hook Compliance Rules
 

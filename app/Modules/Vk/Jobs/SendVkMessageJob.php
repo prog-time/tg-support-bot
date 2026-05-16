@@ -28,7 +28,7 @@ class SendVkMessageJob extends AbstractSendMessageJob
 
     public function __construct(
         int $botUserId,
-        TelegramUpdateDto $updateDto,
+        ?TelegramUpdateDto $updateDto,
         VkTextMessageDto $queryParams,
         mixed $vkMethods = null,
     ) {
@@ -47,6 +47,13 @@ class SendVkMessageJob extends AbstractSendMessageJob
             $methodQuery = $this->queryParams->methodQuery;
             $dataQuery = $this->queryParams->toArray();
 
+            Log::channel('loki')->info('SendVkMessageJob: sending', [
+                'source' => 'send_vk_message_start',
+                'bot_user_id' => $this->botUserId,
+                'method' => $methodQuery,
+                'params' => array_diff_key($dataQuery, array_flip(['access_token'])),
+            ]);
+
             $response = $this->vkMethods->sendQueryVk($methodQuery, $dataQuery);
 
             if ($response->response_code === 200) {
@@ -54,6 +61,13 @@ class SendVkMessageJob extends AbstractSendMessageJob
                 $this->updateTopic($botUser, $this->typeMessage);
                 return;
             } elseif (!empty($response->error_message)) {
+                Log::channel('loki')->error('SendVkMessageJob: VK API error', [
+                    'source' => 'send_vk_message_api_error',
+                    'bot_user_id' => $this->botUserId,
+                    'method' => $methodQuery,
+                    'error_type' => $response->error_type,
+                    'error_message' => $response->error_message,
+                ]);
                 throw new \Exception($response->error_message, 1);
             }
 
@@ -73,16 +87,18 @@ class SendVkMessageJob extends AbstractSendMessageJob
      */
     protected function saveMessage(BotUser $botUser, mixed $resultQuery): void
     {
+        $hasUpdateDto = $this->updateDto instanceof TelegramUpdateDto;
+
         $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
-            'from_id' => $this->updateDto->messageId,
+            'from_id' => $hasUpdateDto ? $this->updateDto->messageId : 0,
             'to_id' => $resultQuery->response,
-            'text' => $this->updateDto->text ?? null,
+            'text' => $this->queryParams->message ?? ($hasUpdateDto ? $this->updateDto->text : null),
         ]);
 
-        if (!empty($this->updateDto->fileId)) {
+        if ($hasUpdateDto && !empty($this->updateDto->fileId)) {
             $message->attachments()->create([
                 'file_id' => $this->updateDto->fileId,
                 'file_type' => $this->updateDto->fileType ?? 'document',

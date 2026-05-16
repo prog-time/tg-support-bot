@@ -2,9 +2,12 @@
 
 namespace App\Modules\Telegram\Controllers;
 
-use App\Actions\Ai\EditAiMessage;
 use App\Contracts\ManagerInterfaceContract;
 use App\Models\BotUser;
+use App\Modules\Ai\Actions\EditAiMessage;
+use App\Modules\Ai\Jobs\SendAiDraftJob;
+use App\Modules\Ai\Jobs\SendAiReplyJob;
+use App\Modules\Ai\Services\ShouldAiReply;
 use App\Modules\Telegram\Actions\BannedContactMessage;
 use App\Modules\Telegram\Actions\CloseTopic;
 use App\Modules\Telegram\Actions\SendAiAnswerMessage;
@@ -152,6 +155,7 @@ class TelegramBotController
                         app(SendAiAnswerMessage::class)->execute($this->dataHook);
                     } else {
                         $this->managerInterface->notifyIncomingMessage($this->botUser, $this->dataHook);
+                        $this->maybeDispatchAi();
                     }
                     break;
 
@@ -162,6 +166,29 @@ class TelegramBotController
                 default:
                     throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
             }
+        }
+    }
+
+    /**
+     * Trigger AI generation for the incoming user message, if the gating rules pass.
+     *
+     * Posts the AI output as the AI bot in the supergroup topic (visual marker for managers)
+     * and, when auto-reply is on, also delivers the same text to the user from the main bot.
+     *
+     * @return void
+     */
+    private function maybeDispatchAi(): void
+    {
+        $shouldAiReply = app(ShouldAiReply::class);
+
+        if (!$shouldAiReply->shouldGenerateForUserMessage($this->dataHook, $this->botUser)) {
+            return;
+        }
+
+        if ((bool) config('ai.auto_reply', false)) {
+            SendAiReplyJob::dispatch($this->botUser->id, $this->dataHook, $this->dataHook->text);
+        } else {
+            SendAiDraftJob::dispatch($this->botUser->id, $this->dataHook, $this->dataHook->text);
         }
     }
 

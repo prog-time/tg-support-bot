@@ -29,8 +29,8 @@ The project uses **L5-Swagger** (darkaonline/l5-swagger) to generate OpenAPI doc
 | Swagger UI | `GET /docs/swagger-v1-ui` |
 | Swagger JSON | `GET /docs/swagger-v1-json` |
 | Annotations | PHP docblocks in Controllers and DTOs |
-| Generator service | `app/Services/Swagger/SwaggerGenerateService.php` |
-| Controller | `app/Http/Controllers/SwaggerController.php` |
+| Generator service | `app/Modules/Api/Services/SwaggerGenerateService.php` |
+| Controller | `app/Modules/Api/Controllers/SwaggerController.php` |
 
 The generated JSON is the authoritative OpenAPI file. Do not write a separate `openapi.yaml` — L5-Swagger generates it from annotations.
 
@@ -42,9 +42,10 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 
 | Method | Path | Middleware | Description |
 |---|---|---|---|
-| `POST` | `/api/telegram/bot` | `TelegramQuery` | Receive Telegram webhook events |
-| `POST` | `/api/telegram/ai/bot` | `TelegramQuery` | Receive Telegram AI bot webhook events |
-| `GET` | `/api/telegram/set_webhook` | — | Register webhook URL with Telegram |
+| `POST` | `/api/telegram/bot` | `TelegramQuery` | Receive Telegram webhook events (main bot) |
+| `POST` | `/api/telegram/ai/bot` | `TelegramQuery` | Receive Telegram AI bot callback queries (Accept/Cancel/Edit) |
+| `GET` | `/api/telegram/set_webhook` | — | Register main bot webhook URL with Telegram |
+| `POST` | `/api/ai-bot/webhook` | `AiBotQuery` | Receive AI bot webhook events from Telegram |
 
 ### VK Webhook (POST)
 

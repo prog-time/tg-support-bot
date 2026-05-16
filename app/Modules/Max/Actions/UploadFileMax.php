@@ -39,9 +39,9 @@ class UploadFileMax
             $uploadResult = $client->uploads->getUploadUrl($type);
 
             Log::channel('loki')->info('UploadFileMax: uploading to CDN', [
-                'type'     => $type,
+                'type' => $type,
                 'filename' => $filename,
-                'size'     => strlen($fileResponse->body()),
+                'size' => strlen($fileResponse->body()),
             ]);
 
             $cdnResponse = Http::attach('data', $fileResponse->body(), $filename)
@@ -69,11 +69,11 @@ class UploadFileMax
             return $token;
         } catch (\Throwable $e) {
             Log::channel('loki')->error('UploadFileMax: upload failed | ' . get_class($e) . ': ' . $e->getMessage(), [
-                'type'      => $type,
-                'filename'  => $filename,
+                'type' => $type,
+                'filename' => $filename,
                 'exception' => get_class($e),
-                'file'      => $e->getFile(),
-                'line'      => $e->getLine(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
 
             return null;
