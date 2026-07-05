@@ -141,7 +141,7 @@ class IntegrationsListPageTest extends TestCase
         $this->actingAs($admin);
 
         Livewire::test(IntegrationsListPage::class)
-            ->assertSee('Отдельный бот ИИ-помощника');
+            ->assertSee('Интеграция с ботом AI-помощника');
     }
 
     public function test_renders_channel_description_texts(): void
@@ -150,9 +150,9 @@ class IntegrationsListPageTest extends TestCase
         $this->actingAs($admin);
 
         Livewire::test(IntegrationsListPage::class)
-            ->assertSee('Поддержка через Telegram-бота')
-            ->assertSee('Поддержка через сообщество ВКонтакте')
-            ->assertSee('Поддержка через мессенджер MAX');
+            ->assertSee('Интеграция с Telegram — приём обращений из бота.')
+            ->assertSee('Интеграция с ВКонтакте — сообщения из чата сообщества.')
+            ->assertSee('Интеграция с Max — обращения из мессенджера Max.');
     }
 
     public function test_renders_connect_button_for_disconnected_channel(): void

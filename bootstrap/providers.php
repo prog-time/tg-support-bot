@@ -10,5 +10,6 @@ return [
     App\Modules\Telegram\TelegramServiceProvider::class,
     App\Modules\Vk\VkServiceProvider::class,
     App\Providers\AppServiceProvider::class,
+    App\Providers\AvitoSettingsBridgeServiceProvider::class,
     App\Providers\TelescopeServiceProvider::class,
 ];

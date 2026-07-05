@@ -36,6 +36,7 @@
         $chatsUrl = Route::has('admin.chats') ? route('admin.chats') : '/admin/chats';
         [$mobileBackUrl, $mobileBackLabel] = match (true) {
             request()->routeIs('admin.settings.integrations.channel') => [route('admin.settings.integrations'), 'Интеграции'],
+            request()->routeIs('admin.settings.avito') => [route('admin.settings.integrations'), 'Интеграции'],
             request()->routeIs('admin.settings.ai.provider') => [route('admin.settings.ai'), 'ИИ-ассистент'],
             request()->routeIs('admin.settings.api-webhooks.source') => [route('admin.settings.api-webhooks'), 'API и вебхуки'],
             request()->routeIs('admin.settings.auto-replies.create', 'admin.settings.auto-replies.edit') => [route('admin.settings.auto-replies'), 'Автоответы'],
@@ -146,6 +147,18 @@
                         </svg>
                     </x-slot>
                     Команда
+                </x-admin.nav-item>
+
+                <x-admin.nav-item
+                    href="{{ route('admin.settings.subscriptions') }}"
+                    :active="request()->routeIs('admin.settings.subscriptions')"
+                >
+                    <x-slot name="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </x-slot>
+                    Подписки
                 </x-admin.nav-item>
 
                 <x-admin.nav-item

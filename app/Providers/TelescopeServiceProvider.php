@@ -31,6 +31,28 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     }
 
     /**
+     * Bootstrap any application services.
+     *
+     * Telescope's package provider prepends laravel/sentinel's middleware to the
+     * `telescope` route group. Sentinel's `laravel` driver guards dev exposure:
+     * when APP_ENV=local it denies requests coming from public client IPs through
+     * a trusted proxy (`trustProxies(*)`), returning a hard 401 for /telescope —
+     * even for authenticated admins. The dashboard is already gated by session
+     * admin auth (`web` + `auth` + TelescopeAccess), so we redefine the group
+     * without Sentinel. Runs after all providers boot, so it overrides the
+     * group Telescope built. (The proper prod fix is APP_ENV=production, which
+     * makes Sentinel a no-op; this keeps Telescope reachable in any environment.)
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        $this->app->booted(function (): void {
+            $this->app['router']->middlewareGroup('telescope', config('telescope.middleware'));
+        });
+    }
+
+    /**
      * Prevent sensitive request details from being logged by Telescope.
      */
     protected function hideSensitiveRequestDetails(): void
