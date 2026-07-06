@@ -15,7 +15,7 @@ use phpDocumentor\Reflection\Exception;
 /**
  * @property int                             $id
  * @property int                             $topic_id
- * @property int                             $chat_id
+ * @property int|string                      $chat_id
  * @property string                          $platform
  * @property string|null                     $display_name
  * @property string|null                     $username
@@ -107,11 +107,11 @@ class BotUser extends Model
     /**
      * Get platform by chat id
      *
-     * @param int $chatId
+     * @param int|string $chatId
      *
      * @return string|null
      */
-    public static function getPlatformByChatId(int $chatId): ?string
+    public static function getPlatformByChatId(int|string $chatId): ?string
     {
         try {
             $botUser = self::select('platform')

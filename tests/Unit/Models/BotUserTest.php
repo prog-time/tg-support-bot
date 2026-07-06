@@ -101,4 +101,39 @@ class BotUserTest extends TestCase
         $profileUpdates = array_filter($updateQueries, static fn ($q) => str_contains($q['query'], 'display_name'));
         $this->assertCount(0, $profileUpdates);
     }
+
+    // ── String chat_id (pluggable platforms: Avito "u2i-...", WhatsApp, …) ─────
+
+    public function test_string_chat_id_round_trips_without_coercion(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'u2i-abc123', 'platform' => 'avito']);
+
+        $fresh = BotUser::findOrFail($botUser->id);
+
+        // Persisted and read back as the exact string — no int coercion, no
+        // dropped prefix (the whole point of widening chat_id to string).
+        $this->assertSame('u2i-abc123', $fresh->chat_id);
+        $this->assertSame($botUser->id, BotUser::where('chat_id', 'u2i-abc123')->first()?->id);
+    }
+
+    // ── external_source relation regression across the type change ─────────────
+    // bot_users.chat_id doubles as the FK to external_users.id (bigint). After
+    // widening chat_id to string, the varchar ↔ bigint join must still resolve.
+
+    public function test_external_user_relation_resolves_after_chat_id_widened_to_string(): void
+    {
+        $externalUser = \App\Models\ExternalUser::create([
+            'external_id' => 555,
+            'source' => 'regression-source',
+        ]);
+
+        $botUser = BotUser::create([
+            'chat_id' => (string) $externalUser->id,
+            'platform' => 'external_source',
+        ]);
+
+        // Forward relation (hasOne ExternalUser 'id' <- 'chat_id') joins the now
+        // varchar chat_id against the bigint external_users.id — must still resolve.
+        $this->assertTrue($botUser->externalUser->is($externalUser));
+    }
 }
