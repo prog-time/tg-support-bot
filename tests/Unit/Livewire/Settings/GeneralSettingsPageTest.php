@@ -44,7 +44,6 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn('Обращение');
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn('');
-
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 
@@ -57,7 +56,6 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn('');
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn('-100999888');
-
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 
@@ -70,7 +68,6 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn(null);
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn(null);
-
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 

@@ -66,6 +66,6 @@ sync:
       defaultDirectoryMode: 0755
 
   # Single session: local working copy → server document root.
-  code:
+  tg-support:
     alpha: "."
     beta: "root@45.80.69.244:/home/multichat"

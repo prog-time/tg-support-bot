@@ -4,6 +4,7 @@ namespace Tests\Unit\Livewire\Settings;
 
 use App\Livewire\Settings\IntegrationsListPage;
 use App\Modules\Admin\Services\ChannelStatusService;
+use App\Services\Settings\SettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -38,7 +39,7 @@ class IntegrationsListPageTest extends TestCase
         $mock->shouldReceive('all')->with()->once()->andReturn($statuses);
 
         $component = new IntegrationsListPage();
-        $component->mount($mock);
+        $component->mount($mock, app(SettingsService::class));
 
         $this->assertSame($statuses, $component->channelStatuses);
     }
@@ -57,7 +58,7 @@ class IntegrationsListPageTest extends TestCase
         $mock->shouldReceive('all')->with()->once()->andReturn($statuses);
 
         $component = new IntegrationsListPage();
-        $component->mount($mock);
+        $component->mount($mock, app(SettingsService::class));
 
         $this->assertArrayHasKey('telegram_ai', $component->channelStatuses);
         $this->assertTrue($component->channelStatuses['telegram_ai']['connected']);
@@ -70,7 +71,7 @@ class IntegrationsListPageTest extends TestCase
         $mock->shouldReceive('all')->with()->once()->andReturn([]);
 
         $component = new IntegrationsListPage();
-        $component->mount($mock);
+        $component->mount($mock, app(SettingsService::class));
 
         $this->assertSame([], $component->channelStatuses);
     }

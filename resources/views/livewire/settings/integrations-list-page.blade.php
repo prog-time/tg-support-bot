@@ -45,7 +45,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через Telegram-бота: каждое обращение пользователя открывает отдельную тему в супергруппе поддержки.
+                        Интеграция с Telegram — приём обращений из бота.
                     </p>
                 </a>
 
@@ -86,7 +86,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через мессенджер MAX: обращения пользователей из MAX поступают операторам в общий поток.
+                        Интеграция с Max — обращения из мессенджера Max.
                     </p>
                 </a>
 
@@ -119,9 +119,51 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через сообщество ВКонтакте: сообщения из чата сообщества поступают операторам как обращения.
+                        Интеграция с ВКонтакте — сообщения из чата сообщества.
                     </p>
                 </a>
+
+                {{-- Avito — только когда установлен платный модуль (Route::has) --}}
+                @if ($avitoInstalled)
+                <a href="{{ route('admin.settings.avito') }}"
+                   class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            {{-- Icon: full-bleed Avito logo --}}
+                            <div class="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 90 90">
+                                    <g fill="none" fill-rule="evenodd">
+                                        <path fill="#FFF" d="M0 0h90v90H0z" />
+                                        <circle fill="#97CF26" cx="59" cy="59" r="16" />
+                                        <circle fill="#0AF" cx="29" cy="29" r="13" />
+                                        <circle fill="#FF6163" cx="59" cy="29" r="10" />
+                                        <circle fill="#A169F7" cx="28.5" cy="58.5" r="7.5" />
+                                    </g>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-text-primary">Avito</p>
+                                @if ($avitoConnected)
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#34C759">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:#34C759"></span>
+                                        Подключено
+                                    </span>
+                                @else
+                                    <span class="text-xs text-text-secondary">Не подключён</span>
+                                @endif
+                            </div>
+                        </div>
+                        @if (! $avitoConnected)
+                            <span class="inline-flex items-center justify-center rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white">
+                                Подключить
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
+                        Интеграция с Avito — приём сообщений из объявлений по подписке.
+                    </p>
+                </a>
+                @endif
 
             </div>
         </div>
@@ -169,7 +211,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Отдельный бот ИИ-помощника: публикует черновики/ответы ИИ в супергруппе.
+                        Интеграция с ботом AI-помощника — отдельный бот публикует черновики и ответы ИИ в супергруппе.
                     </p>
                 </a>
 

@@ -10,9 +10,11 @@ use App\Livewire\Settings\ApiWebhookSourcePage;
 use App\Livewire\Settings\ApiWebhooksPage;
 use App\Livewire\Settings\AutoRepliesPage;
 use App\Livewire\Settings\AutoReplyFormPage;
+use App\Livewire\Settings\AvitoIntegrationPage;
 use App\Livewire\Settings\GeneralSettingsPage;
 use App\Livewire\Settings\IntegrationChannelPage;
 use App\Livewire\Settings\IntegrationsListPage;
+use App\Livewire\Settings\SubscriptionsPage;
 use App\Livewire\Settings\TeamMemberCreatePage;
 use App\Livewire\Settings\TeamMemberEditPage;
 use App\Livewire\Settings\TeamPage;
@@ -136,6 +138,10 @@ class AdminServiceProvider extends ServiceProvider
                     ->name('api-webhooks.source')
                     ->where('source', '[0-9]+');
 
+                // Subscriptions — shared license key + the modules it grants.
+                Route::get('/subscriptions', SubscriptionsPage::class)
+                    ->name('subscriptions');
+
                 // Team — manage operators, add new members, delete existing ones.
                 Route::get('/team', TeamPage::class)
                     ->name('team');
@@ -157,6 +163,14 @@ class AdminServiceProvider extends ServiceProvider
                 Route::get('/auto-replies/{rule}/edit', AutoReplyFormPage::class)
                     ->name('auto-replies.edit')
                     ->where('rule', '[0-9]+');
+
+                // Avito (paid module) license screen — registered only when the
+                // pluggable module is installed, so the nav link (guarded by
+                // Route::has) and page appear exactly when the module is present.
+                if (class_exists(\ProgTime\TgSupportAvito\AvitoServiceProvider::class)) {
+                    Route::get('/avito', AvitoIntegrationPage::class)
+                        ->name('avito');
+                }
             });
     }
 }
