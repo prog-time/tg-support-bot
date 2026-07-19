@@ -78,11 +78,5 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/prog-time/tg-support-avito.git"
-        }
-    ]
+    "prefer-stable": true
 }
