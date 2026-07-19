@@ -123,8 +123,7 @@
                     </p>
                 </a>
 
-                {{-- Avito — только когда установлен платный модуль (Route::has) --}}
-                @if ($avitoInstalled)
+                {{-- Avito --}}
                 <a href="{{ route('admin.settings.avito') }}"
                    class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
                     <div class="flex items-center justify-between">
@@ -163,7 +162,6 @@
                         Интеграция с Avito — приём сообщений из объявлений по подписке.
                     </p>
                 </a>
-                @endif
 
             </div>
         </div>

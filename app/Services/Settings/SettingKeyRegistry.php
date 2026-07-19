@@ -108,28 +108,9 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
-        // ── Licensing (shared subscription key) ──────────────────────────────
-        // Single license key covering all paid modules, entered on the «Подписки»
-        // screen. Mirrored into each installed module's own license key (see
-        // config('license.module_keys')). Stored encrypted.
-        'license.key' => [
-            'type' => 'string',
-            'config' => null,
-            'is_secret' => true,
-        ],
-
-        // ── Avito (paid pluggable module) ────────────────────────────────────
-        // Per-module license key the Avito LicenseGuard reads; mirrored from
-        // `license.key` on save (the «Подписки» screen). Stored encrypted.
-        'avito.license_key' => [
-            'type' => 'string',
-            'config' => null,
-            'is_secret' => true,
-        ],
-        // Avito Messenger API credentials entered on the integration screen. The
-        // module reads these from config('avito.*'); AvitoSettingsBridgeServiceProvider
-        // pushes these DB values into that config tree at boot. config => null
-        // (DB-only), mirroring every other channel/AI credential key.
+        // ── Avito (built-in module) ────────────────────────────────────────────
+        // Avito Messenger API credentials entered on the integration screen.
+        // config => null (DB-only), mirroring every other channel credential key.
         'avito.client_id' => [
             'type' => 'string',
             'config' => null,

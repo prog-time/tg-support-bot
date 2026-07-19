@@ -13,11 +13,10 @@ use Livewire\Component;
 /**
  * Avito integration screen — Avito Messenger API credentials.
  *
- * Manages the paid module's API access fields (client_id, client_secret,
- * base_url, webhook_secret), stored via SettingsService under the `avito.*`
- * registry keys. The module reads these from config('avito.*');
- * {@see \App\Providers\AvitoSettingsBridgeServiceProvider} pushes the stored DB
- * values into that config tree at boot.
+ * Manages the built-in Avito module's API access fields (client_id,
+ * client_secret, base_url, webhook_secret), stored via SettingsService under
+ * the `avito.*` registry keys. The module ({@see \App\Modules\Avito\Api\AvitoMethods})
+ * reads these directly via SettingsService — no config() bridge involved.
  *
  * The primary «Сохранить» button runs a verify-before-save flow via connect():
  *   1. Validate that Client ID and Client Secret are available (entered or stored).
@@ -27,9 +26,6 @@ use Livewire\Component;
  *   4. On success → persist the credentials AND auto-capture the account id
  *      (`user_id`) returned by accounts/self — it is never entered manually,
  *      mirroring how the Telegram AI bot id/@username are captured from getMe.
- *
- * The subscription «Лицензионный ключ» is NOT managed here — it lives on the
- * «Основные» general settings screen ({@see GeneralSettingsPage}).
  *
  * Secret fields are pre-filled from settings and rendered as password inputs; a
  * blank submission keeps the existing stored secret.
@@ -69,6 +65,16 @@ class AvitoIntegrationPage extends Component
 
     /** @var string|null Verify-before-save result message. */
     public ?string $verifyMessage = null;
+
+    /**
+     * Avito «API мессенджера» plan state: ok | no_subscription | unknown.
+     * Separate from $verifySuccess on purpose — credentials can be perfectly
+     * valid while the channel is still unable to receive a single message.
+     */
+    public string $messengerStatus = 'unknown';
+
+    /** Human-readable explanation of {@see self::$messengerStatus}. */
+    public ?string $messengerMessage = null;
 
     /** @var bool Whether the last verify+save succeeded. */
     public bool $verifySuccess = false;
@@ -158,6 +164,12 @@ class AvitoIntegrationPage extends Component
         $this->verifyMessage = $result['accountName'] !== null
             ? 'Подключено. Аккаунт Avito: ' . $result['accountName'] . ' (ID ' . $accountId . ').'
             : 'Подключено. ID аккаунта Avito: ' . $accountId . '.';
+
+        // Credentials being valid says nothing about whether messages will ever
+        // arrive: that needs Avito's paid «API мессенджера» plan, and without it
+        // the webhook subscription is accepted but never fires.
+        $this->messengerStatus = $result['messengerStatus'];
+        $this->messengerMessage = $result['messengerMessage'];
     }
 
     /**

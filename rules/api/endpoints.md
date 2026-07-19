@@ -53,6 +53,14 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 |---|---|---|---|
 | `POST` | `/api/vk/bot` | `VkQuery` | Receive VK webhook events |
 
+### Avito Webhook (POST)
+
+| Method | Path | Middleware | Description |
+|---|---|---|---|
+| `POST` | `/api/avito/bot/{secret?}` | `AvitoQuery` | Receive Avito Messenger webhook events (built-in core module) |
+
+> Auth model differs from Telegram/VK: the secret is embedded in the URL **path segment** (`{secret}`), not a header — Avito faithfully calls back the exact URL registered at subscription time, so a self-chosen path secret is reliable authentication that does not depend on Avito's (undocumented) request-signing scheme. The segment is optional (`{secret?}`) so the route still resolves when no secret is configured — see §4 `AvitoQuery` below. Registered via `php artisan avito:set-webhook`.
+
 ### External Traffic (REST)
 
 | Method | Path | Middleware | Description |
@@ -132,6 +140,7 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | `GET` | `/admin/settings/general` | session | General settings page (`GeneralSettingsPage`, custom Livewire) — name `admin.settings.general` |
 | `GET` | `/admin/settings/integrations` | session | Integration channels list (`IntegrationsListPage`, custom Livewire) — name `admin.settings.integrations` |
 | `GET` | `/admin/settings/integrations/{channel}` | session | Per-channel config form (`IntegrationChannelPage`; channel ∈ telegram\|telegram_ai\|vk\|max) — name `admin.settings.integrations.channel` |
+| `GET` | `/admin/settings/avito` | session (admin only) | Avito module credentials (`AvitoIntegrationPage`) — name `admin.settings.avito`. Always registered (Avito is built-in core, not a conditional package) |
 | `GET` | `/admin/settings/ai` | session | AI assistant settings (`AiAssistantPage`, custom Livewire) — name `admin.settings.ai` |
 | `GET` | `/admin/settings/ai/{provider}` | session | Per-provider access settings (`AiProviderAccessPage`) — name `admin.settings.ai.provider` |
 | `GET` | `/admin/settings/api-webhooks` | session (admin only) | API and webhooks list (`ApiWebhooksPage`, custom Livewire) — name `admin.settings.api-webhooks` |
@@ -168,6 +177,8 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | VK | `message_event` | `payload.command` | `HandleFeedbackRating` when value starts with `feedback_rate_` |
 | Max | `message_callback` | `callback.payload` | `HandleFeedbackRating` when value starts with `feedback_rate_` |
 
+> **Avito has no callback routing yet.** Avito Messenger v1 has no inline-keyboard mechanism, so the feedback rating form is sent as plain text and no rating callback ever arrives at `AvitoBotController`. Routing feedback-rating callbacks into `HandleFeedbackRating` is left as a `TODO` in `AvitoBotController` pending confirmation of Avito's callback mechanism.
+
 ---
 
 ## 4. Middleware Rules
@@ -185,6 +196,12 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 - Validates `Authorization: Bearer {token}` against `external_source_access_tokens` table
 - Only `active = true` tokens are accepted
 - Rejects with `401` if token is missing or invalid
+
+### AvitoQuery
+- Validates the `{secret}` URL path segment against the `avito.webhook_secret` setting (read via `SettingsService`) using `hash_equals()`
+- If `avito.webhook_secret` is empty, the endpoint is left **open** and a warning is logged (`avito_webhook_unverified`) — local development only; a secret must be set in production
+- Rejects with `403` on a mismatch
+- Logs the incoming webhook body (`avito_request`) before passing the request through
 
 ### WidgetGate
 - Reads `X-Widget-Key` header; resolves to an `ExternalSource` by `public_key`; rejects with `401` if not found

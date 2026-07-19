@@ -8,7 +8,7 @@
 
 ## 1. What is this domain?
 
-The Messaging domain is responsible for receiving, routing, storing, and forwarding messages between end users (on Telegram, VK, or External platforms) and the support team (working in a Telegram supergroup with forum topics).
+The Messaging domain is responsible for receiving, routing, storing, and forwarding messages between end users (on Telegram, VK, Max, Avito, or External platforms) and the support team (working in a Telegram supergroup with forum topics and/or the `/admin/chats` workspace).
 
 This domain owns: message creation, message routing, platform-specific sending logic, file handling, keyboard construction.
 
@@ -23,7 +23,7 @@ This domain does not own: user banning (see `domain/bot-users.md`), AI response 
 | Forum Topic | A dedicated thread in a Telegram supergroup for each user's conversation |
 | Incoming Message | A message sent by the user to the bot |
 | Outgoing Message | A message sent by the support team to the user |
-| Platform | Source of a message: `telegram`, `vk`, `external_source` |
+| Platform | Source of a message: `telegram`, `vk`, `max`, `avito`, `external_source` |
 | Job | Asynchronous queue task that performs the actual API send |
 | Webhook | HTTP callback sent to an External Source when the team replies |
 | Button | Interactive element attached to a message (callback, URL, phone, text) |
@@ -81,8 +81,16 @@ _Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ not
 - **VK incoming (group OFF):** `VkMessageService::handleUpdate()` → `persistIncomingVkMessage()` persists directly.
 - **Max incoming (group ON):** `MaxMessageService::handleUpdate()` → `SendMaxTelegramMessageJob` → `saveMessage()` persists after the group send.
 - **Max incoming (group OFF):** `MaxMessageService::handleUpdate()` → `persistIncomingMaxMessage()` persists directly.
+- **Avito incoming (group ON, `telegram.group_id` set):** `AvitoMessageService::handleUpdate()` → `SendAvitoTelegramMessageJob` (in `App\Modules\Telegram\Jobs`) forwards into the supergroup topic → `saveMessage()` persists after the group send.
+- **Avito incoming (group OFF):** `AvitoMessageService::handleUpdate()` persists the row directly (no supergroup forward), then may dispatch AI.
 - **External incoming:** `TgExternalMessageService::handleUpdate()` → inline `saveMessage()` — always persists regardless of group state (the group is only used for `editForumTopic` icon update, not for the message row).
-_Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ persistIncomingTelegramMessage()`, `app/Modules/Vk/Services/VkMessageService.php @ persistIncomingVkMessage()`, `app/Modules/Max/Services/MaxMessageService.php @ persistIncomingMaxMessage()`
+_Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ persistIncomingTelegramMessage()`, `app/Modules/Vk/Services/VkMessageService.php @ persistIncomingVkMessage()`, `app/Modules/Max/Services/MaxMessageService.php @ persistIncomingMaxMessage()`, `app/Modules/Avito/Services/AvitoMessageService.php @ handleUpdate()`
+
+**BR-015 (Avito v1 limitations)** — Avito is a built-in text-only channel (`app/Modules/Avito/`), registered directly (not via `PlatformChannelRegistry`) in `SendReplyAction`, `DeliverAiAnswerToUser`, and `SendFeedbackForm` (`case 'avito'` branches). Known v1 limitations, documented honestly rather than glossed over:
+- **No attachments.** Incoming attachments are not accepted by `AvitoMessageService`. A file attached to a manager's reply is silently skipped with a warning log (`SendReplyAction::sendAvitoReply()`) instead of being delivered — text still sends.
+- **No inline keyboards.** Avito Messenger has no button/keyboard mechanism, so the feedback rating form (`SendFeedbackForm`'s `case 'avito'`) is a one-way plain-text prompt with no tappable stars. No rating callback is ever received; `HandleFeedbackRating` is never invoked for Avito, and the `Feedback` record permanently stays `status='awaiting_rating'`.
+- **Callback handling is a TODO.** `AvitoBotController` has an explicit `TODO` marking where feedback-rating (and any future) callback routing would go once Avito's callback mechanism is confirmed.
+_Enforced in:_ `app/Modules/Admin/Actions/SendReplyAction.php @ sendAvitoReply()`, `app/Modules/Feedback/Actions/SendFeedbackForm.php`, `app/Modules/Avito/Controllers/AvitoBotController.php`
 
 **BR-005a** — Each user has at most one Telegram forum topic (`BotUser.topic_id`). The topic is created lazily: when the supergroup is configured and a message arrives for a user without a topic, `TopicCreateJob` is dispatched.
 _Enforced in:_ `app/Modules/Telegram/Jobs/TopicCreateJob.php`, `app/Models/BotUser.php @ topic_id`
@@ -138,6 +146,7 @@ stateDiagram-v2
 |---|---|---|---|
 | `telegram` | Telegram | `TgMessageService` | `SendTelegramMessageJob` |
 | `vk` | VK + Telegram mirror | `TgVkMessageService`, `VkMessageService` | `SendVkMessageJob`, `SendVkTelegramMessageJob` |
+| `avito` | Avito + Telegram mirror (when configured) | `AvitoMessageService` | `SendAvitoSimpleMessageJob`, `SendAvitoTelegramMessageJob` |
 | `external_source` | Telegram + Webhook | `TgExternalMessageService` | `SendExternalTelegramMessageJob`, `SendWebhookMessage` |
 
 ---

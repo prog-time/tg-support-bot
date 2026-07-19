@@ -8,6 +8,7 @@ use App\Models\ExternalUser;
 use App\Models\User;
 use App\Modules\Admin\Actions\SendReplyAction;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
@@ -16,6 +17,7 @@ use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
@@ -224,13 +226,93 @@ class SendReplyActionTest extends TestCase
         });
     }
 
+    // ── Avito ──────────────────────────────────────────────────────────────────
+
+    public function test_saves_outgoing_message_for_avito_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'u2i-700', 'platform' => 'avito']);
+
+        SendReplyAction::execute($botUser, 'Hello Avito');
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'avito',
+            'message_type' => 'outgoing',
+            'text' => 'Hello Avito',
+        ]);
+    }
+
+    public function test_dispatches_avito_simple_job_with_chat_id_and_text_for_avito_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'u2i-701', 'platform' => 'avito']);
+
+        SendReplyAction::execute($botUser, 'Hello Avito');
+
+        Queue::assertPushed(SendAvitoSimpleMessageJob::class, function (SendAvitoSimpleMessageJob $job) use ($botUser): bool {
+            return $job->queryParams->methodQuery === 'sendMessage'
+                && $job->queryParams->chat_id === $botUser->chat_id
+                && $job->queryParams->text === 'Hello Avito';
+        });
+        Queue::assertNotPushed(SendTelegramSimpleQueryJob::class);
+        Queue::assertNotPushed(SendWebhookMessage::class);
+    }
+
+    public function test_avito_file_attachment_is_skipped_with_warning_but_text_still_sent(): void
+    {
+        Queue::fake();
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('SendReplyAction: Avito does not support file replies, attachment skipped', Mockery::type('array'));
+
+        $botUser = BotUser::create(['chat_id' => 'u2i-702', 'platform' => 'avito']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10);
+
+        SendReplyAction::execute($botUser, 'Text with skipped file', $file);
+
+        Queue::assertPushed(SendAvitoSimpleMessageJob::class, function (SendAvitoSimpleMessageJob $job): bool {
+            return $job->queryParams->text === 'Text with skipped file';
+        });
+    }
+
+    public function test_avito_empty_text_and_file_dispatches_nothing(): void
+    {
+        Queue::fake();
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('warning')->once();
+
+        $botUser = BotUser::create(['chat_id' => 'u2i-703', 'platform' => 'avito']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10);
+
+        SendReplyAction::execute($botUser, '', $file);
+
+        Queue::assertNotPushed(SendAvitoSimpleMessageJob::class);
+    }
+
+    public function test_avito_empty_text_without_file_dispatches_nothing(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'u2i-704', 'platform' => 'avito']);
+
+        SendReplyAction::execute($botUser, '');
+
+        Queue::assertNotPushed(SendAvitoSimpleMessageJob::class);
+    }
+
     public function test_dispatches_webhook_for_external_user_with_webhook_url(): void
     {
         Queue::fake();
 
         ExternalSource::create(['name' => 'widget', 'webhook_url' => 'https://example.com/hook']);
         $externalUser = ExternalUser::create(['external_id' => 'ext-1', 'source' => 'widget']);
-        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'platform' => 'widget']);
+        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'external_user_id' => $externalUser->id, 'platform' => 'widget']);
 
         SendReplyAction::execute($botUser, 'Hello External');
 
@@ -246,7 +328,7 @@ class SendReplyActionTest extends TestCase
 
         ExternalSource::create(['name' => 'widget', 'webhook_url' => '']);
         $externalUser = ExternalUser::create(['external_id' => 'ext-2', 'source' => 'widget']);
-        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'platform' => 'widget']);
+        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'external_user_id' => $externalUser->id, 'platform' => 'widget']);
 
         SendReplyAction::execute($botUser, 'Hello');
 
@@ -258,7 +340,7 @@ class SendReplyActionTest extends TestCase
         Queue::fake();
 
         $externalUser = ExternalUser::create(['external_id' => 'ext-3', 'source' => 'unknown_source']);
-        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'platform' => 'unknown_source']);
+        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'external_user_id' => $externalUser->id, 'platform' => 'unknown_source']);
 
         SendReplyAction::execute($botUser, 'Hello');
 
@@ -271,7 +353,7 @@ class SendReplyActionTest extends TestCase
 
         ExternalSource::create(['name' => 'crm', 'webhook_url' => 'https://crm.example.com/hook']);
         $externalUser = ExternalUser::create(['external_id' => 'crm-user-1', 'source' => 'crm']);
-        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'platform' => 'crm']);
+        $botUser = BotUser::create(['chat_id' => $externalUser->id, 'external_user_id' => $externalUser->id, 'platform' => 'crm']);
 
         SendReplyAction::execute($botUser, 'Test message');
 

@@ -32,8 +32,10 @@ class AvitoVerificationService
      * @param string $clientSecret OAuth client secret.
      * @param string $baseUrl      API base URL (blank → Avito default).
      *
-     * @return array{success: bool, message: string, accountId: string|null, accountName: string|null}
-     *                                                                                                 On success, accountId carries the `id` from accounts/self (the messenger user_id).
+     * @return array{success: bool, message: string, accountId: string|null, accountName: string|null, messengerStatus: string, messengerMessage: string|null}
+     *                                                                                                                                                         messengerStatus is ok|no_subscription|unknown — see {@see self::checkMessengerAccess()}.
+     *                                                                                                                                                         Valid credentials alone do not mean the channel will receive anything.
+     *                                                                                                                                                         On success, accountId carries the `id` from accounts/self (the messenger user_id).
      */
     public function verify(string $clientId, string $clientSecret, string $baseUrl = ''): array
     {
@@ -86,11 +88,15 @@ class AvitoVerificationService
                 return $this->fail('Avito не вернул ID аккаунта.');
             }
 
+            $messenger = $this->checkMessengerAccess($accessToken, (string) $id, $base);
+
             return [
                 'success' => true,
                 'message' => 'Подключение к Avito подтверждено.',
                 'accountId' => (string) $id,
                 'accountName' => ($name = $selfResponse->json('name')) !== null ? (string) $name : null,
+                'messengerStatus' => $messenger['status'],
+                'messengerMessage' => $messenger['message'],
             ];
         } catch (\Throwable) {
             return $this->fail('Не удалось связаться с API Avito.');
@@ -98,12 +104,91 @@ class AvitoVerificationService
     }
 
     /**
+     * Determine whether the account has Avito's paid Messenger API plan.
+     *
+     * Valid credentials are NOT enough for the channel to work: without the
+     * «API мессенджера» subscription Avito accepts the webhook subscription and
+     * reports it in the list, but never delivers a callback, and it replaces the
+     * message text in the chat list with an upsell string. Nothing in the OAuth
+     * or accounts/self responses hints at this, which makes a green "connected"
+     * badge actively misleading.
+     *
+     * Probed through the real paywall — a 402 from the messages endpoint —
+     * rather than by matching Avito's marketing copy, which can change at any
+     * time. The endpoint needs a chat id, so an account with no chats yet cannot
+     * be classified; that case is reported as unknown rather than guessed.
+     *
+     * @param string $accessToken
+     * @param string $userId
+     * @param string $base        API base URL, no trailing slash.
+     *
+     * @return array{status: string, message: string} status: ok|no_subscription|unknown
+     */
+    private function checkMessengerAccess(string $accessToken, string $userId, string $base): array
+    {
+        try {
+            $chats = Http::withToken($accessToken)
+                ->timeout(10)
+                ->get("{$base}/messenger/v2/accounts/{$userId}/chats", ['limit' => 1]);
+
+            if (! $chats->successful()) {
+                return $this->messengerUnknown('не удалось получить список чатов (HTTP ' . $chats->status() . ').');
+            }
+
+            $chatId = $chats->json('chats.0.id');
+
+            if ($chatId === null || $chatId === '') {
+                return $this->messengerUnknown('в аккаунте пока нет чатов, проверить доступ невозможно.');
+            }
+
+            $messages = Http::withToken($accessToken)
+                ->timeout(10)
+                ->get("{$base}/messenger/v3/accounts/{$userId}/chats/{$chatId}/messages", ['limit' => 1]);
+
+            if ($messages->status() === 402) {
+                return [
+                    'status' => 'no_subscription',
+                    'message' => 'Нет подписки «API мессенджера» Avito. Учётные данные верны, но Avito не будет присылать сообщения — ни вебхуком, ни через API. Канал не заработает, пока подписка не оформлена.',
+                ];
+            }
+
+            if ($messages->successful()) {
+                return ['status' => 'ok', 'message' => 'Подписка «API мессенджера» активна.'];
+            }
+
+            return $this->messengerUnknown('неожиданный ответ от API мессенджера (HTTP ' . $messages->status() . ').');
+        } catch (\Throwable) {
+            return $this->messengerUnknown('не удалось связаться с API мессенджера.');
+        }
+    }
+
+    /**
+     * @param string $reason
+     *
+     * @return array{status: string, message: string}
+     */
+    private function messengerUnknown(string $reason): array
+    {
+        return [
+            'status' => 'unknown',
+            'message' => 'Не удалось проверить подписку «API мессенджера»: ' . $reason,
+        ];
+    }
+
+    /**
      * Build a failure result.
      *
-     * @return array{success: bool, message: string, accountId: null, accountName: null}
+     * @return array{success: bool, message: string, accountId: null, accountName: null, messengerStatus: string, messengerMessage: null}
      */
     private function fail(string $message): array
     {
-        return ['success' => false, 'message' => $message, 'accountId' => null, 'accountName' => null];
+        return [
+            'success' => false,
+            'message' => $message,
+            'accountId' => null,
+            'accountName' => null,
+            'messengerStatus' => 'unknown',
+            'messengerMessage' => null,
+        ];
     }
 }

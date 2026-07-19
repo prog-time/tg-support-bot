@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
 use App\Modules\Admin\Jobs\SendAdminDocumentJob;
 use App\Modules\Admin\Services\ChannelStatusService;
+use App\Modules\Avito\DTOs\AvitoTextMessageDto;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
@@ -66,6 +68,7 @@ class SendReplyAction
             $botUser->platform === 'telegram' => self::sendTelegramReply($botUser, $text, $file, $message),
             $botUser->platform === 'vk' => self::sendVkReply($botUser, $text, $file, $message),
             $botUser->platform === 'max' => self::sendMaxReply($botUser, $text, $file, $message),
+            $botUser->platform === 'avito' => self::sendAvitoReply($botUser, $text, $file),
             default => self::sendExternalReply($botUser, $text),
         };
 
@@ -125,6 +128,40 @@ class SendReplyAction
      *
      * @return void
      */
+    /**
+     * Deliver a manager's reply to an Avito user.
+     *
+     * Avito is text-only in this iteration: an attached file cannot be
+     * delivered, so it is logged and skipped rather than silently dropped. When
+     * there is no text either, nothing is sent.
+     *
+     * @param BotUser           $botUser
+     * @param string            $text
+     * @param UploadedFile|null $file
+     *
+     * @return void
+     */
+    private static function sendAvitoReply(BotUser $botUser, string $text, ?UploadedFile $file): void
+    {
+        if ($file !== null) {
+            Log::channel('app')->warning('SendReplyAction: Avito does not support file replies, attachment skipped', [
+                'bot_user_id' => $botUser->id,
+            ]);
+        }
+
+        if ($text === '') {
+            return;
+        }
+
+        SendAvitoSimpleMessageJob::dispatch(
+            AvitoTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
+            ])
+        );
+    }
+
     private static function sendMaxReply(BotUser $botUser, string $text, ?UploadedFile $file, Message $message): void
     {
         if ($file !== null) {

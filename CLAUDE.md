@@ -38,8 +38,9 @@ TG Support Bot is a Laravel 12 application for customer support via Telegram and
 - **Telegram** — main support channel (forum topics in supergroup)
 - **VK** — secondary support channel
 - **Max** — additional support channel
+- **Avito** — built-in support channel (`app/Modules/Avito/`), same tier as Telegram/VK/Max; free, ships with core, text-only in v1 (see `rules/domain/messaging.md`)
 - **External Sources** — third-party integrations via REST API + webhooks
-- **Pluggable platform modules** — additional channels can be shipped as separate (incl. paid, private) Composer packages that implement `App\Contracts\PlatformChannel` and self-register in `App\Platform\PlatformChannelRegistry` — no core edits required (e.g. the paid Avito module)
+- **Pluggable platform modules** — additional channels can still be shipped as separate (incl. paid, private) Composer packages that implement `App\Contracts\PlatformChannel` and self-register in `App\Platform\PlatformChannelRegistry` — no core edits required. Avito is NOT an example of this anymore (it is a built-in module); the registry remains for future third-party platforms
 
 **Key integrations:**
 - AI providers: OpenAI, DeepSeek, GigaChat (draft responses for manager review)
@@ -108,7 +109,7 @@ Data Layer          app/Models/ + PostgreSQL
 - **Queue Pattern** — all Telegram/VK API sends go through Jobs, never synchronously
 - **Middleware Pattern** — webhook validation before controller runs
 - **Contract Pattern** — `ManagerInterfaceContract` decouples manager UI from business logic
-- **Platform Registry Pattern** — `PlatformChannel` + `PlatformChannelRegistry` (`app/Platform/`) let external (incl. paid, private) platform packages self-register delivery for a `platform` key without editing the core
+- **Platform Registry Pattern** — `PlatformChannel` + `PlatformChannelRegistry` (`app/Platform/`) let external (incl. paid, private) platform packages self-register delivery for a `platform` key without editing the core. Built-in channels (Telegram/VK/Max/Avito) do NOT go through this registry — they are wired directly into `DeliverAiAnswerToUser`, `SendReplyAction`, and `SendFeedbackForm` via explicit `case` branches on `platform`. The registry exists for future third-party platforms only
 - **Settings Pattern** — `SettingsService` + `SettingKeyRegistry` (`app/Services/Settings/`) provide a unified `get/set/has/forget` API for runtime-editable settings (DB → optional `config()` fallback, Redis cache, `Crypt` encryption for secrets, type coercion); all channel/AI keys have `config => null` (DB-only, no .env fallback); known keys registered in `SettingKeyRegistry`
 - **Admin Design System Pattern** — Tailwind v4 tokens in `resources/css/app.css @theme` + shared Blade components in `resources/views/components/admin/`. All admin screens — login, chat workspace and Settings — are custom Livewire/Blade on this design system. There is no Filament; authentication uses the standard Laravel `web` guard (login: `App\Livewire\Auth\LoginPage`).
 
@@ -129,6 +130,7 @@ app/
 │       ├── GeneralSettingsPage.php       # /admin/settings/general
 │       ├── IntegrationsListPage.php      # /admin/settings/integrations
 │       ├── IntegrationChannelPage.php   # /admin/settings/integrations/{channel}
+│       ├── AvitoIntegrationPage.php     # /admin/settings/avito (built-in Avito module credentials)
 │       ├── AiAssistantPage.php          # /admin/settings/ai
 │       ├── AiProviderAccessPage.php     # /admin/settings/ai/{provider}
 │       ├── ApiWebhooksPage.php          # /admin/settings/api-webhooks (admin-only, source card list)
@@ -148,10 +150,22 @@ app/
 │   │   ├── Actions/  # SendReplyAction, InviteOperator
 │   │   ├── AdminServiceProvider.php  # All admin routes: login/logout, /admin→/admin/chats, /admin/chats, /admin/settings/*
 │   │   └── Services/ # AdminPanelInterface + ChannelStatusService + WebhookRegistrationService
+│   ├── Avito/        # Avito bot — built-in channel (text-only v1), same tier as Telegram/VK/Max
+│   │   ├── Actions/  # SendMessageAvito, SendBannedMessageAvito, SendStartMessageAvito
+│   │   ├── Api/AvitoMethods.php       # Direct Avito Messenger API calls
+│   │   ├── Console/SetWebhookCommand.php  # php artisan avito:set-webhook
+│   │   ├── Controllers/AvitoBotController.php
+│   │   ├── DTOs/     # AvitoUpdateDto, AvitoTextMessageDto, AvitoAnswerDto
+│   │   ├── Jobs/SendAvitoSimpleMessageJob.php
+│   │   ├── Middleware/AvitoQuery.php  # validates the {secret} URL segment
+│   │   ├── Services/AvitoMessageService.php
+│   │   ├── AvitoServiceProvider.php   # registers routes.php + SetWebhookCommand
+│   │   └── routes.php                 # POST /api/avito/bot/{secret?}
 │   ├── External/     # External Sources integration
 │   │   ├── Actions/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
 │   ├── Telegram/     # Telegram bot
 │   │   ├── Actions/, Api/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
+│   │   ├── Jobs/SendAvitoTelegramMessageJob.php  # forwards Avito messages into the supergroup topic when telegram.group_id is set
 │   │   └── Services/TelegramGroupInterface.php  # ManagerInterfaceContract implementation
 │   └── Vk/           # VK bot
 │       ├── Actions/, Api/, Controllers/, DTOs/, Jobs/, Middleware/, Services/
@@ -177,6 +191,7 @@ resources/
 │           ├── general-settings-page.blade.php        # View for GeneralSettingsPage
 │           ├── integrations-list-page.blade.php       # View for IntegrationsListPage
 │           ├── integration-channel-page.blade.php    # View for IntegrationChannelPage
+│           ├── avito-integration-page.blade.php      # View for AvitoIntegrationPage
 │           ├── ai-assistant-page.blade.php           # View for AiAssistantPage
 │           ├── ai-provider-access-page.blade.php    # View for AiProviderAccessPage
 │           ├── api-webhooks-page.blade.php          # View for ApiWebhooksPage (source card list)
@@ -192,7 +207,14 @@ resources/
 ```bash
 docker compose up -d
 docker exec -it pet composer install
+docker exec -it pet npm ci && docker exec -it pet npm run build
 ```
+
+The bind mount `.:/var/www` shadows `vendor/`, `node_modules/` and
+`public/build/` from the image — they must be installed into the mounted
+directory. Containers run as `www-data` (uid 33); those directories plus
+`storage/` and `bootstrap/cache/` must be owned by uid 33 on the host.
+Full first-time setup: see `README.md` → «Установка через Docker Compose: с нуля».
 
 ### Code formatting (run before every commit)
 ```bash
@@ -262,15 +284,17 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 
 ### Messaging
 
-- All message sending to Telegram/VK must go through **queue Jobs**, never synchronously
+- All message sending to Telegram/VK/Max/Avito must go through **queue Jobs**, never synchronously
 - Every sent/received message must be saved to the `messages` table
 - Banned users receive a banned notification, not a regular reply
 - Each bot user has exactly one Telegram forum topic thread
+- **Avito v1 is text-only.** Incoming attachments are not accepted; a file attached to a manager's reply is skipped with a warning log instead of being sent (see `SendReplyAction::sendAvitoReply()`). Avito Messenger has no inline-keyboard support, so the feedback rating form is a one-way text prompt — the user's star-tap callback is not received, `HandleFeedbackRating` is never invoked for Avito, and the `Feedback` record stays in `status='awaiting_rating'` forever. Rating-callback handling in `AvitoBotController` is marked `TODO` pending confirmation of Avito's callback mechanism
 
 ### Bot Users
 
 - Every interaction creates or finds a `BotUser` record
 - Users are identified by `chat_id` + `platform` (not `chat_id` alone)
+- `bot_users.chat_id` is a `string` column (widened from `unsignedBigInteger`) so pluggable/built-in platforms with non-numeric ids (e.g. Avito's `u2i-...` format) can be stored natively; numeric platforms (telegram/vk/max) still store their id as text
 - Banning sets `is_banned = true`, `banned_at`, and closes the Telegram topic
 
 ### AI Assistant
@@ -289,8 +313,8 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - AI provider credentials (API keys, base URLs, models, tokens, cert path) are managed at `/admin/settings/ai/{provider}` and stored encrypted in the `settings` table via `SettingsService`. The «Проверить и сохранить» button runs a **verify-before-save** flow (`AiProviderAccessPage::connect()` → `App\Modules\Ai\Services\AiProviderVerificationService`): credentials are checked against the provider API (OpenAI/DeepSeek minimal chat-completion; GigaChat OAuth token request) and nothing is persisted on failure — analogous to channel integrations' `WebhookRegistrationService::verifyX()`
 - AI behaviour settings managed from `/admin/settings/ai`: auto-reply toggle and system prompt only. The `ai.rate_limit.*` and `ai.disable_timeout` settings have been removed entirely (no UI, no registry keys, no internal rate-limit logic). The `ai.max_context_tokens`, `ai.confidence_threshold`, `ai.auto_escalation` and `ai.enable_logging` keys are NOT exposed in the UI — `max_context_tokens`/`confidence_threshold` run on their registry defaults (3000 / 0.8); `auto_escalation`/`enable_logging` are vestigial (logging is always on)
 - AI drafts NEVER write to `messages` (only to `ai_messages`); a `messages` row appears only when the message is actually sent to the user — this invariant is what makes "any outgoing row = delivered" safe for the chat-history assembler
-- AI runs across all user platforms (`telegram`, `vk`, `max`). Triggers: `TelegramBotController::maybeDispatchAi()` for TG, `VkMessageService::maybeDispatchAi()` for VK, `MaxMessageService::maybeDispatchAi()` for Max. Triggering is text-only — attachments do not start AI. Gating still goes through `ShouldAiReply` (TG-DTO and platform-agnostic variants share the same rules: AI_ENABLED, `MANAGER_INTERFACE=telegram_group`, replyable text, user active)
-- Final delivery of an AI answer to the user (Accept and auto-reply) is routed by `BotUser.platform` through `App\Modules\Ai\Actions\DeliverAiAnswerToUser` → `SendTelegramMessageJob` / `SendVkMessageJob` / `SendMaxMessageJob`. Any other platform is delegated to a `PlatformChannel` registered in `App\Platform\PlatformChannelRegistry` by a pluggable module (e.g. the paid Avito package). The Accept callback still edits the supergroup draft via `SendTelegramMessageJob` using the AI bot token regardless of user platform
+- AI runs across all user platforms (`telegram`, `vk`, `max`, `avito`). Triggers: `TelegramBotController::maybeDispatchAi()` for TG, `VkMessageService::maybeDispatchAi()` for VK, `MaxMessageService::maybeDispatchAi()` for Max, `AvitoMessageService::maybeDispatchAi()` for Avito. Triggering is text-only — attachments do not start AI. Gating still goes through `ShouldAiReply` (TG-DTO and platform-agnostic variants share the same rules: AI_ENABLED, `MANAGER_INTERFACE=telegram_group`, replyable text, user active)
+- Final delivery of an AI answer to the user (Accept and auto-reply) is routed by `BotUser.platform` through `App\Modules\Ai\Actions\DeliverAiAnswerToUser` → `SendTelegramMessageJob` / `SendVkMessageJob` / `SendMaxMessageJob` / `case 'avito'` (built-in, wired directly — not via the registry). Any other, non-built-in platform is delegated to a `PlatformChannel` registered in `App\Platform\PlatformChannelRegistry` by a pluggable third-party module. The Accept callback still edits the supergroup draft via `SendTelegramMessageJob` using the AI bot token regardless of user platform
 - All channel credentials, AI provider credentials, and AI behaviour settings are stored exclusively in the `settings` DB table (no `.env`/`config()` fallback for these keys — `config => null` in registry). Values must be entered via the admin UI. There is **no env-to-DB seeding command** — configure everything from `/admin/settings/*`.
 
 ### Settings Persistence Layer
@@ -301,13 +325,15 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - Secret keys (`is_secret=true` in `SettingKeyRegistry`) are encrypted with `Crypt::encrypt()` before DB write and decrypted transparently in `get()` — never read the raw `settings.value` column for secret keys
 - Cache: values cached forever in the default store (Redis); invalidated on `set()` / `forget()`
 - Known keys and their types/fallbacks/secret flags are registered in `SettingKeyRegistry::$keys`
-- In-scope keys with `config => null`: all `telegram.*`, `telegram_ai.*`, `vk.*`, `max.*`, all `ai.*` credentials and behaviour settings. Infrastructure keys (`app.manager_interface`) retain their `config()` fallback.
+- In-scope keys with `config => null`: all `telegram.*`, `telegram_ai.*`, `vk.*`, `max.*`, `avito.*`, all `ai.*` credentials and behaviour settings. Infrastructure keys (`app.manager_interface`) retain their `config()` fallback.
+- Avito settings keys: `avito.client_id`, `avito.client_secret`(secret), `avito.user_id` (auto-captured, non-secret), `avito.base_url` (non-secret), `avito.webhook_secret`(secret). There is no `config/avito.php` — credentials are read exclusively via `SettingsService`, no `.env` involved. Register the Avito webhook with `docker exec -it pet php artisan avito:set-webhook` (subscribes `POST /api/avito/bot/{secret}` — where `{secret}` is `avito.webhook_secret` — with the Avito Messenger API)
 - The General Settings screen (`/admin/settings/general`, `app/Livewire/Settings/GeneralSettingsPage.php`) provides a custom Livewire/Blade UI for editing only `telegram.template_topic_name` (Telegram topic-name template). Bot name (`app.bot_name`), description (`app.bot_description`), and the manager-interface radio (`app.manager_interface`) were removed from this screen. Uses the admin design system (Tailwind v4 tokens + `<x-admin.*>` Blade components)
 
 ### Channel Integrations (Settings)
 
-- The Integrations screen (`/admin/settings/integrations`, `app/Livewire/Settings/IntegrationsListPage.php`) shows Telegram, Telegram AI bot, VK, MAX channel cards with connection status computed by `ChannelStatusService`
+- The Integrations screen (`/admin/settings/integrations`, `app/Livewire/Settings/IntegrationsListPage.php`) shows Telegram, Telegram AI bot, VK, MAX, and Avito channel cards. Telegram/Telegram AI/VK/MAX status is computed by `ChannelStatusService`; the Avito card's `avitoConnected` flag is computed independently in `IntegrationsListPage::mount()` (`avito.client_id` + `avito.client_secret` both present)
 - Per-channel config forms (`/admin/settings/integrations/{channel}`, `IntegrationChannelPage`) let admins configure tokens, keys, and identifiers for each platform. Route constraint: `channel` ∈ `telegram|telegram_ai|vk|max`
+- Avito is configured on its own dedicated screen, `/admin/settings/avito` (`AvitoIntegrationPage`, route name `admin.settings.avito`) — NOT through `IntegrationChannelPage`. Fields: `avito.client_id`, `avito.client_secret`(secret), `avito.base_url` (defaults to `https://api.avito.ru`), `avito.webhook_secret`(secret, optional — blank leaves the webhook endpoint open with a warning log). The «Сохранить» button runs a verify-before-save flow (`AvitoVerificationService::verify()`: OAuth `client_credentials` token request + `core/v1/accounts/self`); on success the Avito account id is auto-captured into `avito.user_id` (never entered manually, mirroring `telegram_ai.id`). Admin-only; route is always registered since Avito ships with core (no `class_exists()` gate)
 - Telegram channel page (`channel=telegram`) covers: `telegram.group_id`, `telegram.token`(secret), `telegram.secret_key`(secret) — **all three required** (`IntegrationChannelPage::validateFields()` blocks «Сохранить»/`connect()` with per-field errors until each is filled; fields are pre-filled from settings, so an existing config already satisfies this). The `telegram.template_topic_name` field moved to the General settings screen; the `telegram.bot_id` setting was removed (unused at runtime)
 - Telegram AI bot page (`channel=telegram_ai`) has two inputs: `telegram_ai.token`(secret) and `telegram_ai.secret`(secret) — **both required** (`IntegrationChannelPage::validateFields()` blocks «Сохранить»/`connect()` with per-field errors until filled; fields are pre-filled from settings, so an existing config already satisfies this). The bot's **`telegram_ai.id` and `telegram_ai.username` are captured automatically** from `getMe` during the verify-before-save step and persisted — there is no manual username field. (`telegram_ai.id`/`telegram_ai.username` are informational — not compared at runtime.) Webhook registration uses `php artisan ai-bot:set-webhook` (shown in the instruction panel)
 - Channel config is read/written exclusively via `SettingsService` using the registry keys `telegram.*`, `telegram_ai.*`, `vk.*`, `max.*`
@@ -340,11 +366,12 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 
 ### Feedback Form
 
-- When `CloseTopic::execute()` closes a conversation, `SendFeedbackForm` creates a `Feedback` record (`status='awaiting_rating'`) and sends a 5-star inline-keyboard rating form to the user on their platform (Telegram/VK/Max; other platforms are delegated to a `PlatformChannel` registered in `App\Platform\PlatformChannelRegistry`, e.g. the paid Avito module)
+- When `CloseTopic::execute()` closes a conversation, `SendFeedbackForm` creates a `Feedback` record (`status='awaiting_rating'`) and sends a 5-star inline-keyboard rating form to the user on their platform (Telegram/VK/Max/Avito are built-in `case` branches; any other, non-built-in platform is delegated to a `PlatformChannel` registered in `App\Platform\PlatformChannelRegistry`)
 - Telegram callback_data format: `feedback_rate_{botUserId}_{feedbackId}_{score}` (score 1..5) — handled in `TelegramBotController::checkBotQuery()`
 - VK rating callbacks arrive as `type=message_event` with `payload.command` containing `feedback_rate_*` — handled in `VkBotController`
 - Max rating callbacks arrive as `update_type=message_callback` with `callback.payload` containing `feedback_rate_*` — handled in `MaxBotController`
-- On rating click: `HandleFeedbackRating` saves `rating`, sets `status='completed_no_comment'`, edits message to thank-you text. `comment` stays NULL — no comment capture is implemented
+- **Avito v1 has no inline-keyboard support**, so `SendFeedbackForm`'s `case 'avito'` branch sends the rating request as plain text only — there is no tappable star widget. Consequently no rating callback ever arrives: `HandleFeedbackRating` is never invoked for Avito, and the `Feedback` record stays in `status='awaiting_rating'` indefinitely. Rating-callback handling is left as a `TODO` in `AvitoBotController` pending confirmation of Avito's callback mechanism
+- On rating click (Telegram/VK/Max): `HandleFeedbackRating` saves `rating`, sets `status='completed_no_comment'`, edits message to thank-you text. `comment` stays NULL — no comment capture is implemented
 - Every close event creates a new `Feedback` record — history accumulates
 - `Feedback` records persist in the DB; the legacy admin UI for them was removed (a redesigned screen is pending)
 

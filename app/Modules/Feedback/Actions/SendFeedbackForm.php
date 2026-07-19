@@ -4,6 +4,8 @@ namespace App\Modules\Feedback\Actions;
 
 use App\Models\BotUser;
 use App\Models\Feedback;
+use App\Modules\Avito\DTOs\AvitoTextMessageDto;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
@@ -64,6 +66,10 @@ class SendFeedbackForm
 
             case 'max':
                 $this->sendMax($botUser, $feedback->id);
+                break;
+
+            case 'avito':
+                $this->sendAvito($botUser, $feedback->id);
                 break;
 
             default:
@@ -153,6 +159,34 @@ class SendFeedbackForm
      *
      * @return void
      */
+    /**
+     * Send the rating prompt to an Avito user.
+     *
+     * Avito Messenger has no inline-keyboard equivalent, so this is a plain
+     * text prompt. It is therefore a ONE-WAY prompt: there is no callback to
+     * carry feedback_rate_{botUserId}_{feedbackId}_{score} back, so
+     * HandleFeedbackRating is never reached and the Feedback row stays at
+     * status='awaiting_rating'. Capturing the score would require parsing the
+     * user's next inbound message — deliberately out of scope here.
+     *
+     * @param BotUser $botUser
+     * @param int     $feedbackId
+     *
+     * @return void
+     */
+    private function sendAvito(BotUser $botUser, int $feedbackId): void
+    {
+        $text = 'Пожалуйста, оцените качество нашей поддержки от 1 до 5.';
+
+        SendAvitoSimpleMessageJob::dispatch(
+            AvitoTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
+            ]),
+        );
+    }
+
     private function sendMax(BotUser $botUser, int $feedbackId): void
     {
         // TODO: move text to lang/ru/messages.php when i18n infrastructure is added

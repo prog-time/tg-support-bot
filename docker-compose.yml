@@ -2,7 +2,12 @@ services:
     app:
         build: .
         container_name: pet
-        user: root
+        # Пользователь НЕ переопределяется: из Dockerfile наследуется www-data
+        # (uid 33) — тот же, под которым работают php-fpm воркеры, queue и
+        # scheduler. Раньше здесь стоял `user: root`, из-за чего
+        # `docker exec pet composer install` создавал vendor/ и
+        # bootstrap/cache/*.php от root, и www-data потом не мог их перезаписать.
+        # Каталоги на хосте должны принадлежать uid 33 — см. README, «Установка».
         restart: always
         depends_on:
             - pgdb

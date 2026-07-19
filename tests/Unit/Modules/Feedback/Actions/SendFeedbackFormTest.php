@@ -4,6 +4,7 @@ namespace Tests\Unit\Modules\Feedback\Actions;
 
 use App\Models\BotUser;
 use App\Models\Feedback;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\Feedback\Actions\SendFeedbackForm;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
@@ -123,6 +124,53 @@ class SendFeedbackFormTest extends TestCase
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
         $this->assertEquals($botUser->chat_id, $job->queryParams->user_id);
         $this->assertNotNull($job->queryParams->keyboard);
+    }
+
+    public function test_dispatches_avito_simple_message_job_for_avito_user(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'u2i-400001', 'platform' => 'avito']);
+
+        (new SendFeedbackForm())->execute($botUser);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendAvitoSimpleMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $job = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
+        $this->assertEquals($botUser->chat_id, $job->queryParams->chat_id);
+        $this->assertEquals('Пожалуйста, оцените качество нашей поддержки от 1 до 5.', $job->queryParams->text);
+    }
+
+    /**
+     * Avito Messenger has no inline-keyboard mechanism, so the rating prompt is
+     * a plain one-way text message: there is no callback carrying
+     * feedback_rate_{botUserId}_{feedbackId}_{score} back to the bot, so
+     * HandleFeedbackRating is never reached for this platform. This is a
+     * deliberate, documented limitation (see SendFeedbackForm::sendAvito()) —
+     * this test locks in the current behavior (status stays 'awaiting_rating')
+     * so a future regression test can catch it if that ever changes.
+     */
+    public function test_avito_feedback_has_no_rating_keyboard_and_stays_awaiting_rating(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'u2i-400002', 'platform' => 'avito']);
+
+        (new SendFeedbackForm())->execute($botUser);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendAvitoSimpleMessageJob::class] ?? [];
+        $job = $pushed[0]['job'];
+
+        // No keyboard field exists on AvitoTextMessageDto's outgoing payload.
+        $this->assertArrayNotHasKey('keyboard', $job->queryParams->toArray());
+
+        // With no rating callback possible, the Feedback record is never
+        // transitioned out of 'awaiting_rating' by this flow.
+        $this->assertDatabaseHas('feedbacks', [
+            'bot_user_id' => $botUser->id,
+            'status' => 'awaiting_rating',
+            'rating' => null,
+        ]);
     }
 
     public function test_dispatches_nothing_for_unsupported_platform(): void

@@ -17,6 +17,10 @@ COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 # Установка Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
+# $HOME у www-data — это /var/www, то есть корень проекта. Без этой переменной
+# composer, запущенный внутри контейнера, создаёт кэш в /var/www/.composer и
+# засоряет рабочую копию (а под mutagen — ещё и уезжает на сервер).
+ENV COMPOSER_HOME=/tmp/composer
 
 # WORKDIR до COPY проекта
 WORKDIR /var/www
@@ -38,6 +42,12 @@ RUN mkdir -p storage/logs \
 
 # Отключаем получение git commit info для Laravel/npm
 ENV LARAVEL_GIT_COMMIT=false
+
+# ВНИМАНИЕ: docker-compose.yml монтирует рабочую копию как `.:/var/www`, и этот
+# bind-mount перекрывает /var/www целиком — включая vendor/, node_modules/ и
+# public/build/, собранные ниже. Слои нужны только для запуска образа БЕЗ
+# монтирования; при обычной установке через compose зависимости ставятся внутрь
+# смонтированного каталога отдельными командами (см. README, «Установка»).
 
 # Установка PHP зависимостей
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
