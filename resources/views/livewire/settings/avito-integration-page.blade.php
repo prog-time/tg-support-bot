@@ -150,6 +150,33 @@
                     </div>
                 @endif
 
+                {{-- Paid «API мессенджера» plan. Shown separately from the notice
+                     above because valid credentials do not imply the channel can
+                     receive anything: without this plan Avito accepts the webhook
+                     subscription and then never calls it. --}}
+                @if ($verifySuccess && $messengerMessage)
+                    <div class="mt-3 flex items-start gap-2 rounded-xl border px-4 py-3 text-sm
+                        @if ($messengerStatus === 'ok') border-green-200 bg-green-50 text-green-800
+                        @elseif ($messengerStatus === 'no_subscription') border-red-200 bg-red-50 text-red-800
+                        @else border-amber-200 bg-amber-50 text-amber-800 @endif">
+
+                        @if ($messengerStatus === 'ok')
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0 text-green-500"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        @else
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0
+                                        @if ($messengerStatus === 'no_subscription') text-red-500 @else text-amber-500 @endif"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M6.938 19h10.124A2 2 0 0019 16.27L13.938 7A2 2 0 0010.062 7L5 16.27A2 2 0 006.938 19z" />
+                            </svg>
+                        @endif
+
+                        <span>{{ $messengerMessage }}</span>
+                    </div>
+                @endif
+
             </form>
         </div>
 

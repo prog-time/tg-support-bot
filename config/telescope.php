@@ -141,12 +141,28 @@ return [
 
         Watchers\CacheWatcher::class => [
             'enabled' => env('TELESCOPE_CACHE_WATCHER', true),
-            'hidden' => [],
+
+            // SettingsService caches every setting under `settings.{key}` AFTER
+            // decrypting it, so recording cache values would write bot tokens and
+            // API keys into telescope_entries in plaintext — bypassing the Crypt
+            // encryption they have in the `settings` table.
+            // Matched with Str::is(), so the wildcard also covers keys added
+            // later: no drift when a new secret lands in SettingKeyRegistry.
+            'hidden' => ['settings.*'],
+
             'ignore' => [],
         ],
 
+        // Opt-IN, unlike the package default. This app puts credentials directly
+        // into outbound requests — the Telegram bot token is a URL path segment
+        // (api.telegram.org/bot{token}/…), VK sends access_token as a POST param,
+        // and the AI providers send Authorization headers. This watcher stores
+        // URL, headers and body verbatim, so leaving it on writes every one of
+        // those secrets into telescope_entries in plaintext — defeating the
+        // Crypt encryption they get in the `settings` table.
+        // Turn on only for local debugging against throwaway credentials.
         Watchers\ClientRequestWatcher::class => [
-            'enabled' => env('TELESCOPE_CLIENT_REQUEST_WATCHER', true),
+            'enabled' => env('TELESCOPE_CLIENT_REQUEST_WATCHER', false),
             'ignore_hosts' => [],
         ],
 
