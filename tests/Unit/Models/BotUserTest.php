@@ -129,6 +129,7 @@ class BotUserTest extends TestCase
 
         $botUser = BotUser::create([
             'chat_id' => (string) $externalUser->id,
+            'external_user_id' => $externalUser->id,
             'platform' => 'external_source',
         ]);
 

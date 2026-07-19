@@ -39,7 +39,7 @@ class ExternalTrafficService
             }
 
             $botUser = BotUser::where([
-                'chat_id' => $externalUser->id,
+                'external_user_id' => $externalUser->id,
                 'platform' => $externalUser->source,
             ])->first();
             if (empty($botUser)) {
