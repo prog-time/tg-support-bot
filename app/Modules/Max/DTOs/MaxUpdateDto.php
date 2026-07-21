@@ -15,6 +15,8 @@ readonly class MaxUpdateDto
         public array $rawData,
         public array $listFileUrl,
         public array $listAttachments,
+        public ?string $senderName = null,
+        public ?string $senderUsername = null,
     ) {
     }
 
@@ -30,6 +32,8 @@ readonly class MaxUpdateDto
 
             $attachments = $data['message']['body']['attachments'] ?? [];
 
+            $sender = $data['message']['sender'] ?? [];
+
             return new self(
                 event_id: (string)($data['event_id'] ?? $data['timestamp']),
                 type: $data['update_type'] ?? $data['type'],
@@ -39,6 +43,11 @@ readonly class MaxUpdateDto
                 rawData: $data,
                 listFileUrl: self::getListUrlAttachments($attachments),
                 listAttachments: self::getListAttachments($attachments),
+                // MAX delivers the sender's display name and @username right in the
+                // webhook (per the Bot API sender object), so — unlike VK — no extra
+                // API call is needed to label the conversation.
+                senderName: isset($sender['name']) ? (string) $sender['name'] : null,
+                senderUsername: isset($sender['username']) ? (string) $sender['username'] : null,
             );
         } catch (\Throwable) {
             return null;

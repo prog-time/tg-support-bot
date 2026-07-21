@@ -52,6 +52,35 @@ class MaxMessageServiceTest extends TestCase
         });
     }
 
+    // ── Profile capture (issue #205) ────────────────────────────────────────────
+
+    public function test_incoming_message_stores_sender_name_and_username(): void
+    {
+        // MAX carries the sender's name and @username in the webhook, so the
+        // conversation is labelled with the person rather than a bare id.
+        $payload = $this->basicPayload;
+        $payload['message']['sender']['name'] = 'Иван Петров';
+        $payload['message']['sender']['username'] = 'ivan_p';
+
+        (new MaxMessageService(MaxUpdateDtoMock::getDto($payload)))->handleUpdate();
+
+        $this->botUser->refresh();
+        $this->assertSame('Иван Петров', $this->botUser->display_name);
+        $this->assertSame('ivan_p', $this->botUser->username);
+    }
+
+    public function test_profile_capture_does_not_overwrite_an_existing_name(): void
+    {
+        $this->botUser->update(['display_name' => 'Имя оператора']);
+
+        $payload = $this->basicPayload;
+        $payload['message']['sender']['name'] = 'Иван Петров';
+
+        (new MaxMessageService(MaxUpdateDtoMock::getDto($payload)))->handleUpdate();
+
+        $this->assertSame('Имя оператора', $this->botUser->fresh()->display_name);
+    }
+
     public function test_send_photo_attachment(): void
     {
         $payload = $this->basicPayload;
