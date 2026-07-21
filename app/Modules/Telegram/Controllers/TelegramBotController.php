@@ -22,6 +22,7 @@ use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Jobs\TopicCreateJob;
 use App\Modules\Telegram\Services\Tg\TgEditMessageService;
 use App\Modules\Telegram\Services\Tg\TgMessageService;
+use App\Modules\Telegram\Services\TgEmail\TgEmailMessageService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
 use App\Modules\Telegram\Services\TgMax\TgMaxMessageService;
@@ -134,6 +135,10 @@ class TelegramBotController
 
                 case 'max':
                     $this->controllerPlatformMax();
+                    break;
+
+                case 'email':
+                    $this->controllerPlatformEmail();
                     break;
 
                 case 'ignore':
@@ -323,6 +328,23 @@ class TelegramBotController
 
     /**
      * Controller external message.
+     *
+     * @return void
+     */
+    private function controllerPlatformEmail(): void
+    {
+        switch ($this->dataHook->typeQuery) {
+            case 'message':
+                (new TgEmailMessageService($this->dataHook))->handleUpdate();
+                break;
+
+            default:
+                throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
+        }
+    }
+
+    /**
+     * Controller external platform message
      *
      * @return void
      */
