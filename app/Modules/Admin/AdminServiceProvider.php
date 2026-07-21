@@ -12,6 +12,7 @@ use App\Livewire\Settings\ApiWebhooksPage;
 use App\Livewire\Settings\AutoRepliesPage;
 use App\Livewire\Settings\AutoReplyFormPage;
 use App\Livewire\Settings\AvitoIntegrationPage;
+use App\Livewire\Settings\EmailIntegrationPage;
 use App\Livewire\Settings\GeneralSettingsPage;
 use App\Livewire\Settings\IntegrationChannelPage;
 use App\Livewire\Settings\IntegrationsListPage;
@@ -173,6 +174,14 @@ class AdminServiceProvider extends ServiceProvider
                 // (same as Telegram/VK/Max), so the route is always registered.
                 Route::get('/avito', AvitoIntegrationPage::class)
                     ->name('avito');
+
+                // Email integration screen — Email is a built-in core module
+                // (IMAP polling + SMTP sending), same as Avito above: a
+                // dedicated screen rather than the generic {channel} route,
+                // since its fields (IMAP/SMTP host/port/encryption) don't fit
+                // IntegrationChannelPage's telegram|telegram_ai|vk|max shape.
+                Route::get('/email', EmailIntegrationPage::class)
+                    ->name('email');
             });
     }
 }

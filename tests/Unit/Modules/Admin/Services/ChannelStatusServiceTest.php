@@ -24,7 +24,7 @@ class ChannelStatusServiceTest extends TestCase
 
     // ── all() ────────────────────────────────────────────────────────────────
 
-    public function test_all_returns_all_four_channels(): void
+    public function test_all_returns_all_five_channels(): void
     {
         $settings = $this->makeSettings([]);
         $service = new ChannelStatusService($settings);
@@ -35,6 +35,7 @@ class ChannelStatusServiceTest extends TestCase
         $this->assertArrayHasKey('telegram_ai', $result);
         $this->assertArrayHasKey('vk', $result);
         $this->assertArrayHasKey('max', $result);
+        $this->assertArrayHasKey('email', $result);
     }
 
     // ── telegram() ───────────────────────────────────────────────────────────
@@ -212,6 +213,46 @@ class ChannelStatusServiceTest extends TestCase
         $service = new ChannelStatusService($settings);
 
         $this->assertFalse($service->max()['connected']);
+    }
+
+    // ── email() ──────────────────────────────────────────────────────────────
+
+    public function test_email_connected_when_all_required_keys_set(): void
+    {
+        $settings = $this->makeSettings([
+            'email.imap_host' => 'imap.example.com',
+            'email.smtp_host' => 'smtp.example.com',
+            'email.username' => 'support@example.com',
+            'email.password' => 'secret',
+        ]);
+        $service = new ChannelStatusService($settings);
+
+        $status = $service->email();
+
+        $this->assertTrue($status['connected']);
+        $this->assertSame('Подключён', $status['label']);
+    }
+
+    public function test_email_not_connected_when_smtp_host_missing(): void
+    {
+        $settings = $this->makeSettings([
+            'email.imap_host' => 'imap.example.com',
+            'email.smtp_host' => '',
+            'email.username' => 'support@example.com',
+            'email.password' => 'secret',
+        ]);
+        $service = new ChannelStatusService($settings);
+
+        $this->assertFalse($service->email()['connected']);
+        $this->assertSame('Не настроен', $service->email()['label']);
+    }
+
+    public function test_email_not_connected_when_all_keys_missing(): void
+    {
+        $settings = $this->makeSettings([]);
+        $service = new ChannelStatusService($settings);
+
+        $this->assertFalse($service->email()['connected']);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

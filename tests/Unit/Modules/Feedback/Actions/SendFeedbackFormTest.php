@@ -5,6 +5,7 @@ namespace Tests\Unit\Modules\Feedback\Actions;
 use App\Models\BotUser;
 use App\Models\Feedback;
 use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Feedback\Actions\SendFeedbackForm;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
@@ -166,6 +167,42 @@ class SendFeedbackFormTest extends TestCase
 
         // With no rating callback possible, the Feedback record is never
         // transitioned out of 'awaiting_rating' by this flow.
+        $this->assertDatabaseHas('feedbacks', [
+            'bot_user_id' => $botUser->id,
+            'status' => 'awaiting_rating',
+            'rating' => null,
+        ]);
+    }
+
+    public function test_dispatches_email_message_job_for_email_user(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'feedback@example.com', 'platform' => 'email']);
+
+        (new SendFeedbackForm())->execute($botUser);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendEmailMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $job = $pushed[0]['job'];
+        $this->assertEquals($botUser->chat_id, $job->queryParams->to);
+        $this->assertEquals('Пожалуйста, оцените качество нашей поддержки от 1 до 5.', $job->queryParams->text);
+    }
+
+    /**
+     * Email has no inline-keyboard mechanism either (like Avito), so the
+     * rating prompt is a plain one-way text message: there is no callback
+     * carrying feedback_rate_{botUserId}_{feedbackId}_{score} back, so
+     * HandleFeedbackRating is never reached for this platform. This is a
+     * deliberate, documented limitation (see SendFeedbackForm::sendEmail()) —
+     * this test locks in the current behavior (status stays 'awaiting_rating').
+     */
+    public function test_email_feedback_stays_awaiting_rating(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'feedback2@example.com', 'platform' => 'email']);
+
+        (new SendFeedbackForm())->execute($botUser);
+
         $this->assertDatabaseHas('feedbacks', [
             'bot_user_id' => $botUser->id,
             'status' => 'awaiting_rating',

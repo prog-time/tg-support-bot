@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Admin\Actions\SendReplyAction;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
 use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
@@ -304,6 +305,70 @@ class SendReplyActionTest extends TestCase
         SendReplyAction::execute($botUser, '');
 
         Queue::assertNotPushed(SendAvitoSimpleMessageJob::class);
+    }
+
+    // ── Email ──────────────────────────────────────────────────────────────────
+
+    public function test_saves_outgoing_message_for_email_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, 'Hello Email');
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'email',
+            'message_type' => 'outgoing',
+            'text' => 'Hello Email',
+        ]);
+    }
+
+    public function test_dispatches_email_simple_job_with_chat_id_and_text_for_email_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user2@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, 'Hello Email');
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job) use ($botUser): bool {
+            return $job->queryParams->to === $botUser->chat_id
+                && $job->queryParams->text === 'Hello Email';
+        });
+        Queue::assertNotPushed(SendTelegramSimpleQueryJob::class);
+        Queue::assertNotPushed(SendWebhookMessage::class);
+    }
+
+    public function test_email_file_attachment_is_skipped_with_warning_but_text_still_sent(): void
+    {
+        Queue::fake();
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('SendReplyAction: Email does not support file replies yet, attachment skipped', Mockery::type('array'));
+
+        $botUser = BotUser::create(['chat_id' => 'user3@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10);
+
+        SendReplyAction::execute($botUser, 'Text with skipped file', $file);
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job): bool {
+            return $job->queryParams->text === 'Text with skipped file';
+        });
+    }
+
+    public function test_email_empty_text_without_file_dispatches_nothing(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user4@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, '');
+
+        Queue::assertNotPushed(SendEmailMessageJob::class);
     }
 
     public function test_dispatches_webhook_for_external_user_with_webhook_url(): void

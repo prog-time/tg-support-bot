@@ -6,6 +6,9 @@ use App\Models\BotUser;
 use App\Models\Feedback;
 use App\Modules\Avito\DTOs\AvitoTextMessageDto;
 use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\DTOs\EmailMessageDto;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
@@ -70,6 +73,10 @@ class SendFeedbackForm
 
             case 'avito':
                 $this->sendAvito($botUser, $feedback->id);
+                break;
+
+            case 'email':
+                $this->sendEmail($botUser, $feedback->id);
                 break;
 
             default:
@@ -183,6 +190,38 @@ class SendFeedbackForm
                 'methodQuery' => 'sendMessage',
                 'chat_id' => $botUser->chat_id,
                 'text' => $text,
+            ]),
+        );
+    }
+
+    /**
+     * Send the rating prompt to an email user.
+     *
+     * Email has no inline-keyboard equivalent (like Avito), so this is a
+     * plain text prompt. It is therefore a ONE-WAY prompt: there is no
+     * callback to carry feedback_rate_{botUserId}_{feedbackId}_{score} back,
+     * so HandleFeedbackRating is never reached and the Feedback row stays at
+     * status='awaiting_rating'. Capturing the score would require parsing the
+     * user's next inbound email reply — deliberately out of scope here.
+     *
+     * @param BotUser $botUser
+     * @param int     $feedbackId
+     *
+     * @return void
+     */
+    private function sendEmail(BotUser $botUser, int $feedbackId): void
+    {
+        $text = 'Пожалуйста, оцените качество нашей поддержки от 1 до 5.';
+
+        $headers = app(EmailThreadStore::class)->replyHeaders($botUser->id);
+
+        SendEmailMessageJob::dispatch(
+            EmailMessageDto::from([
+                'to' => $botUser->chat_id,
+                'subject' => $headers['subject'],
+                'text' => $text,
+                'inReplyTo' => $headers['inReplyTo'],
+                'references' => $headers['references'],
             ]),
         );
     }

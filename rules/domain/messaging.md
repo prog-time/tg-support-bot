@@ -8,7 +8,7 @@
 
 ## 1. What is this domain?
 
-The Messaging domain is responsible for receiving, routing, storing, and forwarding messages between end users (on Telegram, VK, Max, Avito, or External platforms) and the support team (working in a Telegram supergroup with forum topics and/or the `/admin/chats` workspace).
+The Messaging domain is responsible for receiving, routing, storing, and forwarding messages between end users (on Telegram, VK, Max, Avito, Email, or External platforms) and the support team (working in a Telegram supergroup with forum topics and/or the `/admin/chats` workspace).
 
 This domain owns: message creation, message routing, platform-specific sending logic, file handling, keyboard construction.
 
@@ -23,7 +23,7 @@ This domain does not own: user banning (see `domain/bot-users.md`), AI response 
 | Forum Topic | A dedicated thread in a Telegram supergroup for each user's conversation |
 | Incoming Message | A message sent by the user to the bot |
 | Outgoing Message | A message sent by the support team to the user |
-| Platform | Source of a message: `telegram`, `vk`, `max`, `avito`, `external_source` |
+| Platform | Source of a message: `telegram`, `vk`, `max`, `avito`, `email`, `external_source` |
 | Job | Asynchronous queue task that performs the actual API send |
 | Webhook | HTTP callback sent to an External Source when the team replies |
 | Button | Interactive element attached to a message (callback, URL, phone, text) |
@@ -83,14 +83,19 @@ _Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ not
 - **Max incoming (group OFF):** `MaxMessageService::handleUpdate()` → `persistIncomingMaxMessage()` persists directly.
 - **Avito incoming (group ON, `telegram.group_id` set):** `AvitoMessageService::handleUpdate()` → `SendAvitoTelegramMessageJob` (in `App\Modules\Telegram\Jobs`) forwards into the supergroup topic → `saveMessage()` persists after the group send.
 - **Avito incoming (group OFF):** `AvitoMessageService::handleUpdate()` persists the row directly (no supergroup forward), then may dispatch AI.
+- **Email incoming (group ON, `telegram.group_id` set):** `EmailMessageService::handleUpdate()` (dispatched from `email:poll`, not a webhook) → `SendEmailTelegramMessageJob` (in `App\Modules\Telegram\Jobs`) forwards into the supergroup topic → `saveMessage()` persists after the group send.
+- **Email incoming (group OFF):** `EmailMessageService::handleUpdate()` persists the row directly (no supergroup forward), then may dispatch AI.
 - **External incoming:** `TgExternalMessageService::handleUpdate()` → inline `saveMessage()` — always persists regardless of group state (the group is only used for `editForumTopic` icon update, not for the message row).
-_Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ persistIncomingTelegramMessage()`, `app/Modules/Vk/Services/VkMessageService.php @ persistIncomingVkMessage()`, `app/Modules/Max/Services/MaxMessageService.php @ persistIncomingMaxMessage()`, `app/Modules/Avito/Services/AvitoMessageService.php @ handleUpdate()`
+_Enforced in:_ `app/Modules/Telegram/Controllers/TelegramBotController.php @ persistIncomingTelegramMessage()`, `app/Modules/Vk/Services/VkMessageService.php @ persistIncomingVkMessage()`, `app/Modules/Max/Services/MaxMessageService.php @ persistIncomingMaxMessage()`, `app/Modules/Avito/Services/AvitoMessageService.php @ handleUpdate()`, `app/Modules/Email/Services/EmailMessageService.php @ handleUpdate()`
 
 **BR-015 (Avito v1 limitations)** — Avito is a built-in text-only channel (`app/Modules/Avito/`), registered directly (not via `PlatformChannelRegistry`) in `SendReplyAction`, `DeliverAiAnswerToUser`, and `SendFeedbackForm` (`case 'avito'` branches). Known v1 limitations, documented honestly rather than glossed over:
 - **No attachments.** Incoming attachments are not accepted by `AvitoMessageService`. A file attached to a manager's reply is silently skipped with a warning log (`SendReplyAction::sendAvitoReply()`) instead of being delivered — text still sends.
 - **No inline keyboards.** Avito Messenger has no button/keyboard mechanism, so the feedback rating form (`SendFeedbackForm`'s `case 'avito'`) is a one-way plain-text prompt with no tappable stars. No rating callback is ever received; `HandleFeedbackRating` is never invoked for Avito, and the `Feedback` record permanently stays `status='awaiting_rating'`.
 - **Callback handling is a TODO.** `AvitoBotController` has an explicit `TODO` marking where feedback-rating (and any future) callback routing would go once Avito's callback mechanism is confirmed.
 _Enforced in:_ `app/Modules/Admin/Actions/SendReplyAction.php @ sendAvitoReply()`, `app/Modules/Feedback/Actions/SendFeedbackForm.php`, `app/Modules/Avito/Controllers/AvitoBotController.php`
+
+**BR-016 (Email channel)** — Email is a built-in channel (`app/Modules/Email/`) with no HTTP webhook: incoming mail arrives via IMAP polling (`php artisan email:poll`, scheduled every minute in `routes/console.php`) instead of a Controller. `PollInboxCommand` plays the webhook-controller role: resolve/create the `BotUser` (`platform='email'`, `chat_id`=sender email address), short-circuit banned users, hand the update to `EmailMessageService`. A message is marked `\Seen` on the mail server ONLY after it was fully processed (`EmailMessageService::handledSuccessfully()`) — a mid-run failure leaves it unseen so the next poll retries it; nothing is ever marked seen speculatively, and nothing is ever double-processed. Outgoing replies go through the single `SendEmailMessageJob` (SMTP, via `EmailMailer`) with `In-Reply-To`/`References`/`Subject: Re: ...` headers resolved from `EmailThreadStore` (a Cache-backed, TTL'd record of the last inbound `Message-ID` + Subject per `BotUser` — there is no `messages.message_id` DB column, so this is a deliberate non-durable middle ground; see the Completion Report on issue #214 for the reasoning). Same v1 limitations as Avito: **no attachments** (text-only; HTML bodies are stripped to plain text for the manager) and **no inline keyboards** (the feedback rating prompt in `SendFeedbackForm`'s `case 'email'` is a one-way plain-text prompt — `HandleFeedbackRating` is never reached for this platform).
+_Enforced in:_ `app/Modules/Email/Console/PollInboxCommand.php`, `app/Modules/Email/Services/EmailMessageService.php`, `app/Modules/Email/Services/EmailThreadStore.php`, `app/Modules/Email/Jobs/SendEmailMessageJob.php`, `app/Modules/Admin/Actions/SendReplyAction.php @ sendEmailReply()`, `app/Modules/Feedback/Actions/SendFeedbackForm.php @ sendEmail()`
 
 **BR-005a** — Each user has at most one Telegram forum topic (`BotUser.topic_id`). The topic is created lazily: when the supergroup is configured and a message arrives for a user without a topic, `TopicCreateJob` is dispatched.
 _Enforced in:_ `app/Modules/Telegram/Jobs/TopicCreateJob.php`, `app/Models/BotUser.php @ topic_id`
@@ -150,6 +155,7 @@ stateDiagram-v2
 | `telegram` | Telegram | `TgMessageService` | `SendTelegramMessageJob` |
 | `vk` | VK + Telegram mirror | `TgVkMessageService`, `VkMessageService` | `SendVkMessageJob`, `SendVkTelegramMessageJob` |
 | `avito` | Avito + Telegram mirror (when configured) | `AvitoMessageService` | `SendAvitoSimpleMessageJob`, `SendAvitoTelegramMessageJob` |
+| `email` | Email (SMTP) + Telegram mirror (when configured) | `EmailMessageService` (polled, not webhook) | `SendEmailMessageJob`, `SendEmailTelegramMessageJob` |
 | `external_source` | Telegram + Webhook | `TgExternalMessageService` | `SendExternalTelegramMessageJob`, `SendWebhookMessage` |
 
 ---

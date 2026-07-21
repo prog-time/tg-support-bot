@@ -10,6 +10,9 @@ use App\Modules\Admin\Jobs\SendAdminDocumentJob;
 use App\Modules\Admin\Services\ChannelStatusService;
 use App\Modules\Avito\DTOs\AvitoTextMessageDto;
 use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\DTOs\EmailMessageDto;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
@@ -69,6 +72,7 @@ class SendReplyAction
             $botUser->platform === 'vk' => self::sendVkReply($botUser, $text, $file, $message),
             $botUser->platform === 'max' => self::sendMaxReply($botUser, $text, $file, $message),
             $botUser->platform === 'avito' => self::sendAvitoReply($botUser, $text, $file),
+            $botUser->platform === 'email' => self::sendEmailReply($botUser, $text, $file),
             default => self::sendExternalReply($botUser, $text),
         };
 
@@ -158,6 +162,44 @@ class SendReplyAction
                 'methodQuery' => 'sendMessage',
                 'chat_id' => $botUser->chat_id,
                 'text' => $text,
+            ])
+        );
+    }
+
+    /**
+     * Deliver a manager's reply to an email user.
+     *
+     * Email is text-only in this iteration: an attached file cannot be
+     * delivered, so it is logged and skipped rather than silently dropped
+     * (mirrors sendAvitoReply). When there is no text either, nothing is sent.
+     *
+     * @param BotUser           $botUser
+     * @param string            $text
+     * @param UploadedFile|null $file
+     *
+     * @return void
+     */
+    private static function sendEmailReply(BotUser $botUser, string $text, ?UploadedFile $file): void
+    {
+        if ($file !== null) {
+            Log::channel('app')->warning('SendReplyAction: Email does not support file replies yet, attachment skipped', [
+                'bot_user_id' => $botUser->id,
+            ]);
+        }
+
+        if ($text === '') {
+            return;
+        }
+
+        $headers = app(EmailThreadStore::class)->replyHeaders($botUser->id);
+
+        SendEmailMessageJob::dispatch(
+            EmailMessageDto::from([
+                'to' => $botUser->chat_id,
+                'subject' => $headers['subject'],
+                'text' => $text,
+                'inReplyTo' => $headers['inReplyTo'],
+                'references' => $headers['references'],
             ])
         );
     }
