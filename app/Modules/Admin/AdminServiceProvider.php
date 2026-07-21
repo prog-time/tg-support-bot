@@ -2,6 +2,7 @@
 
 namespace App\Modules\Admin;
 
+use App\Livewire\Admin\ThanksPage;
 use App\Livewire\Auth\LoginPage;
 use App\Livewire\Chat\ConversationPage;
 use App\Livewire\Settings\AiAssistantPage;
@@ -94,6 +95,15 @@ class AdminServiceProvider extends ServiceProvider
             ->get('/admin/team-member-avatars/{user}', [UserAvatarController::class, 'show'])
             ->name('admin.team-member-avatar')
             ->where('user', '[0-9]+');
+
+        // «Поблагодарить автора» — static support/thanks page.
+        // Deliberately NOT under the /admin/settings prefix: it is not a setting
+        // and must stay reachable by every signed-in operator, whereas
+        // EnsureSettingsAccess redirects non-admins away from all settings
+        // screens except «Основные».
+        Route::middleware(['web', 'auth'])
+            ->get('/admin/thanks', ThanksPage::class)
+            ->name('admin.thanks');
 
         // Custom Livewire Settings routes.
         // Prefix: /admin/settings.
