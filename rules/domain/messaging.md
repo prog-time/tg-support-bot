@@ -95,6 +95,9 @@ _Enforced in:_ `app/Modules/Admin/Actions/SendReplyAction.php @ sendAvitoReply()
 **BR-005a** — Each user has at most one Telegram forum topic (`BotUser.topic_id`). The topic is created lazily: when the supergroup is configured and a message arrives for a user without a topic, `TopicCreateJob` is dispatched.
 _Enforced in:_ `app/Modules/Telegram/Jobs/TopicCreateJob.php`, `app/Models/BotUser.php @ topic_id`
 
+**BR-005b** — The forum-topic name is rendered from the `telegram.template_topic_name` template (params `{first_name} {last_name} {username} {name} {display_name} {id} {platform}`) against the user's identity. The identity is resolved **per platform**, NOT via Telegram `getChat` for everyone: `telegram` is fetched live from `getChat`; every other platform (`vk`, `max`, `avito`, …) is labelled from the stored `BotUser` profile (`display_name` / `username`). MAX captures the name/`username` straight from its webhook (`MaxMessageService::captureProfile()`); VK is enriched on demand via `users.get` inside `TopicCreateJob` when `display_name` is still empty. A template param that has no value collapses to an empty string (a single-name profile against `{first_name} {last_name}` still resolves), and only when NO name and NO username exist does the topic fall back to `#{chat_id} ({platform})`. Before, `getChat` was called for every platform and failed for non-Telegram ids, so VK/MAX topics always fell back to the bare id (issue #205).
+_Enforced in:_ `app/Modules/Telegram/Jobs/TopicCreateJob.php @ generateNameTopic/getPartsGenerateName`, `app/Modules/Max/Services/MaxMessageService.php @ captureProfile`, `app/Jobs/EnrichBotUserProfileJob.php`
+
 **BR-006** — If a forum topic does not exist when forwarding a message to the supergroup, `TopicCreateJob` must be dispatched before the message send job to ensure the topic is ready.
 _Enforced in:_ `app/Modules/Telegram/Jobs/TopicCreateJob.php`
 
