@@ -150,10 +150,12 @@ class EmailImapClient implements EmailInboxReader
 
             $text = $this->extractText($message);
 
+            $personal = $this->decodeMimeHeader((string) $from->personal);
+
             return new EmailUpdateDto(
                 chatId: $from->mail,
-                senderName: $from->personal !== '' ? $from->personal : $from->mail,
-                subject: (string) $message->subject,
+                senderName: $personal !== '' ? $personal : $from->mail,
+                subject: $this->decodeMimeHeader((string) $message->subject),
                 text: $text !== '' ? trim($text) : null,
                 messageId: (string) $message->message_id,
                 references: $this->referencesHeader($message),
@@ -165,6 +167,29 @@ class EmailImapClient implements EmailInboxReader
 
             return null;
         }
+    }
+
+    /**
+     * Decode an RFC 2047 «encoded-word» header value (e.g. a From name or a
+     * Subject like «=?UTF-8?B?…?=») to plain UTF-8.
+     *
+     * webklex hands some header fields back still encoded, which otherwise
+     * surfaces verbatim as the conversation title. A value that is not encoded
+     * passes through unchanged; on a decode error the original is kept.
+     *
+     * @param string $value
+     *
+     * @return string
+     */
+    private function decodeMimeHeader(string $value): string
+    {
+        if ($value === '' || !str_contains($value, '=?')) {
+            return $value;
+        }
+
+        $decoded = iconv_mime_decode($value, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, 'UTF-8');
+
+        return $decoded !== false ? trim($decoded) : $value;
     }
 
     /**
