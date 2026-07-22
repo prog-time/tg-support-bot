@@ -79,6 +79,13 @@ class EmailMailer
                 if (!empty($dto->references)) {
                     $headers->addTextHeader('References', '<' . $dto->references . '>');
                 }
+
+                if (!empty($dto->attachmentPath) && is_file($dto->attachmentPath)) {
+                    $message->attach($dto->attachmentPath, array_filter([
+                        'as' => $dto->attachmentName,
+                        'mime' => $dto->attachmentMime,
+                    ]));
+                }
             });
 
             return true;
