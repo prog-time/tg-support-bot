@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Admin\Actions\SendReplyAction;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
 use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
@@ -304,6 +305,108 @@ class SendReplyActionTest extends TestCase
         SendReplyAction::execute($botUser, '');
 
         Queue::assertNotPushed(SendAvitoSimpleMessageJob::class);
+    }
+
+    // ── Email ──────────────────────────────────────────────────────────────────
+
+    public function test_saves_outgoing_message_for_email_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, 'Hello Email');
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'email',
+            'message_type' => 'outgoing',
+            'text' => 'Hello Email',
+        ]);
+    }
+
+    public function test_dispatches_email_simple_job_with_chat_id_and_text_for_email_user(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user2@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, 'Hello Email');
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job) use ($botUser): bool {
+            return $job->queryParams->to === $botUser->chat_id
+                && $job->queryParams->text === 'Hello Email';
+        });
+        Queue::assertNotPushed(SendTelegramSimpleQueryJob::class);
+        Queue::assertNotPushed(SendWebhookMessage::class);
+    }
+
+    public function test_email_file_attachment_is_sent_as_smtp_attachment(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $botUser = BotUser::create(['chat_id' => 'user3@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
+
+        SendReplyAction::execute($botUser, 'Text with file', $file);
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job) use ($botUser): bool {
+            return $job->queryParams->to === $botUser->chat_id
+                && $job->queryParams->text === 'Text with file'
+                && $job->queryParams->attachmentName === 'doc.pdf'
+                && $job->queryParams->attachmentMime === 'application/pdf'
+                && is_string($job->queryParams->attachmentPath)
+                && is_file($job->queryParams->attachmentPath);
+        });
+    }
+
+    public function test_records_local_attachment_for_email_photo_reply(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $botUser = BotUser::create(['chat_id' => 'user5@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->image('photo.jpg');
+
+        SendReplyAction::execute($botUser, '', $file);
+
+        // Regression: the outgoing file must be stored on the private disk and
+        // recorded by its path so the admin chat workspace can render it instead
+        // of showing only the «Вложение» placeholder — email has no provider
+        // file id to fall back on, unlike Telegram.
+        $attachment = \App\Models\MessageAttachment::where('file_name', 'photo.jpg')->first();
+        $this->assertNotNull($attachment);
+        $this->assertSame('photo', $attachment->file_type);
+        $this->assertStringStartsWith('chat-attachments/', (string) $attachment->file_id);
+        Storage::disk('local')->assertExists($attachment->file_id);
+    }
+
+    public function test_email_file_only_reply_still_dispatches_without_text(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $botUser = BotUser::create(['chat_id' => 'user6@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
+
+        SendReplyAction::execute($botUser, '', $file);
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job): bool {
+            return $job->queryParams->text === ''
+                && $job->queryParams->attachmentName === 'doc.pdf';
+        });
+    }
+
+    public function test_email_empty_text_without_file_dispatches_nothing(): void
+    {
+        Queue::fake();
+
+        $botUser = BotUser::create(['chat_id' => 'user4@example.com', 'platform' => 'email']);
+
+        SendReplyAction::execute($botUser, '');
+
+        Queue::assertNotPushed(SendEmailMessageJob::class);
     }
 
     public function test_dispatches_webhook_for_external_user_with_webhook_url(): void

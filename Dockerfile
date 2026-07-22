@@ -45,9 +45,11 @@ ENV LARAVEL_GIT_COMMIT=false
 
 # ВНИМАНИЕ: docker-compose.yml монтирует рабочую копию как `.:/var/www`, и этот
 # bind-mount перекрывает /var/www целиком — включая vendor/, node_modules/ и
-# public/build/, собранные ниже. Слои нужны только для запуска образа БЕЗ
-# монтирования; при обычной установке через compose зависимости ставятся внутрь
-# смонтированного каталога отдельными командами (см. README, «Установка»).
+# public/build/, собранные ниже. Эти слои нужны только для запуска образа БЕЗ
+# монтирования (например, продакшен-деплой самого образа). При обычной
+# установке через compose то же самое (composer install / npm run build)
+# выполняет docker/scripts/entrypoint.sh при первом старте контейнера `app` —
+# см. его комментарий и README, «Установка».
 
 # Установка PHP зависимостей
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -60,4 +62,5 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && \
 USER www-data
 
 EXPOSE 9000
+ENTRYPOINT ["/bin/bash", "/var/www/docker/scripts/entrypoint.sh"]
 CMD ["php-fpm"]

@@ -13,3 +13,9 @@ Artisan::command('inspire', function () {
 // otherwise wire a cron (`* * * * * php artisan schedule:run`) or run
 // `php artisan telescope:prune` manually.
 Schedule::command('telescope:prune --hours=24')->daily();
+
+// Email channel: poll the configured mailbox for unread support messages
+// (IMAP). No-op when email.imap_host/username/password are not configured
+// (see App\Modules\Email\Console\PollInboxCommand::isConfigured()). Runs via
+// the `scheduler` docker service, same as telescope:prune above.
+Schedule::command('email:poll')->everyMinute()->withoutOverlapping();

@@ -15,7 +15,8 @@
         "monolog/monolog": "^3.9",
         "prog-time/max-php-sdk": "^1.0",
         "prog-time/tg-logger": "^1.0",
-        "spatie/laravel-data": "^4.14"
+        "spatie/laravel-data": "^4.14",
+        "webklex/php-imap": "^6.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

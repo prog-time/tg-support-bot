@@ -80,6 +80,10 @@ services:
             - redis
         env_file:
             - .env
+        environment:
+            # Tells docker/scripts/entrypoint.sh to wait for the `app`
+            # container's composer/npm install instead of racing it.
+            - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www
@@ -99,6 +103,10 @@ services:
             - redis
         env_file:
             - .env
+        environment:
+            # Tells docker/scripts/entrypoint.sh to wait for the `app`
+            # container's composer/npm install instead of racing it.
+            - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www

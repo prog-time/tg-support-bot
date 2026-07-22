@@ -1,4 +1,4 @@
-{{-- Раздел «Интеграции»: каналы сгруппированы — мессенджеры и (виджет + ИИ-ассистент) --}}
+{{-- Раздел «Интеграции»: каналы сгруппированы — источники и (виджет + ИИ-ассистент) --}}
 <div class="p-4 lg:p-8 lg:max-w-3xl">
 
     {{-- ── Page header --}}
@@ -7,12 +7,12 @@
         <p class="mt-0.5 text-sm text-text-secondary">Управление каналами поддержки</p>
     </div>
 
-    {{-- ── Channel cards — grouped: messengers and AI assistant ──────────── --}}
+    {{-- ── Channel cards — grouped: sources and AI assistant ──────────── --}}
     <div class="space-y-6">
 
-        {{-- ══ Группа 1: Мессенджеры ══════════════════════════════════════════ --}}
+        {{-- ══ Группа 1: Источники ══════════════════════════════════════════ --}}
         <div>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Мессенджеры</h2>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Источники</h2>
             <div class="space-y-3">
 
                 {{-- Telegram --}}
@@ -160,6 +160,39 @@
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
                         Интеграция с Avito — приём сообщений из объявлений по подписке.
+                    </p>
+                </a>
+
+                {{-- Email --}}
+                <a href="{{ route('admin.settings.email') }}"
+                   class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="#6B7280" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-text-primary">Email</p>
+                                @if ($channelStatuses['email']['connected'])
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#34C759">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:#34C759"></span>
+                                        Подключено
+                                    </span>
+                                @else
+                                    <span class="text-xs text-text-secondary">Не подключён</span>
+                                @endif
+                            </div>
+                        </div>
+                        @if (! $channelStatuses['email']['connected'])
+                            <span class="inline-flex items-center justify-center rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white">
+                                Подключить
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
+                        Интеграция с почтой — приём писем по IMAP, ответы по SMTP.
                     </p>
                 </a>
 
