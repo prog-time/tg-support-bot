@@ -10,7 +10,7 @@
 --}}
 @php
     $primary = [
-        'url'   => 'https://godonate.ru/s/prog-time',
+        'url'   => 'https://godonate.ru/@ilya-lyashchuk',
         'title' => 'Поддержать рублём',
         'text'  => 'Разработка идёт в свободное время. Любая сумма помогает проекту жить и развиваться дальше.',
         'cta'   => 'Поддержать',
