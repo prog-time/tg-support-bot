@@ -208,34 +208,29 @@ https://t.me/TgSupportTest1Bot
 
 ### Установка через Docker Compose: с нуля
 
-`docker-compose.yml` монтирует рабочую копию в контейнер (`.:/var/www`), и этот bind-mount перекрывает содержимое образа. Поэтому `vendor/`, `node_modules/` и `public/build/`, собранные на этапе `docker build`, в смонтированном каталоге не видны — их нужно установить отдельно, уже после запуска контейнеров. Все процессы внутри (php-fpm, queue, scheduler) работают под `www-data` — **uid 33**, поэтому каталоги, в которые пишет приложение, должны принадлежать этому uid на хосте.
+`docker-compose.yml` монтирует рабочую копию в контейнер (`.:/var/www`), и этот bind-mount перекрывает содержимое образа. Поэтому `vendor/`, `node_modules/` и `public/build/`, собранные на этапе `docker build`, в смонтированном каталоге не видны. `docker/scripts/entrypoint.sh` подхватывает это автоматически при первом старте контейнера `app`: если `vendor/autoload.php` или `public/build/manifest.json` отсутствуют, он сам выполняет `composer install` и `npm ci && npm run build`, прежде чем стартовать `php-fpm` — руками эти команды выполнять не нужно. Контейнеры `queue`/`scheduler` в это время ждут, пока `app` закончит установку (не запускают её параллельно — иначе три процесса писали бы в один и тот же смонтированный каталог одновременно). Все процессы внутри (php-fpm, queue, scheduler) работают под `www-data` — **uid 33**, поэтому каталоги, в которые пишет приложение, должны принадлежать этому uid на хосте *до* запуска — сам entrypoint работает под тем же www-data и не может создать/перевладеть их сам.
 
 ```bash
 # 1. Конфигурация
 cp .env.example .env
 
 # 2. Каталоги под запись + владелец www-data (uid 33).
-#    Без этого шага composer и artisan упрутся в permission denied.
-mkdir -p vendor storage bootstrap/cache public/build
-chown -R 33:33 vendor storage bootstrap/cache public/build
+#    Без этого шага entrypoint (composer/npm) и artisan упрутся в permission denied.
+mkdir -p vendor node_modules storage bootstrap/cache public/build
+chown -R 33:33 vendor node_modules storage bootstrap/cache public/build
 
-# 3. Сборка образа и запуск
+# 3. Сборка образа и запуск — первый старт займёт минуту-две: entrypoint
+#    ставит PHP/JS-зависимости и собирает фронтенд, прежде чем открыть порт.
+#    Прогресс можно смотреть через `docker compose logs -f app`.
 docker compose up -d --build
 
-# 4. PHP-зависимости
-docker exec -it pet composer install
-
-# 5. Фронтенд — без него Laravel падает с ViteManifestNotFoundException
-docker exec -it pet npm ci
-docker exec -it pet npm run build
-
-# 6. Ключ приложения и миграции
+# 4. Ключ приложения и миграции
 docker exec -it pet php artisan key:generate
 docker exec -it pet php artisan migrate
 docker exec -it pet php artisan storage:link
 ```
 
-Шаги 4–5 — разовые, на установку. Каталоги из шага 2 не отслеживаются git и не синхронизируются mutagen, поэтому выставленный владелец сохраняется между деплоями.
+Каталоги из шага 2 не отслеживаются git и не синхронизируются mutagen, поэтому выставленный владелец сохраняется между деплоями. При следующих `docker compose up` (без `--build`) entrypoint отрабатывает мгновенно — `vendor/`/`public/build/` уже на месте, повторно `composer install`/`npm run build` не запускаются.
 
 > После запуска войдите в админ-панель `/admin/login` и настройте каналы и AI на странице **Настройки** (`/admin/settings/*`). Все токены и ключи хранятся в БД в зашифрованном виде — править `.env` для этого не нужно.
 

@@ -52,9 +52,9 @@ git push --no-verify
 
 ### Install dependencies
 ```bash
-docker compose up -d
-docker exec -it pet composer install
+docker compose up -d --build
 ```
+On the `app` container's first boot, `docker/scripts/entrypoint.sh` runs `composer install` and `npm ci && npm run build` automatically when `vendor/` or `public/build/manifest.json` are missing — see README, «Установка через Docker Compose: с нуля» for the full first-time setup (directory ownership, `.env`, migrations).
 
 ### Code formatting (must run before commit)
 ```bash
