@@ -2,13 +2,17 @@
 
 namespace App\Modules\Telegram\Services\TgEmail;
 
+use App\Helpers\TelegramHelper;
 use App\Models\Message;
 use App\Modules\Email\DTOs\EmailMessageDto;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Delivers a manager's reply typed in the Telegram supergroup topic to the
@@ -17,8 +21,10 @@ use Illuminate\Support\Facades\Log;
  * Without this the switch in {@see \App\Modules\Telegram\Controllers\TelegramBotController}
  * routed `platform = 'email'` group replies into the External-Sources default
  * arm, which has no webhook for email — so the reply was silently dropped even
- * though incoming mail worked (issue #214 follow-up). Email is text-only in v1;
- * media typed into the topic is not forwarded.
+ * though incoming mail worked (issue #214 follow-up). A single photo/document
+ * typed into the topic is forwarded as a real SMTP attachment (see
+ * {@see self::sendFileReply()}) — mirrors `SendReplyAction::sendEmailReply()`,
+ * the admin-panel counterpart of this same capability.
  */
 class TgEmailMessageService extends FromTgMessageService
 {
@@ -39,7 +45,11 @@ class TgEmailMessageService extends FromTgMessageService
 
             $text = $this->update->text ?? $this->update->caption ?? null;
 
-            if (!empty($text)) {
+            if (!empty($this->update->fileId) && $this->update->fileType === 'photo') {
+                $this->sendPhoto();
+            } elseif (!empty($this->update->fileId) && $this->update->fileType === 'document') {
+                $this->sendDocument();
+            } elseif (!empty($text)) {
                 $this->sendMessage($text);
             }
         } catch (\Throwable $e) {
@@ -89,21 +99,111 @@ class TgEmailMessageService extends FromTgMessageService
     }
 
     /**
-     * Email v1 is text-only — media replies from the group topic are not forwarded.
-     *
      * @return void
+     *
+     * @throws \Exception
      */
     protected function sendPhoto(): void
     {
-        //
+        $this->sendFileReply('jpg');
     }
 
     /**
      * @return void
+     *
+     * @throws \Exception
      */
     protected function sendDocument(): void
     {
-        //
+        $this->sendFileReply(null, $this->update->rawData['message']['document']['file_name'] ?? null);
+    }
+
+    /**
+     * Download the manager's Telegram photo/document and forward it to the
+     * Email user as a real SMTP attachment (one file per reply, mirrors
+     * `SendReplyAction::sendEmailReply()`).
+     *
+     * Downloads once and writes two on-disk copies, matching
+     * `EmailImapClient::extractAttachments()`'s reasoning for the reverse
+     * direction: a queue-safe temp path that `EmailMailer`'s SMTP send reads,
+     * and a permanent `local`-disk copy under `chat-attachments/` for the
+     * admin workspace.
+     *
+     * @param string|null $fallbackExtension Used when neither the original filename nor the CDN URL has one (Telegram photos).
+     * @param string|null $originalName      The document's original filename, if Telegram sent one.
+     *
+     * @return void
+     *
+     * @throws \Exception
+     */
+    private function sendFileReply(?string $fallbackExtension, ?string $originalName = null): void
+    {
+        if ($this->botUser === null) {
+            return;
+        }
+
+        $telegramFileUrl = TelegramHelper::getFileTelegramPath((string) $this->update->fileId);
+        if (empty($telegramFileUrl)) {
+            throw new \Exception('Failed to get Telegram file URL', 1);
+        }
+
+        $response = Http::get($telegramFileUrl);
+        if ($response->failed()) {
+            throw new \Exception("Failed to download Telegram file: status={$response->status()}", 1);
+        }
+
+        $content = $response->body();
+        $mime = $response->header('Content-Type') ?: 'application/octet-stream';
+
+        $nameExtension = $originalName !== null ? pathinfo($originalName, PATHINFO_EXTENSION) : '';
+        $urlExtension = pathinfo((string) parse_url($telegramFileUrl, PHP_URL_PATH), PATHINFO_EXTENSION);
+        $extension = $nameExtension !== '' ? $nameExtension : ($urlExtension !== '' ? $urlExtension : (string) $fallbackExtension);
+
+        $name = $originalName ?: (Str::uuid() . ($extension !== '' ? '.' . $extension : ''));
+
+        $storedPath = 'chat-attachments/' . Str::uuid() . ($extension !== '' ? '.' . $extension : '');
+        Storage::disk('local')->put($storedPath, $content);
+
+        $dir = storage_path('app/temp_attachments');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $tempPath = $dir . '/' . Str::uuid() . ($extension !== '' ? '.' . $extension : '');
+        file_put_contents($tempPath, $content);
+
+        $caption = $this->update->caption ?? '';
+
+        // Mirrors sendMessage(): the send job only sends, so the group-topic
+        // path records the outgoing row itself (BR-002, admin workspace).
+        $message = Message::create([
+            'bot_user_id' => $this->botUser->id,
+            'platform' => $this->botUser->platform,
+            'message_type' => 'outgoing',
+            'from_id' => 0,
+            'to_id' => 0,
+            'text' => $caption !== '' ? $caption : null,
+        ]);
+
+        $message->attachments()->create([
+            'file_id' => $storedPath,
+            'file_type' => str_starts_with($mime, 'image/') ? 'photo' : 'document',
+            'file_name' => $name,
+        ]);
+
+        $headers = app(EmailThreadStore::class)->replyHeaders($this->botUser->id);
+
+        SendEmailMessageJob::dispatch(
+            EmailMessageDto::from([
+                'to' => $this->botUser->chat_id,
+                'subject' => $headers['subject'],
+                'text' => $caption,
+                'inReplyTo' => $headers['inReplyTo'],
+                'references' => $headers['references'],
+                'attachmentPath' => $tempPath,
+                'attachmentName' => $name,
+                'attachmentMime' => $mime,
+            ])
+        );
     }
 
     /**
