@@ -6,7 +6,10 @@ use App\Modules\Email\Contracts\EmailInboxReader;
 use App\Modules\Email\DTOs\EmailUpdateDto;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Webklex\PHPIMAP\Address;
+use Webklex\PHPIMAP\Attachment;
 use Webklex\PHPIMAP\Client;
 use Webklex\PHPIMAP\ClientManager;
 use Webklex\PHPIMAP\Message;
@@ -159,7 +162,7 @@ class EmailImapClient implements EmailInboxReader
                 text: $text !== '' ? trim($text) : null,
                 messageId: (string) $message->message_id,
                 references: $this->referencesHeader($message),
-                attachments: [],
+                attachments: $this->extractAttachments($message),
                 providerRef: $message,
             );
         } catch (\Throwable $e) {
@@ -250,5 +253,62 @@ class EmailImapClient implements EmailInboxReader
         }
 
         return $ids !== [] ? implode(' ', array_map(static fn (string $id) => "<{$id}>", $ids)) : null;
+    }
+
+    /**
+     * Extract the first attachment (if any) to two on-disk copies:
+     *
+     *  - `path` — a queue-safe temp file for the Telegram upload
+     *    (`{@see \App\Modules\Telegram\Api\ParserMethods::attachQuery()}` deletes
+     *    it after a successful send, so it must never be the only copy);
+     *  - `storedPath` — a permanent copy on the `local` disk under
+     *    `chat-attachments/`, so the admin workspace can render/download it via
+     *    the same route outgoing manager-reply attachments use.
+     *
+     * Only the first attachment is kept — Telegram's `sendPhoto`/`sendDocument`
+     * carry one file per message, mirroring the single-file limit already in
+     * place for outgoing replies (`SendReplyAction::sendEmailReply()`).
+     *
+     * @param Message $message
+     *
+     * @return array<int, array{path: string, storedPath: string, name: string, mime: string}>
+     */
+    private function extractAttachments(Message $message): array
+    {
+        if (!$message->hasAttachments()) {
+            return [];
+        }
+
+        /** @var Attachment|null $attachment */
+        $attachment = $message->getAttachments()->first();
+        if ($attachment === null) {
+            return [];
+        }
+
+        $content = (string) $attachment->content;
+        if ($content === '') {
+            return [];
+        }
+
+        $name = $this->decodeMimeHeader((string) ($attachment->name ?: 'attachment'));
+        $mime = $attachment->getMimeType() ?: 'application/octet-stream';
+        $extension = pathinfo($name, PATHINFO_EXTENSION) ?: (string) $attachment->getExtension();
+
+        $storedPath = 'chat-attachments/' . Str::uuid() . ($extension !== '' ? '.' . $extension : '');
+        Storage::disk('local')->put($storedPath, $content);
+
+        $dir = storage_path('app/temp_attachments');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $tempPath = $dir . '/' . Str::uuid() . ($extension !== '' ? '.' . $extension : '');
+        file_put_contents($tempPath, $content);
+
+        return [[
+            'path' => $tempPath,
+            'storedPath' => $storedPath,
+            'name' => $name,
+            'mime' => $mime,
+        ]];
     }
 }
