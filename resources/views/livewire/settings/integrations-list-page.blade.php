@@ -1,4 +1,4 @@
-{{-- Раздел «Интеграции»: каналы сгруппированы — мессенджеры и (виджет + ИИ-ассистент) --}}
+{{-- Раздел «Интеграции»: каналы сгруппированы — источники и (виджет + ИИ-ассистент) --}}
 <div class="p-4 lg:p-8 lg:max-w-3xl">
 
     {{-- ── Page header --}}
@@ -7,12 +7,12 @@
         <p class="mt-0.5 text-sm text-text-secondary">Управление каналами поддержки</p>
     </div>
 
-    {{-- ── Channel cards — grouped: messengers and AI assistant ──────────── --}}
+    {{-- ── Channel cards — grouped: sources and AI assistant ──────────── --}}
     <div class="space-y-6">
 
-        {{-- ══ Группа 1: Мессенджеры ══════════════════════════════════════════ --}}
+        {{-- ══ Группа 1: Источники ══════════════════════════════════════════ --}}
         <div>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Мессенджеры</h2>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Источники</h2>
             <div class="space-y-3">
 
                 {{-- Telegram --}}
