@@ -341,22 +341,60 @@ class SendReplyActionTest extends TestCase
         Queue::assertNotPushed(SendWebhookMessage::class);
     }
 
-    public function test_email_file_attachment_is_skipped_with_warning_but_text_still_sent(): void
+    public function test_email_file_attachment_is_sent_as_smtp_attachment(): void
     {
         Queue::fake();
-
-        Log::shouldReceive('channel')->with('app')->andReturnSelf();
-        Log::shouldReceive('warning')
-            ->once()
-            ->with('SendReplyAction: Email does not support file replies yet, attachment skipped', Mockery::type('array'));
+        Storage::fake('local');
 
         $botUser = BotUser::create(['chat_id' => 'user3@example.com', 'platform' => 'email']);
-        $file = UploadedFile::fake()->create('doc.pdf', 10);
+        $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
 
-        SendReplyAction::execute($botUser, 'Text with skipped file', $file);
+        SendReplyAction::execute($botUser, 'Text with file', $file);
+
+        Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job) use ($botUser): bool {
+            return $job->queryParams->to === $botUser->chat_id
+                && $job->queryParams->text === 'Text with file'
+                && $job->queryParams->attachmentName === 'doc.pdf'
+                && $job->queryParams->attachmentMime === 'application/pdf'
+                && is_string($job->queryParams->attachmentPath)
+                && is_file($job->queryParams->attachmentPath);
+        });
+    }
+
+    public function test_records_local_attachment_for_email_photo_reply(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $botUser = BotUser::create(['chat_id' => 'user5@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->image('photo.jpg');
+
+        SendReplyAction::execute($botUser, '', $file);
+
+        // Regression: the outgoing file must be stored on the private disk and
+        // recorded by its path so the admin chat workspace can render it instead
+        // of showing only the «Вложение» placeholder — email has no provider
+        // file id to fall back on, unlike Telegram.
+        $attachment = \App\Models\MessageAttachment::where('file_name', 'photo.jpg')->first();
+        $this->assertNotNull($attachment);
+        $this->assertSame('photo', $attachment->file_type);
+        $this->assertStringStartsWith('chat-attachments/', (string) $attachment->file_id);
+        Storage::disk('local')->assertExists($attachment->file_id);
+    }
+
+    public function test_email_file_only_reply_still_dispatches_without_text(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $botUser = BotUser::create(['chat_id' => 'user6@example.com', 'platform' => 'email']);
+        $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
+
+        SendReplyAction::execute($botUser, '', $file);
 
         Queue::assertPushed(SendEmailMessageJob::class, function (SendEmailMessageJob $job): bool {
-            return $job->queryParams->text === 'Text with skipped file';
+            return $job->queryParams->text === ''
+                && $job->queryParams->attachmentName === 'doc.pdf';
         });
     }
 
