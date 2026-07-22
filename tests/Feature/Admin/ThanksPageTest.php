@@ -65,7 +65,7 @@ class ThanksPageTest extends TestCase
         $this->get(route('admin.thanks'))
             ->assertOk()
             ->assertSee('Поддержать рублём')
-            ->assertSee('https://godonate.ru/s/prog-time', false);
+            ->assertSee('https://godonate.ru/@ilya-lyashchuk', false);
     }
 
     public function test_a_card_without_a_link_is_not_rendered(): void
