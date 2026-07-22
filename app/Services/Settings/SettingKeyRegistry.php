@@ -199,6 +199,15 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
+        // List of ignored senders — newline-entered on the Email integration
+        // screen, stored as a JSON array of lowercased strings. Each entry is
+        // either a full address ("newsletter@example.com") or a "@domain.com"
+        // suffix to block an entire domain. See EmailIgnoreListMatcher.
+        'email.ignored_addresses' => [
+            'type' => 'json',
+            'config' => null,
+            'is_secret' => false,
+        ],
 
         // ── AI assistant ─────────────────────────────────────────────────────
         'ai.enabled' => [
