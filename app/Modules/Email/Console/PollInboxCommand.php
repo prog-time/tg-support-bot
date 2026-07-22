@@ -6,6 +6,7 @@ use App\Models\BotUser;
 use App\Modules\Email\Actions\SendBannedMessageEmail;
 use App\Modules\Email\Contracts\EmailInboxReader;
 use App\Modules\Email\DTOs\EmailUpdateDto;
+use App\Modules\Email\Services\EmailIgnoreListMatcher;
 use App\Modules\Email\Services\EmailMessageService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Console\Command;
@@ -37,12 +38,13 @@ class PollInboxCommand extends Command
     protected $description = 'Poll the configured mailbox for unread support messages';
 
     /**
-     * @param EmailInboxReader $reader
-     * @param SettingsService  $settings
+     * @param EmailInboxReader       $reader
+     * @param SettingsService        $settings
+     * @param EmailIgnoreListMatcher $ignoreList
      *
      * @return int
      */
-    public function handle(EmailInboxReader $reader, SettingsService $settings): int
+    public function handle(EmailInboxReader $reader, SettingsService $settings, EmailIgnoreListMatcher $ignoreList): int
     {
         if (!$this->isConfigured($settings)) {
             return self::SUCCESS;
@@ -57,7 +59,7 @@ class PollInboxCommand extends Command
         }
 
         foreach ($updates as $update) {
-            if ($this->processUpdate($update)) {
+            if ($this->processUpdate($update, $ignoreList)) {
                 $reader->markSeen($update);
             }
         }
@@ -66,13 +68,21 @@ class PollInboxCommand extends Command
     }
 
     /**
-     * @param EmailUpdateDto $update
+     * @param EmailUpdateDto         $update
+     * @param EmailIgnoreListMatcher $ignoreList
      *
      * @return bool true when the email was fully handled and can be marked seen.
      */
-    private function processUpdate(EmailUpdateDto $update): bool
+    private function processUpdate(EmailUpdateDto $update, EmailIgnoreListMatcher $ignoreList): bool
     {
         try {
+            if ($ignoreList->isIgnored($update->chatId)) {
+                // Dropped before a BotUser/topic is ever created for this
+                // sender — the whole point of the ignore list is to keep
+                // newsletter/no-reply senders out of the support funnel.
+                return true;
+            }
+
             $botUser = BotUser::getUserByChatId($update->chatId, 'email');
 
             if ($botUser === null) {

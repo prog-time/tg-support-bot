@@ -85,7 +85,7 @@ class PollInboxCommandTest extends TestCase
         $this->assertDatabaseHas('messages', [
             'platform' => 'email',
             'message_type' => 'incoming',
-            'text' => 'Здравствуйте',
+            'text' => "Тема: Subject\n\nЗдравствуйте",
         ]);
     }
 
@@ -137,6 +137,37 @@ class PollInboxCommandTest extends TestCase
         Queue::assertPushed(SendEmailMessageJob::class);
         // Banned users do not get routed into the normal funnel.
         $this->assertSame(0, Message::where('bot_user_id', $botUser->id)->count());
+    }
+
+    public function test_ignored_sender_is_marked_seen_without_creating_a_bot_user(): void
+    {
+        $this->seedSetting('email.ignored_addresses', ['newsletter@example.com']);
+        $dto = $this->makeDto(chatId: 'newsletter@example.com');
+
+        $reader = Mockery::mock(EmailInboxReader::class);
+        $reader->shouldReceive('fetchUnseen')->once()->andReturn([$dto]);
+        $reader->shouldReceive('markSeen')->once()->with($dto);
+        $this->app->instance(EmailInboxReader::class, $reader);
+
+        $this->artisan('email:poll')->assertExitCode(0);
+
+        $this->assertNull(BotUser::getPlatformByChatId($dto->chatId));
+        $this->assertSame(0, Message::where('platform', 'email')->count());
+    }
+
+    public function test_ignored_domain_is_marked_seen_without_creating_a_bot_user(): void
+    {
+        $this->seedSetting('email.ignored_addresses', ['@promo.example.com']);
+        $dto = $this->makeDto(chatId: 'offers@promo.example.com');
+
+        $reader = Mockery::mock(EmailInboxReader::class);
+        $reader->shouldReceive('fetchUnseen')->once()->andReturn([$dto]);
+        $reader->shouldReceive('markSeen')->once()->with($dto);
+        $this->app->instance(EmailInboxReader::class, $reader);
+
+        $this->artisan('email:poll')->assertExitCode(0);
+
+        $this->assertNull(BotUser::getPlatformByChatId($dto->chatId));
     }
 
     public function test_multiple_messages_each_marked_seen_independently(): void
