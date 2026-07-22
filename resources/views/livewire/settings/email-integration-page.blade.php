@@ -154,6 +154,24 @@
                         </x-admin.form-field>
                     </div>
 
+                    {{-- Ignore list --}}
+                    <div>
+                        <x-admin.form-field
+                            label="Игнорировать письма с адресов"
+                            for="ignored_addresses"
+                            hint="По одному адресу в строке. Чтобы заблокировать весь домен, укажите его как @domain.com — такие письма не создают тему/обращение и не попадают в очередь"
+                        >
+                            <textarea
+                                id="ignored_addresses"
+                                wire:model="ignored_addresses"
+                                rows="4"
+                                autocomplete="off"
+                                placeholder="newsletter@example.com&#10;@promo.example.com"
+                                class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                            ></textarea>
+                        </x-admin.form-field>
+                    </div>
+
                 </div>
 
                 {{-- Actions row — right-aligned, verify-before-save --}}
@@ -205,11 +223,11 @@
                 <ol class="space-y-3">
                     @php
                         $steps = [
-                            'Активируйте лицензию в разделе «Подписки»',
-                            'Для Gmail/Workspace создайте пароль приложения (обычный пароль аккаунта не подойдёт)',
-                            'Укажите IMAP- и SMTP-хосты вашего почтового провайдера',
-                            'Нажмите «Сохранить» — подключение проверится и по IMAP, и по SMTP',
-                            'Письма опрашиваются автоматически раз в минуту (email:poll в планировщике)',
+                            'Укажите логин и пароль почтового ящика — для Gmail/Workspace нужен пароль приложения, обычный пароль аккаунта не подойдёт',
+                            'Укажите IMAP- и SMTP-хосты вашего почтового провайдера — подходит любой (Яндекс, Mail.ru, Gmail, корпоративная почта)',
+                            'Нажмите «Сохранить» — подключение проверится и по IMAP, и по SMTP; при ошибке ничего не сохранится',
+                            'Чтобы рассылки и автоответчики не превращались в обращения, добавьте их адреса (или домен целиком — @domain.com) в список игнорируемых',
+                            'Письма опрашиваются автоматически раз в минуту, поэтому новое письмо может появиться в чате с задержкой до минуты',
                         ];
                     @endphp
                     @foreach ($steps as $i => $step)

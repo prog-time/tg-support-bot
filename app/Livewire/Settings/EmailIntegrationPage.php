@@ -28,6 +28,11 @@ use Livewire\Component;
  * The password field is pre-filled as "already stored" and rendered as a
  * password input; a blank submission keeps the existing stored password.
  *
+ * The ignore-list textarea (`email.ignored_addresses`) is parsed/deduped by
+ * {@see self::parseIgnoredAddresses()} and persisted alongside the other
+ * fields on success; it is not part of the IMAP/SMTP verify step. Matching
+ * against incoming mail is done by {@see \App\Modules\Email\Services\EmailIgnoreListMatcher}.
+ *
  * Admin-only: non-admins are redirected to the general settings screen.
  * Layout: custom dark-sidebar admin layout (layouts.admin-settings).
  */
@@ -53,6 +58,9 @@ class EmailIntegrationPage extends Component
     public string $from_address = '';
 
     public string $from_name = '';
+
+    /** One entry per line: a full address, or "@domain.com" to block a whole domain. */
+    public string $ignored_addresses = '';
 
     /** @var bool Whether a password is already stored. */
     public bool $hasPassword = false;
@@ -86,6 +94,9 @@ class EmailIntegrationPage extends Component
         $this->username = (string) ($settings->get('email.username') ?? '');
         $this->from_address = (string) ($settings->get('email.from_address') ?? '');
         $this->from_name = (string) ($settings->get('email.from_name') ?? '');
+
+        $ignoredAddresses = $settings->get('email.ignored_addresses') ?? [];
+        $this->ignored_addresses = implode("\n", is_array($ignoredAddresses) ? $ignoredAddresses : []);
 
         $this->hasPassword = $settings->has('email.password');
     }
@@ -145,6 +156,7 @@ class EmailIntegrationPage extends Component
         $settings->set('email.username', trim($this->username));
         $settings->set('email.from_address', trim($this->from_address));
         $settings->set('email.from_name', trim($this->from_name));
+        $settings->set('email.ignored_addresses', $this->parseIgnoredAddresses());
 
         // Password: write only when a value was entered (blank keeps the stored one).
         if (trim($this->password) !== '') {
@@ -187,6 +199,21 @@ class EmailIntegrationPage extends Component
         }
 
         return empty($this->formErrors) ? null : (string) array_key_first($this->formErrors);
+    }
+
+    /**
+     * Parse the textarea into a deduped, lowercased list of ignore entries.
+     *
+     * @return array<int, string>
+     */
+    private function parseIgnoredAddresses(): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $this->ignored_addresses) ?: [];
+
+        $entries = array_map(static fn (string $line): string => strtolower(trim($line)), $lines);
+        $entries = array_filter($entries, static fn (string $entry): bool => $entry !== '');
+
+        return array_values(array_unique($entries));
     }
 
     /**

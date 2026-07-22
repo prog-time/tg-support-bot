@@ -72,6 +72,7 @@ class EmailIntegrationPageTest extends TestCase
         $mock->shouldReceive('get')->with('email.username')->andReturn('support@example.com');
         $mock->shouldReceive('get')->with('email.from_address')->andReturn('support@example.com');
         $mock->shouldReceive('get')->with('email.from_name')->andReturn('Support');
+        $mock->shouldReceive('get')->with('email.ignored_addresses')->andReturn(['newsletter@example.com']);
         $mock->shouldReceive('has')->with('email.password')->andReturn(true);
 
         $component = new EmailIntegrationPage();
@@ -80,6 +81,7 @@ class EmailIntegrationPageTest extends TestCase
         $this->assertSame('imap.example.com', $component->imap_host);
         $this->assertSame('smtp.example.com', $component->smtp_host);
         $this->assertSame('support@example.com', $component->username);
+        $this->assertSame('newsletter@example.com', $component->ignored_addresses);
         $this->assertTrue($component->hasPassword);
     }
 
@@ -96,6 +98,7 @@ class EmailIntegrationPageTest extends TestCase
         $mock->shouldReceive('set')->with('email.username', 'support@example.com')->once();
         $mock->shouldReceive('set')->with('email.from_address', 'support@example.com')->once();
         $mock->shouldReceive('set')->with('email.from_name', 'Support')->once();
+        $mock->shouldReceive('set')->with('email.ignored_addresses', ['newsletter@example.com', '@promo.example.com'])->once();
         $mock->shouldReceive('set')->with('email.password', 'secret')->once();
         $mock->shouldReceive('has')->with('email.password')->andReturn(true);
 
@@ -110,6 +113,7 @@ class EmailIntegrationPageTest extends TestCase
         $component->password = 'secret';
         $component->from_address = 'support@example.com';
         $component->from_name = 'Support';
+        $component->ignored_addresses = "Newsletter@Example.com\n\n@promo.example.com\n";
 
         $component->connect($mock, $this->verifierOk());
 
@@ -175,6 +179,7 @@ class EmailIntegrationPageTest extends TestCase
         $mock->shouldReceive('set')->with('email.username', 'support@example.com')->once();
         $mock->shouldReceive('set')->with('email.from_address', 'support@example.com')->once();
         $mock->shouldReceive('set')->with('email.from_name', '')->once();
+        $mock->shouldReceive('set')->with('email.ignored_addresses', [])->once();
         $mock->shouldNotReceive('set')->with('email.password', Mockery::any());
         $mock->shouldReceive('has')->andReturn(true);
 
