@@ -4,6 +4,7 @@ namespace Tests\Unit\Modules\Email\Services;
 
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Models\MessageAttachment;
 use App\Modules\Ai\Jobs\SendAiDraftJob;
 use App\Modules\Ai\Jobs\SendAiReplyJob;
 use App\Modules\Ai\Services\ShouldAiReply;
@@ -13,6 +14,7 @@ use App\Modules\Telegram\Jobs\SendEmailTelegramMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 use Tests\Traits\SeedsSettings;
@@ -56,6 +58,7 @@ class EmailMessageServiceTest extends TestCase
         string $senderName = 'User Name',
         ?string $text = 'Здравствуйте',
         string $subject = 'Нужна помощь',
+        array $attachments = [],
     ): EmailUpdateDto {
         return new EmailUpdateDto(
             chatId: $chatId,
@@ -64,7 +67,35 @@ class EmailMessageServiceTest extends TestCase
             text: $text,
             messageId: 'msg-1@example.com',
             references: null,
+            attachments: $attachments,
         );
+    }
+
+    /**
+     * A fake attachment shaped like EmailImapClient::extractAttachments()'s
+     * output — a real temp file at `path` (as the queued job would receive)
+     * and a `storedPath` on the faked `local` disk.
+     *
+     * @return array{path: string, storedPath: string, name: string, mime: string}
+     */
+    private function makeAttachment(string $name = 'photo.jpg', string $mime = 'image/jpeg'): array
+    {
+        $dir = storage_path('app/temp_attachments');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $path = $dir . '/' . uniqid('test_', true) . '.jpg';
+        file_put_contents($path, 'fake-bytes');
+
+        $storedPath = 'chat-attachments/' . uniqid('test_', true) . '.jpg';
+        Storage::disk('local')->put($storedPath, 'fake-bytes');
+
+        return [
+            'path' => $path,
+            'storedPath' => $storedPath,
+            'name' => $name,
+            'mime' => $mime,
+        ];
     }
 
     // ── group-ON ─────────────────────────────────────────────────────────────
@@ -77,11 +108,100 @@ class EmailMessageServiceTest extends TestCase
         (new EmailMessageService($dto))->handleUpdate();
 
         Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job) use ($botUser, $dto): bool {
+            // Not the same instance as $dto (identity) — sendMessage() passes
+            // a queue-safe copy with providerRef stripped, see
+            // test_group_on_strips_provider_ref_before_dispatch_to_avoid_queue_crash().
             return $job->botUserId === $botUser->id
-                && $job->updateDto === $dto
+                && $job->updateDto->chatId === $dto->chatId
+                && $job->updateDto->text === $dto->text
                 && $job->queryParams->methodQuery === 'sendMessage'
-                && $job->queryParams->text === 'Здравствуйте'
+                && $job->queryParams->text === "Тема: Нужна помощь\n\nЗдравствуйте"
                 && $job->queryParams->message_thread_id === $botUser->topic_id;
+        });
+    }
+
+    public function test_group_on_forwards_image_attachment_as_send_photo(): void
+    {
+        Storage::fake('local');
+
+        $attachment = $this->makeAttachment('photo.jpg', 'image/jpeg');
+        $dto = $this->makeDto(chatId: 'photo@example.com', text: 'Смотрите фото', attachments: [$attachment]);
+        $botUser = BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job) use ($botUser, $attachment): bool {
+            return $job->botUserId === $botUser->id
+                && $job->queryParams->methodQuery === 'sendPhoto'
+                && $job->queryParams->uploaded_file_path === $attachment['path']
+                && $job->queryParams->caption === "Тема: Нужна помощь\n\nСмотрите фото"
+                && $job->queryParams->text === null;
+        });
+    }
+
+    public function test_group_on_forwards_non_image_attachment_as_send_document(): void
+    {
+        Storage::fake('local');
+
+        $attachment = $this->makeAttachment('report.pdf', 'application/pdf');
+        $dto = $this->makeDto(chatId: 'doc@example.com', text: 'Отчёт во вложении', attachments: [$attachment]);
+        BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job) use ($attachment): bool {
+            return $job->queryParams->methodQuery === 'sendDocument'
+                && $job->queryParams->uploaded_file_path === $attachment['path'];
+        });
+    }
+
+    public function test_group_on_strips_provider_ref_before_dispatch_to_avoid_queue_crash(): void
+    {
+        // Regression: EmailUpdateDto::$providerRef holds the raw IMAP message
+        // object. Serializing the whole job for the queue payload (even under
+        // QUEUE_CONNECTION=sync — Illuminate\Queue\Queue::createPayload() still
+        // runs) breaks on an email with an attachment: the serialized bytes
+        // aren't valid UTF-8, json_encode() fails, dispatch() throws, and the
+        // source email is never marked seen — retried forever on every poll.
+        $dto = $this->makeDto();
+        $dtoWithProviderRef = new EmailUpdateDto(
+            chatId: $dto->chatId,
+            senderName: $dto->senderName,
+            subject: $dto->subject,
+            text: $dto->text,
+            messageId: $dto->messageId,
+            references: $dto->references,
+            providerRef: new \stdClass(),
+        );
+        BotUser::getUserByChatId($dtoWithProviderRef->chatId, 'email');
+
+        (new EmailMessageService($dtoWithProviderRef))->handleUpdate();
+
+        Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job): bool {
+            return $job->updateDto->providerRef === null;
+        });
+    }
+
+    public function test_group_on_escapes_angle_brackets_in_telegram_text_but_not_ai_text(): void
+    {
+        // Regression test: a mail client's own reply-quote header ("...От
+        // Служба поддержки <support@example.com>: ...") routinely contains a
+        // bare '<address' in the plain-text body. Sent unescaped with
+        // Telegram's parse_mode=html, that 400s with "can't parse entities" —
+        // silently, since the job's own failure handling doesn't throw — and
+        // the reply never reaches Telegram. AI should still see the natural,
+        // unescaped text.
+        $dto = $this->makeDto(
+            chatId: 'quoted-reply@example.com',
+            text: 'см. <support@example.com> для деталей & подробностей',
+        );
+        $botUser = BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job) use ($botUser): bool {
+            return $job->botUserId === $botUser->id
+                && $job->queryParams->text === "Тема: Нужна помощь\n\nсм. &lt;support@example.com&gt; для деталей &amp; подробностей";
         });
     }
 
@@ -123,10 +243,60 @@ class EmailMessageServiceTest extends TestCase
             'message_type' => 'incoming',
             'from_id' => 0,
             'to_id' => 0,
-            'text' => 'Привет',
+            'text' => "Тема: Нужна помощь\n\nПривет",
         ]);
 
         $this->assertSame(1, Message::where('bot_user_id', $botUser->id)->count());
+    }
+
+    public function test_group_off_persists_body_only_when_subject_is_blank(): void
+    {
+        $this->clearGroupId();
+
+        $dto = $this->makeDto(chatId: 'no-subject@example.com', text: 'Привет', subject: '');
+        $botUser = BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'email',
+            'text' => 'Привет',
+        ]);
+    }
+
+    public function test_group_off_records_local_attachment_for_admin_workspace(): void
+    {
+        $this->clearGroupId();
+        Storage::fake('local');
+
+        $attachment = $this->makeAttachment('photo.jpg', 'image/jpeg');
+        $dto = $this->makeDto(chatId: 'group-off-photo@example.com', text: 'Фото во вложении', attachments: [$attachment]);
+        $botUser = BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        $message = Message::where('bot_user_id', $botUser->id)->first();
+        $this->assertNotNull($message);
+
+        $recorded = MessageAttachment::where('message_id', $message->id)->first();
+        $this->assertNotNull($recorded);
+        $this->assertSame('photo', $recorded->file_type);
+        $this->assertSame($attachment['storedPath'], $recorded->file_id);
+        $this->assertSame('photo.jpg', $recorded->file_name);
+    }
+
+    public function test_group_off_without_attachment_records_no_attachment(): void
+    {
+        $this->clearGroupId();
+
+        $dto = $this->makeDto(chatId: 'group-off-plain@example.com', text: 'Просто текст');
+        $botUser = BotUser::getUserByChatId($dto->chatId, 'email');
+
+        (new EmailMessageService($dto))->handleUpdate();
+
+        $message = Message::where('bot_user_id', $botUser->id)->first();
+        $this->assertSame(0, MessageAttachment::where('message_id', $message->id)->count());
     }
 
     public function test_group_off_does_not_dispatch_email_telegram_job(): void
@@ -154,6 +324,25 @@ class EmailMessageServiceTest extends TestCase
         $this->assertTrue($service->handledSuccessfully());
         Queue::assertNotPushed(SendEmailTelegramMessageJob::class);
         $this->assertSame(0, Message::where('platform', 'email')->count());
+    }
+
+    public function test_empty_text_with_attachment_still_forwards(): void
+    {
+        // Regression: an attachment-only email (no typed body) must not be
+        // dropped by the "nothing to route" empty-text guard.
+        Storage::fake('local');
+
+        $attachment = $this->makeAttachment('photo.jpg', 'image/jpeg');
+        $dto = $this->makeDto(chatId: 'empty-text-with-file@example.com', text: '', attachments: [$attachment]);
+        BotUser::getUserByChatId($dto->chatId, 'email');
+
+        $service = new EmailMessageService($dto);
+        $service->handleUpdate();
+
+        $this->assertTrue($service->handledSuccessfully());
+        Queue::assertPushed(SendEmailTelegramMessageJob::class, function (SendEmailTelegramMessageJob $job): bool {
+            return $job->queryParams->methodQuery === 'sendPhoto';
+        });
     }
 
     public function test_null_text_does_nothing_but_is_still_handled(): void
@@ -254,7 +443,7 @@ class EmailMessageServiceTest extends TestCase
         Queue::assertPushed(SendAiReplyJob::class, function (SendAiReplyJob $job) use ($botUser): bool {
             return $job->botUserId === $botUser->id
                 && $job->updateDto === null
-                && $job->userMessage === 'Нужна помощь';
+                && $job->userMessage === "Тема: Нужна помощь\n\nНужна помощь";
         });
         Queue::assertNotPushed(SendAiDraftJob::class);
     }
@@ -276,7 +465,7 @@ class EmailMessageServiceTest extends TestCase
         Queue::assertPushed(SendAiDraftJob::class, function (SendAiDraftJob $job) use ($botUser): bool {
             return $job->botUserId === $botUser->id
                 && $job->updateDto === null
-                && $job->userMessage === 'Нужна помощь';
+                && $job->userMessage === "Тема: Нужна помощь\n\nНужна помощь";
         });
         Queue::assertNotPushed(SendAiReplyJob::class);
     }

@@ -40,8 +40,11 @@ use Illuminate\Support\Facades\Log;
  * is instead tracked on {@see self::$succeeded} and read via
  * {@see self::handledSuccessfully()} after the call.
  *
- * Email is text-only in this iteration: the media hooks required by the base
- * class are intentional no-ops (see the class-level note on each).
+ * Incoming email supports at most one attachment, forwarded as a Telegram
+ * photo/document by {@see self::sendMessage()} — see `EmailUpdateDto::$attachments`.
+ * The base class's per-media-type hooks (sendPhoto/sendDocument/...) are
+ * intentional no-ops here (see the class-level note on each): IMAP has no
+ * "message type" discriminator the way a webhook payload does.
  */
 class EmailMessageService extends ToTgMessageService
 {
@@ -72,9 +75,10 @@ class EmailMessageService extends ToTgMessageService
             // is never overwritten.
             $this->captureProfile();
 
-            if (empty($this->update->text)) {
-                // Nothing to route (e.g. an empty-body email). Retrying would
-                // not change that — leave $succeeded=true so it is marked seen.
+            if (empty($this->update->text) && $this->update->attachments === []) {
+                // Nothing to route (e.g. an empty-body email with no
+                // attachment). Retrying would not change that — leave
+                // $succeeded=true so it is marked seen.
                 return;
             }
 
@@ -92,7 +96,7 @@ class EmailMessageService extends ToTgMessageService
 
             // Group-OFF path: persist directly so the admin workspace shows it.
             $this->persistIncomingEmailMessage();
-            $this->maybeDispatchAi($this->update->text);
+            $this->maybeDispatchAi($this->update->displayText());
         } catch (\Throwable $e) {
             Log::channel('app')->error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
 
@@ -119,20 +123,59 @@ class EmailMessageService extends ToTgMessageService
      */
     protected function sendMessage(): void
     {
-        $dto = TGTextMessageDto::from([
+        $text = $this->update->displayText();
+        $escapedText = $this->escapeForTelegramHtml($text);
+        $attachment = $this->update->attachments[0] ?? null;
+
+        $dto = TGTextMessageDto::from($attachment !== null ? [
+            // An attachment goes out as a photo/document with the text as its
+            // caption — Telegram has no "text + separate file" single call, and
+            // this mirrors how MaxMessageService forwards incoming Max media.
+            'methodQuery' => str_starts_with($attachment['mime'], 'image/') ? 'sendPhoto' : 'sendDocument',
+            'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
+            'message_thread_id' => $this->botUser->topic_id,
+            'caption' => $escapedText !== '' ? $escapedText : null,
+            'uploaded_file_path' => $attachment['path'],
+        ] : [
             'methodQuery' => 'sendMessage',
             'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
             'message_thread_id' => $this->botUser->topic_id,
-            'text' => $this->update->text,
+            // Telegram's parse_mode=html (TGTextMessageDto's default) treats
+            // an unescaped '<'/'>'/'&' as markup. A plain-text email body is
+            // never *meant* to carry HTML, but a mail client's own "On ... X
+            // <address> wrote:" reply-quote header routinely contains a bare
+            // '<address' — Telegram then rejects the whole send with 400
+            // "can't parse entities", and since that failure doesn't throw,
+            // it was silently swallowed: the email got marked seen and the
+            // reply vanished, never reaching Telegram or the messages table.
+            'text' => $escapedText,
         ]);
 
         SendEmailTelegramMessageJob::dispatch(
             $this->botUser->id,
-            $this->update,
+            // Queue-safe copy — see EmailUpdateDto::withoutProviderRef(): the
+            // full DTO's providerRef (raw IMAP message) breaks queue payload
+            // serialization for emails with an attachment.
+            $this->update->withoutProviderRef(),
             $dto,
         );
 
-        $this->maybeDispatchAi($this->update->text);
+        $this->maybeDispatchAi($text);
+    }
+
+    /**
+     * Escape the characters Telegram's parse_mode=html requires escaped in
+     * plain text ('<', '>', '&') — deliberately NOT quotes: Telegram only
+     * recognizes &lt;/&gt;/&amp; in message text, so encoding quotes would
+     * surface as a literal "&quot;" instead of being decoded back.
+     *
+     * @param string $text
+     *
+     * @return string
+     */
+    private function escapeForTelegramHtml(string $text): string
+    {
+        return htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
     }
 
     /**
@@ -165,13 +208,40 @@ class EmailMessageService extends ToTgMessageService
      */
     protected function persistIncomingEmailMessage(): void
     {
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->platform,
             'message_type' => 'incoming',
             'from_id' => 0,
             'to_id' => 0,
-            'text' => $this->update->text ?? null,
+            'text' => $this->update->displayText(),
+        ]);
+
+        $this->recordIncomingAttachment($message);
+    }
+
+    /**
+     * Record the email's attachment (if any) on the local `local` disk copy
+     * ({@see \App\Modules\Email\Api\EmailImapClient::extractAttachments()}
+     * already stored it under `chat-attachments/`) so the admin workspace can
+     * render/download it via the same route outgoing attachments use — email
+     * has no provider-native URL to fall back on, unlike VK/Max.
+     *
+     * @param Message $message
+     *
+     * @return void
+     */
+    private function recordIncomingAttachment(Message $message): void
+    {
+        $attachment = $this->update->attachments[0] ?? null;
+        if ($attachment === null || empty($attachment['storedPath'])) {
+            return;
+        }
+
+        $message->attachments()->create([
+            'file_id' => $attachment['storedPath'],
+            'file_type' => str_starts_with($attachment['mime'], 'image/') ? 'photo' : 'document',
+            'file_name' => $attachment['name'],
         ]);
     }
 
@@ -201,8 +271,11 @@ class EmailMessageService extends ToTgMessageService
     }
 
     /**
-     * Email attachments are out of scope for this iteration — the inbox
-     * reader parses text-only, so these hooks are never reached.
+     * Never reached: an incoming email's (single) attachment is forwarded by
+     * {@see self::sendMessage()} directly — via `EmailUpdateDto::$attachments`
+     * rather than the base class's per-media-type dispatch, since IMAP has no
+     * "message type" the way a webhook payload does; this hook only exists to
+     * satisfy the abstract base class.
      *
      * @return void
      */
