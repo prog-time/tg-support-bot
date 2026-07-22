@@ -15,11 +15,13 @@ use Illuminate\Support\Facades\Log;
 /**
  * Forward an incoming email into the user's Telegram forum topic.
  *
- * Mirrors {@see SendAvitoTelegramMessageJob}, minus the CDN-download branch:
- * the Email channel is text-only in its first iteration, so there is never a
- * file field to upload. The row in `messages` is written only after the
- * Telegram call succeeds, keeping the "any persisted row was delivered"
- * invariant the chat-history assembler relies on.
+ * Mirrors {@see SendAvitoTelegramMessageJob}, plus a single-attachment path:
+ * when the email carried one attachment, `queryParams` is a `sendPhoto`/
+ * `sendDocument` call with `uploaded_file_path` set (built by
+ * `EmailMessageService::sendMessage()`) instead of `sendMessage`. The row in
+ * `messages` is written only after the Telegram call succeeds, keeping the
+ * "any persisted row was delivered" invariant the chat-history assembler
+ * relies on.
  *
  * There is no numeric sender id for an email (unlike Avito's author_id), so
  * `from_id` is persisted as 0 — the sender is identified by the BotUser
@@ -152,14 +154,32 @@ class SendEmailTelegramMessageJob extends AbstractSendMessageJob
             throw new \Exception('Expected TelegramAnswerDto', 1);
         }
 
-        Message::create([
+        $message = Message::create([
             'bot_user_id' => $botUser->id,
             'platform' => $botUser->platform,
             'message_type' => $this->typeMessage,
             'from_id' => 0,
             'to_id' => $resultQuery->message_id,
-            'text' => $this->updateDto->text ?? null,
+            // The readable form (subject + body), NOT $this->queryParams->text —
+            // that's HTML-escaped for the Telegram wire payload (EmailMessageService
+            // escapes '<'/'>'/'&' so a reply-quote's "<address>" doesn't break
+            // Telegram's HTML parser); persisting the escaped string would show
+            // literal "&lt;" once the admin workspace's Blade view re-escapes it.
+            'text' => $this->updateDto->displayText(),
         ]);
+
+        // The Telegram-bound copy (queryParams' uploaded_file_path) is already
+        // gone — ParserMethods::attachQuery() deletes it after upload. The
+        // permanent admin-workspace copy lives at a separate path
+        // (EmailImapClient::extractAttachments()'s `storedPath`).
+        $attachment = $this->updateDto->attachments[0] ?? null;
+        if ($attachment !== null && !empty($attachment['storedPath'])) {
+            $message->attachments()->create([
+                'file_id' => $attachment['storedPath'],
+                'file_type' => str_starts_with($attachment['mime'], 'image/') ? 'photo' : 'document',
+                'file_name' => $attachment['name'],
+            ]);
+        }
     }
 
     /**
