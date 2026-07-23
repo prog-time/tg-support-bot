@@ -485,9 +485,10 @@ tests/
 
 | Hook | Script | What it checks |
 |---|---|---|
+| `pre-commit` | `checks/runner.sh` | Branch name (`issues-{N}`), max file size (300 lines in `app/`), no debug code (`dd()`/`dump()`/`console.log()`/...) in `app/`, no inline `//`/`/* */` comments in `app/`, PHPStan on staged PHP files, Pint (`--test`, whole repo), every changed `app/*.php` has a matching test under `tests/`, full `php artisan test` |
 | `pre-push` | `linting/pre-push-check.sh` | PHPStan level 6 + PHPUnit |
 
-The `pre-commit` and `prepare-commit-msg` hooks have been removed. Pint formatting is not enforced by a local hook or CI at this time — run it manually before committing (`vendor/bin/pint`). PHPStan and tests are enforced by CI and by the `pre-push` hook.
+`checks/runner.sh` runs every `checks/scripts/*.sh` in turn — each script is independently runnable too (`bash checks/scripts/pint.sh`, etc.) for a quicker check while iterating. The `prepare-commit-msg` hook has been removed.
 
 Never bypass hooks with `--no-verify`.
 
