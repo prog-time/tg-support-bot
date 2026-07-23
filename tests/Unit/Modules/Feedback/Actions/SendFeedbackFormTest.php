@@ -140,17 +140,17 @@ class SendFeedbackFormTest extends TestCase
         $job = $pushed[0]['job'];
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
         $this->assertEquals($botUser->chat_id, $job->queryParams->chat_id);
-        $this->assertEquals('Пожалуйста, оцените качество нашей поддержки от 1 до 5.', $job->queryParams->text);
+        $this->assertEquals('Пожалуйста, оставьте отзыв о качестве нашей поддержки.', $job->queryParams->text);
     }
 
     /**
-     * Avito Messenger has no inline-keyboard mechanism, so the rating prompt is
-     * a plain one-way text message: there is no callback carrying
-     * feedback_rate_{botUserId}_{feedbackId}_{score} back to the bot, so
-     * HandleFeedbackRating is never reached for this platform. This is a
-     * deliberate, documented limitation (see SendFeedbackForm::sendAvito()) —
-     * this test locks in the current behavior (status stays 'awaiting_rating')
-     * so a future regression test can catch it if that ever changes.
+     * Avito Messenger has no inline-keyboard mechanism, so instead of a 1-5
+     * rating (which would need a tappable button to capture) the prompt asks
+     * for a free-text review — no callback needed, but also nothing to parse
+     * back into a structured rating: HandleFeedbackRating is never reached for
+     * this platform. This test locks in the current behavior (status stays
+     * 'awaiting_rating') so a future regression test can catch it if that ever
+     * changes (see SendFeedbackForm::sendAvito()).
      */
     public function test_avito_feedback_has_no_rating_keyboard_and_stays_awaiting_rating(): void
     {
