@@ -50,9 +50,11 @@ class AvitoBotController
             return response('ok', 200);
         }
 
-        // TODO(open question): route feedback-rating callbacks here once the
-        // keyboard/callback mechanism for Avito is confirmed (call the host's
-        // App\Modules\Feedback\Actions\HandleFeedbackRating with the payload).
+        // No feedback-rating callback route: Avito Messenger has no
+        // inline-keyboard mechanism, so SendFeedbackForm asks Avito users for
+        // a free-text review instead of a tappable 1-5 rating (deliberate
+        // product decision, not a pending TODO). Any reply the user sends
+        // just arrives below as a normal inbound message.
 
         if ($update->type === 'message' && $update->text !== null) {
             (new AvitoMessageService($update))->handleUpdate();
