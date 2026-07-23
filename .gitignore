@@ -44,3 +44,5 @@ yarn-error.log
 .claude
 /github-tasks.json
 /resources/ai/system-prompt.blade.php
+
+mutagen.yml.lock
