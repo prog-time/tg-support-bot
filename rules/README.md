@@ -55,7 +55,7 @@ rules/
 | Framework | Laravel 12 |
 | Language | PHP 8.2+ |
 | Database | PostgreSQL |
-| Queue | Laravel Queue (Redis) |
+| Queue | Laravel Queue (sync) |
 | Containers | Docker |
 | Monitoring | Laravel Telescope |
 | Live Chat | Node.js (port 3001) |

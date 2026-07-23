@@ -131,16 +131,16 @@ https://t.me/TgSupportTest1Bot
 - Настраиваемые шаблоны имен топиков
 
 ### Автоматизация
-- **AI помощник**: Интеграция с OpenAI, DeepSeek, GigaChat для генерации ответов (черновик на проверку менеджеру или авто-ответ)
+- **AI помощник**: Интеграция с OpenAI, DeepSeek, GigaChat для генерации ответов
 - Очереди сообщений с Laravel Queue
 - Webhook обработка в реальном времени
 - Виджет сайта на fetch-polling (без отдельного WebSocket сервера)
 
 ### Админ-панель
-- **Рабочее место менеджера** (`/admin/chats`): полноэкранный чат-воркспейс на Livewire со списком диалогов, историей, отправкой ответов
+- **Рабочее место менеджера** (`/admin/chats`): полноэкранный чат-воркспейс со списком диалогов
 - **Настройки** (`/admin/settings/*`): интеграции каналов, AI-помощник, API/вебхуки, команда операторов — всё хранится в БД (таблица `settings`), без правки `.env`
 - **Роли**: админ видит все экраны настроек; менеджер — только «Общие». Удаление чата доступно только админу
-- **Два режима работы менеджеров** (`MANAGER_INTERFACE`): через Telegram-супергруппу (топики) или через админ-панель
+- **Два режима работы менеджеров**: через Telegram-супергруппу (топики) или через админ-панель
 
 ### Управление и мониторинг
 - **Laravel Telescope**: Дашборд отладки (`/telescope`) — запросы, исключения, логи, SQL, очереди, кэш
@@ -159,15 +159,14 @@ https://t.me/TgSupportTest1Bot
 **Backend:**
 - Laravel 12 (PHP 8.2+)
 - PostgreSQL (база данных)
-- Redis (кэш и очереди)
-- Laravel Queue (обработка фоновых задач)
+- Laravel Queue (обработка фоновых задач, sync)
 - spatie/laravel-data (DTO)
 
 **Admin & Frontend:**
 - Livewire 3 + Blade (вся админка: вход `/admin/login`, рабочее место чата `/admin/chats`, настройки `/admin/settings/*`)
-- Стандартная Laravel-аутентификация (guard `web`); Filament не используется
+- Стандартная Laravel-аутентификация
 - Tailwind CSS v4 (дизайн-система админки)
-- Виджет живого чата — vanilla JS на fetch-polling (без отдельного Node.js/WebSocket сервера)
+- Виджет живого чата
 
 **Интеграции:**
 - Telegram Bot API
@@ -181,7 +180,7 @@ https://t.me/TgSupportTest1Bot
 - REST API + L5-Swagger (`/api/documentation`)
 
 **DevOps:**
-- Docker + Docker Compose (сервисы: `pet`, `pgdb`, `nginx`, `redis`, `laravel_queue`, `laravel_scheduler`)
+- Docker + Docker Compose (сервисы: `pet`, `pgdb`, `nginx`, `laravel_queue`, `laravel_scheduler`)
 - Nginx (reverse proxy, SSL)
 
 **Мониторинг и логирование:**
@@ -203,8 +202,6 @@ https://t.me/TgSupportTest1Bot
 - 📘 **С чего начать:** [docs.tg-support-bot.ru](https://docs.tg-support-bot.ru/docs/getting-started.html)
 - 🚀 **Установка через Docker Compose:** [инструкция](https://docs.tg-support-bot.ru/docs/installation-on-docker-compose.html)
 - 🖥 **Установка на хостинг:** [инструкция](https://docs.tg-support-bot.ru/docs/installation-on-hosting.html)
-- 🧩 **Несколько ботов на одном сервере:** [инструкция](https://docs.tg-support-bot.ru/docs/multi-instance-deployment.html)
-- 🎬 **Видео-инструкция (Docker Compose):** [YouTube](https://youtu.be/ZAtP9qJ5q9M)
 
 ### Установка через Docker Compose: с нуля
 
@@ -315,10 +312,6 @@ Email — встроенный канал поддержки, часть ядр�
 
 Проект включает готовый виджет живого чата для встраивания на сайт.
 
-### Демо
-
-[Пример работы виджета](https://tg-support-bot.ru/preview/chat)
-
 ### Установка виджета
 
 Виджет — это самодостаточный скрипт (`public/widget/widget.js`) на vanilla JS, который общается с бэкендом через REST-эндпоинты с fetch-polling (отдельный Node.js/WebSocket сервер больше не нужен).
@@ -395,7 +388,7 @@ curl -X POST https://yourdomain.com/api/external/user_12345/messages \
 
 Доступ защищён **сессионной авторизацией админки**: middleware-стек `['web', 'auth', App\Http\Middleware\TelescopeAccess::class]` — гость перенаправляется на `/admin/login` (302), не-админ получает **403**, админ открывает дашборд. HTTP Basic auth не используется (его `401`-челлендж вырезается edge-прокси перед доменом). Не зависит от `APP_DEBUG`; чтобы выключить дашборд полностью — `TELESCOPE_ENABLED=false`.
 
-Дашборд отладки: запросы, исключения, логи (`Log::channel('app')`), SQL-запросы, очереди/джобы, кэш, redis, события. Записи хранятся в таблицах `telescope_entries` (PostgreSQL) и обрезаются ежедневно (`telescope:prune --hours=48`). В окружении `local` пишется всё; в остальных — только сбои/исключения/расписание.
+Дашборд отладки: запросы, исключения, логи (`Log::channel('app')`), SQL-запросы, очереди/джобы, кэш, события. Записи хранятся в таблицах `telescope_entries` (PostgreSQL) и обрезаются ежедневно (`telescope:prune --hours=48`). В окружении `local` пишется всё; в остальных — только сбои/исключения/расписание.
 
 ### Логи
 
@@ -530,50 +523,6 @@ tail -f storage/logs/laravel-$(date +%F).log
 - Inline кнопки (url, callback) имеют приоритет над reply keyboard
 - Максимум 8 кнопок в одном ряду для Telegram
 - Для VK кнопки конвертируются в соответствующий формат VK API
-
----
-
-## Архитектура
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                       Nginx (Reverse Proxy)                       │
-│                          SSL termination                          │
-└───────────────────────────────┬──────────────────────────────────┘
-                                 │
-                        ┌────────▼────────┐
-                        │  Laravel App    │   (pet, PHP-FPM)
-                        │  HTTP + Webhooks│   + админ-панель /admin/*
-                        └────────┬────────┘
-                                 │
-            ┌────────────────────┼────────────────────┐
-            │                    │                     │
-   ┌────────▼────────┐  ┌────────▼────────┐   ┌────────▼────────┐
-   │ Queue Worker    │  │ Scheduler       │   │  File Storage   │
-   │ (laravel_queue) │  │(laravel_scheduler)  │ (Public Files)  │
-   └────────┬────────┘  └─────────────────┘   └─────────────────┘
-            │
-   ┌────────▼────────┬──────────────────┐
-   │   PostgreSQL    │      Redis        │
-   │     (pgdb)      │ (cache / queue)   │
-   └─────────────────┴──────────────────┘
-```
-
-### Основные компоненты
-
-**App Service** (`pet`): Laravel приложение — HTTP-запросы, webhook'и от Telegram/VK/Max, REST API, виджет, админ-панель (`/admin/*`)
-
-**Queue Worker** (`laravel_queue`): Обработка фоновых задач (отправка сообщений, AI обработка)
-
-**Scheduler** (`laravel_scheduler`): Планировщик задач (в т.ч. `telescope:prune`)
-
-**PostgreSQL** (`pgdb`): Основная база данных (пользователи, сообщения, топики, настройки)
-
-**Redis**: Кэш, очереди, кэш настроек
-
-**Nginx**: Веб-сервер, reverse proxy, SSL termination
-
-**Monitoring**: Laravel Telescope (отладка: запросы/логи/SQL/очереди)
 
 ---
 

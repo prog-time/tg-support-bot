@@ -2,6 +2,12 @@
 
 echo "🔍 Checking tests for code changes..."
 
+# Authorship-quality gate — skip during a merge commit; see no-inline-comments.sh.
+if [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]; then
+  echo "✅ Merge commit — skipping (not new authorship)"
+  exit 0
+fi
+
 SOURCE_DIR="app"
 TEST_DIR="tests"
 

@@ -95,7 +95,7 @@ class AiProviderVerificationService
      *
      * @return array{success: bool, message: string}
      */
-    public function verifyGigachat(string $clientSecret, string $certPath): array
+    public function verifyGigachat(string $clientSecret, string $certPath, string $scope = 'GIGACHAT_API_PERS'): array
     {
         if ($clientSecret === '') {
             return ['success' => false, 'message' => 'Не указан client secret GigaChat.'];
@@ -104,6 +104,8 @@ class AiProviderVerificationService
         if ($certPath === '') {
             return ['success' => false, 'message' => 'Загрузите сертификат GigaChat.'];
         }
+
+        $scope = $scope !== '' ? $scope : 'GIGACHAT_API_PERS';
 
         try {
             $response = Http::withHeaders([
@@ -115,17 +117,52 @@ class AiProviderVerificationService
                 ->timeout(self::TIMEOUT)
                 ->asForm()
                 ->post('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', [
-                    'scope' => 'GIGACHAT_API_PERS',
+                    'scope' => $scope,
                 ]);
 
             if ($response->successful() && ! empty($response->json()['access_token'])) {
                 return ['success' => true, 'message' => 'Доступы GigaChat прошли проверку.'];
             }
 
-            return ['success' => false, 'message' => 'GigaChat: проверка не пройдена (HTTP ' . $response->status() . ').'];
+            return [
+                'success' => false,
+                'message' => 'GigaChat: проверка не пройдена (HTTP ' . $response->status() . ')' . $this->gigachatErrorHint($response) . '.',
+            ];
         } catch (\Throwable) {
             return ['success' => false, 'message' => 'Не удалось связаться с API GigaChat.'];
         }
+    }
+
+    /**
+     * Build a human hint for a failed GigaChat OAuth response.
+     *
+     * Surfaces the provider's error body (no secret is present in an OAuth
+     * error payload) plus a status-specific tip — most 400s here are a scope
+     * mismatch (PERS vs B2B/CORP) or a malformed Authorization key.
+     *
+     * @param \Illuminate\Http\Client\Response $response
+     *
+     * @return string Leading-space hint, or '' when nothing useful is available.
+     */
+    private function gigachatErrorHint(\Illuminate\Http\Client\Response $response): string
+    {
+        $hint = match ($response->status()) {
+            400 => ' — проверьте scope (PERS / B2B / CORP) и формат Authorization key',
+            401 => ' — неверные авторизационные данные',
+            default => '',
+        };
+
+        $detail = $response->json('message') ?? $response->json('error');
+        if (! is_string($detail) || $detail === '') {
+            $body = trim((string) $response->body());
+            $detail = $body !== '' ? mb_substr($body, 0, 200) : '';
+        }
+
+        if ($detail !== '') {
+            $hint .= ' [' . $detail . ']';
+        }
+
+        return $hint;
     }
 
     /**

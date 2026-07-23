@@ -25,7 +25,7 @@ This project uses the following observability tools:
 | Tool | Purpose | Access |
 |---|---|---|
 | **Rotating log files** | Application logs on disk (`storage/logs/laravel-*.log`, `storage/logs/app-*.log`) | `php artisan pail` / `tail` |
-| **Laravel Telescope** | Debug/inspection dashboard: requests, exceptions, **logs**, queries, jobs, cache, redis, events | `GET /telescope` — session-based admin auth (guests → `/admin/login`); works with `APP_DEBUG=false` |
+| **Laravel Telescope** | Debug/inspection dashboard: requests, exceptions, **logs**, queries, jobs, cache, events | `GET /telescope` — session-based admin auth (guests → `/admin/login`); works with `APP_DEBUG=false` |
 | **TG Logger** (`prog-time/tg-logger`) | Send critical alerts to Telegram channel | `TG_LOGGER_TOKEN`, `TG_LOGGER_CHAT_ID` |
 
 > **Loki + Grafana were removed.** Centralized log aggregation is no longer used — logs live in rotating files (view with `php artisan pail`) and in the **Telescope** Logs tab at `/telescope`. The former `Log::channel('loki')` calls were renamed to `Log::channel('app')`, a daily rotating-file channel (`storage/logs/app-YYYY-MM-DD.log`); the `App\Logging\LokiHandler` class was deleted.
@@ -156,7 +156,6 @@ The application must remain operable when checked by Docker/orchestration.
 - PHP-FPM health is managed by Docker (`docker/php-fpm/` config)
 - Nginx health is managed by Docker (`docker/nginx/` config)
 - PostgreSQL connectivity is verified on app startup
-- Redis connectivity is verified on queue worker startup
 - Do not add heavy database queries to health check endpoints
 
 ---
@@ -170,7 +169,7 @@ Forbidden in logs:
 - AI provider credentials from settings (`ai.openai_api_key`, `ai.gigachat_client_secret`, `ai.deepseek_client_secret`, etc.)
 - Bearer tokens from `external_source_access_tokens`
 - User passwords
-- Infrastructure secrets (`DB_PASSWORD`, `REDIS_PASSWORD`, `APP_KEY`, `TG_LOGGER_TOKEN`)
+- Infrastructure secrets (`DB_PASSWORD`, `APP_KEY`, `TG_LOGGER_TOKEN`)
 - Full webhook payloads (may contain PII)
 
 Mask when necessary:

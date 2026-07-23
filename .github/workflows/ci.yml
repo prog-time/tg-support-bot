@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main", "dev" ]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   hadolint:
     runs-on: ubuntu-latest
@@ -228,3 +232,109 @@ jobs:
 
       - name: Run tests in parallel with isolation
         run: php artisan test
+
+  pint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Pint (check only)
+        run: ./vendor/bin/pint --test
+
+  composer_validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+
+      - name: Validate composer.json against composer.lock
+        run: composer validate --strict --no-check-publish
+
+  composer_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Audit dependencies for known vulnerabilities
+        run: composer audit --no-dev --abandoned=ignore
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="8.18.4"
+          BASE="https://github.com/gitleaks/gitleaks/releases/download"
+          FILE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL "${BASE}/v${GITLEAKS_VERSION}/${FILE}" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+
+      - name: Run gitleaks
+        run: |
+          set -euo pipefail
+
+          echo "ℹ️ Running gitleaks on the repository..."
+
+          if gitleaks detect --source . --no-banner --redact; then
+            echo "✅ No secrets found"
+          else
+            echo "❌ gitleaks found potential secrets"
+            exit 1
+          fi
+
+  vite_build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build front-end assets
+        run: npm run build

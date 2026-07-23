@@ -91,6 +91,9 @@ class AiProviderAccessPage extends Component
     /** @var string|null GigaChat temperature */
     public ?string $gigachat_temperature = null;
 
+    /** @var string|null GigaChat OAuth scope (GIGACHAT_API_PERS | GIGACHAT_API_B2B | GIGACHAT_API_CORP) */
+    public ?string $gigachat_scope = null;
+
     /** @var string|null Stored relative path of the GigaChat certificate (read-only display) */
     public ?string $gigachat_path_cert = null;
 
@@ -108,6 +111,9 @@ class AiProviderAccessPage extends Component
     private const GIGACHAT_CERT_NAME = 'russian_trusted_root_ca_pem.crt';
 
     private const GIGACHAT_CERT_RELATIVE = 'certs/russian_trusted_root_ca_pem.crt';
+
+    /** Allowed GigaChat OAuth scopes (account types). */
+    private const GIGACHAT_SCOPES = ['GIGACHAT_API_PERS', 'GIGACHAT_API_B2B', 'GIGACHAT_API_CORP'];
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -227,6 +233,11 @@ class AiProviderAccessPage extends Component
             $this->formErrors['gigachat_max_tokens'] = 'Макс. токенов должно быть положительным числом.';
         }
 
+        if ($this->gigachat_scope !== null && $this->gigachat_scope !== ''
+            && ! in_array($this->gigachat_scope, self::GIGACHAT_SCOPES, true)) {
+            $this->formErrors['gigachat_scope'] = 'Недопустимый scope GigaChat.';
+        }
+
         if ($this->gigachat_cert_file !== null) {
             $ext = strtolower((string) $this->gigachat_cert_file->getClientOriginalExtension());
 
@@ -297,7 +308,11 @@ class AiProviderAccessPage extends Component
             ? $this->gigachat_client_secret
             : (string) ($settings->get('ai.gigachat_client_secret') ?? '');
 
-        return $verifier->verifyGigachat($secret, $this->resolveGigachatCertPath());
+        return $verifier->verifyGigachat(
+            $secret,
+            $this->resolveGigachatCertPath(),
+            (string) ($this->gigachat_scope ?: 'GIGACHAT_API_PERS'),
+        );
     }
 
     /**
@@ -346,6 +361,7 @@ class AiProviderAccessPage extends Component
         $this->gigachat_max_tokens = $rawGigaMax !== null ? (int) $rawGigaMax : null;
         $this->gigachat_temperature = (string) ($settings->get('ai.gigachat_temperature') ?? '');
         $this->gigachat_path_cert = (string) ($settings->get('ai.gigachat_path_cert') ?? '');
+        $this->gigachat_scope = (string) ($settings->get('ai.gigachat_scope') ?: 'GIGACHAT_API_PERS');
         $this->gigachat_cert_uploaded = File::exists(storage_path(self::GIGACHAT_CERT_RELATIVE));
 
         // Secret fields: intentionally left null — never pre-filled
@@ -438,6 +454,7 @@ class AiProviderAccessPage extends Component
         }
 
         $settings->set('ai.gigachat_temperature', $this->gigachat_temperature ?? '');
+        $settings->set('ai.gigachat_scope', $this->gigachat_scope ?: 'GIGACHAT_API_PERS');
 
         // Certificate: when a new file is uploaded, store it under storage/certs with the
         // fixed name and persist its storage-relative path. Otherwise keep the current cert.

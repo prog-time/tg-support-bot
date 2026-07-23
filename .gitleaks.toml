@@ -1,0 +1,28 @@
+# gitleaks configuration for tg-support-bot
+# Used by the `gitleaks` CI job (.github/workflows/ci.yml).
+#
+# We extend gitleaks' default ruleset and allowlist a small set of KNOWN
+# false positives that the high-entropy `generic-api-key` heuristic flags in
+# git history. All four are non-secret example/fixture values:
+#   - test fixtures with fake API keys/tokens,
+#   - an example key in the rules documentation.
+# They are allowlisted by the exact commit that introduced them, so any
+# NEW secret in any NEW commit is still caught.
+
+title = "tg-support-bot gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives — test fixtures and docs example keys (high-entropy, not real credentials)"
+commits = [
+  # tests/Unit/Livewire/Settings/IntegrationChannelPageTest.php — fake channel token in a test
+  "a743189840972a5e2ba79a69ea883eee1f5137cf",
+  # rules/master-promt.md — example API key in documentation
+  "11644b094b313c7f736a75a43f7eecec64bd6fce",
+  # tests/Unit/Services/File/FileServiceTest.php — fixture value (file no longer in tree)
+  "7a01e6a522459ad7e271b802ff89c286bcf9078a",
+  # resources/views/preview/chat.blade.php — demo preview value (file no longer in tree)
+  "1bd097ea2cf2d9d2ce1ef451c1a15830f37600dc",
+]

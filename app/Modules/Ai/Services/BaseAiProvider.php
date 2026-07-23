@@ -44,7 +44,7 @@ abstract class BaseAiProvider implements AiProviderInterface
 
         $keys = [
             'api_key', 'client_id', 'client_secret',
-            'base_url', 'model', 'max_tokens', 'temperature', 'path_cert',
+            'base_url', 'model', 'max_tokens', 'temperature', 'path_cert', 'scope',
         ];
 
         $config = [];

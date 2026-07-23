@@ -2,6 +2,15 @@
 
 echo "🔍 Checking inline comments..."
 
+# Authorship-quality gate — skip during a merge commit. The staged diff for
+# a merge is everything reconciled from both parents, not just new work; it
+# would otherwise flag pre-existing style from the other branch that nobody
+# touched here.
+if [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]; then
+  echo "✅ Merge commit — skipping (not new authorship)"
+  exit 0
+fi
+
 TARGET_DIR="app"
 
 fail=0

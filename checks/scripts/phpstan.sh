@@ -2,7 +2,6 @@
 
 echo "🔍 Running PHPStan..."
 
-LEVEL=7
 TARGET_DIR="app"
 
 # Проверяем наличие PHPStan
@@ -20,8 +19,10 @@ if [ -z "$files" ]; then
   exit 0
 fi
 
+# No --level override — inherit the project's own phpstan.neon (level 6),
+# same standard as linting/pre-push-check.sh and CI. A hardcoded stricter
+# level here would fail code that's already green everywhere else.
 vendor/bin/phpstan analyse \
-  --level=$LEVEL \
   $files
 
 status=$?

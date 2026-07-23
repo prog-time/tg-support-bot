@@ -133,7 +133,7 @@ DB::select("SELECT * FROM bot_users WHERE chat_id = '$chatId'");
 ## 5. Secrets Management Rules
 
 - **Application access credentials (bot tokens, webhook secrets, AI provider keys) live in the DB `settings` table, NOT in `.env`/`config()`.** They are read via `SettingsService`, stored encrypted (`Crypt::encrypt()`) for `is_secret` keys, and edited in `/admin/settings/*`. There is no `config()` fallback for these keys (`config => null` in `SettingKeyRegistry`).
-- Only **infrastructure** secrets remain in environment variables (`.env`): `APP_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Never commit `.env`.
+- Only **infrastructure** secrets remain in environment variables (`.env`): `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Never commit `.env`.
 - Never hardcode API keys, tokens, or passwords in code or config files
 - Never echo secrets in logs (see also `process/observability.md`)
 
@@ -157,7 +157,7 @@ $token = '1234567890:AABBcc_my_telegram_token_here';        // hardcoded secret
 - `ai.openai_api_key`, `ai.deepseek_client_secret`, `ai.gigachat_client_secret` (+ client ids / base urls / models / cert) — AI providers
 - Non-secret access keys (`telegram.group_id`, `telegram_ai.username`, `avito.client_id`, `avito.user_id`, `avito.base_url`, etc.) also live in `settings` but are stored unencrypted
 
-**Infrastructure secrets (`.env` only):** `APP_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Per-source bearer tokens live in the `external_source_access_tokens` table.
+**Infrastructure secrets (`.env` only):** `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Per-source bearer tokens live in the `external_source_access_tokens` table.
 
 **Handling rules for DB settings secrets:**
 - Secrets (`is_secret = true` in `SettingKeyRegistry`) are encrypted via `Crypt::encrypt()` and surfaced in the admin UI as `<input type="password">` fields

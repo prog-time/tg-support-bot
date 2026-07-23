@@ -57,7 +57,7 @@ TG Support Bot is a Laravel 12 application for customer support via Telegram and
 | Language | PHP 8.2+ |
 | Framework | Laravel 12 |
 | Database | PostgreSQL |
-| Cache / Queue | Redis + Laravel Queue |
+| Cache / Queue | Laravel Queue (sync) |
 | Containers | Docker |
 | API Documentation | L5-Swagger (annotations-based) |
 | Static Analysis | PHPStan level 6 (larastan) |
@@ -111,7 +111,7 @@ Data Layer          app/Models/ + PostgreSQL
 - **Middleware Pattern** — webhook validation before controller runs
 - **Contract Pattern** — `ManagerInterfaceContract` decouples manager UI from business logic
 - **Platform Registry Pattern** — `PlatformChannel` + `PlatformChannelRegistry` (`app/Platform/`) let external (incl. paid, private) platform packages self-register delivery for a `platform` key without editing the core. Built-in channels (Telegram/VK/Max/Avito) do NOT go through this registry — they are wired directly into `DeliverAiAnswerToUser`, `SendReplyAction`, and `SendFeedbackForm` via explicit `case` branches on `platform`. The registry exists for future third-party platforms only
-- **Settings Pattern** — `SettingsService` + `SettingKeyRegistry` (`app/Services/Settings/`) provide a unified `get/set/has/forget` API for runtime-editable settings (DB → optional `config()` fallback, Redis cache, `Crypt` encryption for secrets, type coercion); all channel/AI keys have `config => null` (DB-only, no .env fallback); known keys registered in `SettingKeyRegistry`
+- **Settings Pattern** — `SettingsService` + `SettingKeyRegistry` (`app/Services/Settings/`) provide a unified `get/set/has/forget` API for runtime-editable settings (DB → optional `config()` fallback, file-cache layer, `Crypt` encryption for secrets, type coercion); all channel/AI keys have `config => null` (DB-only, no .env fallback); known keys registered in `SettingKeyRegistry`
 - **Admin Design System Pattern** — Tailwind v4 tokens in `resources/css/app.css @theme` + shared Blade components in `resources/views/components/admin/`. All admin screens — login, chat workspace and Settings — are custom Livewire/Blade on this design system. There is no Filament; authentication uses the standard Laravel `web` guard (login: `App\Livewire\Auth\LoginPage`).
 
 ---
@@ -330,7 +330,7 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - **Reading priority:** DB row → `config()` default (declared in `SettingKeyRegistry`) → `null`. Channel credentials and AI settings have `config => null` (no fallback) — they return `null` until explicitly saved.
 - **Never call `config()` directly** for a setting that may be overridden at runtime — use `app(\App\Services\Settings\SettingsService::class)->get('key')` instead
 - Secret keys (`is_secret=true` in `SettingKeyRegistry`) are encrypted with `Crypt::encrypt()` before DB write and decrypted transparently in `get()` — never read the raw `settings.value` column for secret keys
-- Cache: values cached forever in the default store (Redis); invalidated on `set()` / `forget()`
+- Cache: values cached forever in the default store (file); invalidated on `set()` / `forget()`
 - Known keys and their types/fallbacks/secret flags are registered in `SettingKeyRegistry::$keys`
 - In-scope keys with `config => null`: all `telegram.*`, `telegram_ai.*`, `vk.*`, `max.*`, `avito.*`, all `ai.*` credentials and behaviour settings. Infrastructure keys (`app.manager_interface`) retain their `config()` fallback.
 - Avito settings keys: `avito.client_id`, `avito.client_secret`(secret), `avito.user_id` (auto-captured, non-secret), `avito.base_url` (non-secret), `avito.webhook_secret`(secret). There is no `config/avito.php` — credentials are read exclusively via `SettingsService`, no `.env` involved. Register the Avito webhook with `docker exec -it pet php artisan avito:set-webhook` (subscribes `POST /api/avito/bot/{secret}` — where `{secret}` is `avito.webhook_secret` — with the Avito Messenger API)

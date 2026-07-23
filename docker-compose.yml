@@ -11,7 +11,6 @@ services:
         restart: always
         depends_on:
             - pgdb
-            - redis
         env_file:
             - .env
         working_dir: /var/www/
@@ -59,25 +58,12 @@ services:
         networks:
             - pet
 
-    redis:
-        image: redis:latest
-        container_name: redis
-        restart: always
-        ports:
-            - ${REDIS_PORT}
-        environment:
-            - REDIS_PASSWORD=${REDIS_PASSWORD}
-        command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
-        networks:
-            - pet
-
     queue:
         build: .
         container_name: laravel_queue
         restart: always
         depends_on:
             - app
-            - redis
         env_file:
             - .env
         environment:
@@ -100,7 +86,6 @@ services:
         restart: always
         depends_on:
             - app
-            - redis
         env_file:
             - .env
         environment:

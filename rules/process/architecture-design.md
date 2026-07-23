@@ -337,7 +337,7 @@ Keys with `is_secret=true` in the registry are encrypted with `Crypt::encrypt()`
 
 ### Cache behaviour
 
-- Values are cached in the default cache store (Redis) under `settings.{key}` forever.
+- Values are cached in the default cache store (file) under `settings.{key}` forever.
 - Cache is invalidated when `set()` or `forget()` is called.
 - A sentinel (`__settings_null__`) is cached when there is no DB row, preventing repeated DB misses.
 

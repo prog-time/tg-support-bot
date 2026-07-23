@@ -2,6 +2,12 @@
 
 echo "🔍 Checking debug code..."
 
+# Authorship-quality gate — skip during a merge commit; see no-inline-comments.sh.
+if [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]; then
+  echo "✅ Merge commit — skipping (not new authorship)"
+  exit 0
+fi
+
 TARGET_DIR="app"
 
 PATTERNS=(
@@ -29,9 +35,14 @@ for file in $files; do
 
   for pattern in "${PATTERNS[@]}"; do
 
-    if grep -n "$pattern" "$file" > /dev/null; then
+    # Plain substring matching false-positives on real code: "ray(" matches
+    # inside "array("/"in_array(", "dd(" matches inside "add(". \b anchors
+    # the pattern to a real token boundary instead.
+    regex="\\b$(printf '%s' "$pattern" | sed 's/[.[\*^$(]/\\&/g')"
+
+    if grep -nE "$regex" "$file" > /dev/null; then
       echo "❌ Debug code found: $file"
-      grep -n "$pattern" "$file"
+      grep -nE "$regex" "$file"
       fail=1
     fi
 

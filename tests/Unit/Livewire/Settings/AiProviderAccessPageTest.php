@@ -65,6 +65,7 @@ class AiProviderAccessPageTest extends TestCase
         $mock->shouldReceive('get')->with('ai.gigachat_max_tokens')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.gigachat_temperature')->andReturn('');
         $mock->shouldReceive('get')->with('ai.gigachat_path_cert')->andReturn('');
+        $mock->shouldReceive('get')->with('ai.gigachat_scope')->andReturn('');
 
         $component = new AiProviderAccessPage();
         $component->mount('openai', $mock);
@@ -252,6 +253,7 @@ class AiProviderAccessPageTest extends TestCase
         $mock->shouldReceive('set')->with('ai.gigachat_base_url', 'https://gigachat.sber.ru')->once();
         $mock->shouldReceive('set')->with('ai.gigachat_model', 'GigaChat-Pro')->once();
         $mock->shouldReceive('set')->with('ai.gigachat_temperature', '0.6')->once();
+        $mock->shouldReceive('set')->with('ai.gigachat_scope', 'GIGACHAT_API_PERS')->once();
         // path_cert is NOT persisted from a text field — it is set only when a
         // certificate file is uploaded (no upload here, so no set call expected).
         $mock->shouldNotReceive('set')->with('ai.gigachat_path_cert', Mockery::any());
@@ -266,6 +268,40 @@ class AiProviderAccessPageTest extends TestCase
         $component->save($mock);
 
         $this->assertTrue($component->saved);
+    }
+
+    public function test_save_gigachat_persists_selected_scope(): void
+    {
+        /** @var \Mockery\MockInterface&SettingsService $mock */
+        $mock = Mockery::mock(SettingsService::class);
+        $mock->shouldReceive('get')->andReturn(null);
+        $mock->shouldReceive('set')->with('ai.gigachat_scope', 'GIGACHAT_API_B2B')->once();
+        $mock->shouldReceive('set')->with(Mockery::not('ai.gigachat_scope'), Mockery::any());
+
+        $component = new AiProviderAccessPage();
+        $component->mount('gigachat', $mock);
+        $component->gigachat_scope = 'GIGACHAT_API_B2B';
+        $component->gigachat_max_tokens = null;
+        $component->save($mock);
+
+        $this->assertTrue($component->saved);
+    }
+
+    public function test_save_gigachat_rejects_unknown_scope(): void
+    {
+        /** @var \Mockery\MockInterface&SettingsService $mock */
+        $mock = Mockery::mock(SettingsService::class);
+        $mock->shouldReceive('get')->andReturn(null);
+        $mock->shouldNotReceive('set');
+
+        $component = new AiProviderAccessPage();
+        $component->mount('gigachat', $mock);
+        $component->gigachat_scope = 'GIGACHAT_API_BOGUS';
+        $component->gigachat_max_tokens = null;
+        $component->save($mock);
+
+        $this->assertFalse($component->saved);
+        $this->assertArrayHasKey('gigachat_scope', $component->formErrors);
     }
 
     public function test_save_gigachat_does_not_overwrite_client_secret_when_empty(): void

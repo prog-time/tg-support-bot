@@ -280,6 +280,24 @@
                             />
                         </x-admin.form-field>
 
+                        {{-- Scope --}}
+                        <x-admin.form-field
+                            label="Scope (тип проекта)"
+                            for="gigachat_scope"
+                            hint="PERS — для физлиц, B2B / CORP — для юрлиц. Несоответствие даёт ошибку HTTP 400."
+                            :error="$formErrors['gigachat_scope'] ?? null"
+                        >
+                            <select
+                                id="gigachat_scope"
+                                wire:model="gigachat_scope"
+                                class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                            >
+                                <option value="GIGACHAT_API_PERS">GIGACHAT_API_PERS (физлица)</option>
+                                <option value="GIGACHAT_API_B2B">GIGACHAT_API_B2B (юрлица)</option>
+                                <option value="GIGACHAT_API_CORP">GIGACHAT_API_CORP (корпоративный)</option>
+                            </select>
+                        </x-admin.form-field>
+
                         {{-- Base URL --}}
                         <x-admin.form-field
                             label="Base URL"

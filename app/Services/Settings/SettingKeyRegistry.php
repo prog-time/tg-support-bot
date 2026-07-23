@@ -350,6 +350,13 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
+        // OAuth scope: GIGACHAT_API_PERS (individuals) | GIGACHAT_API_B2B |
+        // GIGACHAT_API_CORP (legal entities). Defaults to PERS in code when unset.
+        'ai.gigachat_scope' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
     ];
 
     /**

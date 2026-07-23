@@ -122,10 +122,8 @@ The application runs in Docker. All development commands must be run inside the 
 |---|---|---|
 | PHP-FPM | `pet` | Main application container |
 | PostgreSQL | `pgdb` | Database |
-| Redis | `redis` | Cache + Queue |
 | Nginx | `nginx` | Web server |
 | Queue worker | `queue` | `php artisan queue:work` |
-| Node.js | `node` | Live chat server |
 
 Queue worker config:
 - Tries: 3

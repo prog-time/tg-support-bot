@@ -103,7 +103,7 @@ class GigaChatProvider extends BaseAiProvider
         ])->withOptions([
             'verify' => storage_path($this->config['path_cert'] ?? ''),
         ])->asForm()->post('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', [
-            'scope' => 'GIGACHAT_API_PERS',
+            'scope' => $this->config['scope'] ?? 'GIGACHAT_API_PERS',
         ]);
 
         if (!$response->successful()) {

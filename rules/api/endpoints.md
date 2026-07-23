@@ -158,7 +158,7 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/telescope` | session (admin only) | Telescope dashboard — requests, exceptions, logs, queries, jobs, cache, redis, events, etc. Path configurable via `TELESCOPE_PATH` |
+| `GET` | `/telescope` | session (admin only) | Telescope dashboard — requests, exceptions, logs, queries, jobs, cache, events, etc. Path configurable via `TELESCOPE_PATH` |
 
 > Authorization: gated by the middleware stack `['web', 'auth', App\Http\Middleware\TelescopeAccess::class]` (in `config/telescope.php` `middleware`). Guests are redirected to `/admin/login` (302) by the `auth` middleware; authenticated non-admins get **403**; admins reach the dashboard. HTTP Basic auth was removed — its `401` `WWW-Authenticate` challenge is stripped by the upstream edge proxy in front of the production domain, so the login prompt never reached the browser. Independent of `APP_DEBUG` (set `TELESCOPE_ENABLED=false` to disable entirely). See `process/security.md` §7 and `process/observability.md`.
 

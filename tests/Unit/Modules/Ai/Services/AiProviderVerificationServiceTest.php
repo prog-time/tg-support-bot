@@ -144,4 +144,24 @@ class AiProviderVerificationServiceTest extends TestCase
         $this->assertFalse($result['success']);
         Http::assertNothingSent();
     }
+
+    public function test_verify_gigachat_sends_provided_scope(): void
+    {
+        Http::fake(['*' => Http::response(['access_token' => 'abc', 'expires_at' => time() + 1800], 200)]);
+
+        $this->service->verifyGigachat('base64secret', '/tmp/ca.crt', 'GIGACHAT_API_B2B');
+
+        Http::assertSent(fn ($request) => ($request['scope'] ?? null) === 'GIGACHAT_API_B2B');
+    }
+
+    public function test_verify_gigachat_surfaces_error_detail_on_failure(): void
+    {
+        Http::fake(['*' => Http::response(['message' => 'invalid scope'], 400)]);
+
+        $result = $this->service->verifyGigachat('base64secret', '/tmp/ca.crt', 'GIGACHAT_API_PERS');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('400', $result['message']);
+        $this->assertStringContainsString('invalid scope', $result['message']);
+    }
 }
