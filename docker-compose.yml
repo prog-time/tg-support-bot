@@ -2,7 +2,12 @@ services:
     app:
         build: .
         container_name: pet
-        user: root
+        # Пользователь НЕ переопределяется: из Dockerfile наследуется www-data
+        # (uid 33) — тот же, под которым работают php-fpm воркеры, queue и
+        # scheduler. Раньше здесь стоял `user: root`, из-за чего
+        # `docker exec pet composer install` создавал vendor/ и
+        # bootstrap/cache/*.php от root, и www-data потом не мог их перезаписать.
+        # Каталоги на хосте должны принадлежать uid 33 — см. README, «Установка».
         restart: always
         depends_on:
             - pgdb
@@ -61,6 +66,10 @@ services:
             - app
         env_file:
             - .env
+        environment:
+            # Tells docker/scripts/entrypoint.sh to wait for the `app`
+            # container's composer/npm install instead of racing it.
+            - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www
@@ -79,6 +88,10 @@ services:
             - app
         env_file:
             - .env
+        environment:
+            # Tells docker/scripts/entrypoint.sh to wait for the `app`
+            # container's composer/npm install instead of racing it.
+            - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www

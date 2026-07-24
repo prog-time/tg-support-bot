@@ -6,6 +6,8 @@ use App\Jobs\EnrichBotUserProfileJob;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Ai\Actions\DeliverAiAnswerToUser;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
@@ -158,6 +160,70 @@ class DeliverAiAnswerToUserTest extends TestCase
         $this->assertEquals(1, Message::where('bot_user_id', $botUser->id)->count());
     }
 
+    public function test_dispatches_simple_avito_job_for_avito_user_and_persists_plain_text(): void
+    {
+        $botUser = BotUser::getUserByChatId('u2i-' . time(), 'avito');
+        $botUser->save();
+
+        $htmlText = '<b>Здравствуйте!</b> <i>Спасибо за обращение.</i>';
+
+        $result = (new DeliverAiAnswerToUser())->execute($botUser, $htmlText);
+
+        $this->assertTrue($result);
+
+        Queue::assertPushed(SendAvitoSimpleMessageJob::class);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendAvitoSimpleMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $job = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
+        $this->assertEquals($botUser->chat_id, $job->queryParams->chat_id);
+        // Avito receives plain text — HTML tags stripped from the AI draft.
+        $this->assertEquals('Здравствуйте! Спасибо за обращение.', $job->queryParams->text);
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'avito',
+            'message_type' => 'outgoing',
+            'text' => 'Здравствуйте! Спасибо за обращение.',
+        ]);
+
+        $this->assertEquals(1, Message::where('bot_user_id', $botUser->id)->count());
+    }
+
+    public function test_dispatches_simple_email_job_for_email_user_and_persists_plain_text(): void
+    {
+        $botUser = BotUser::getUserByChatId('ai-answer@example.com', 'email');
+
+        $htmlText = '<b>Здравствуйте!</b> <i>Спасибо за обращение.</i>';
+
+        $result = (new DeliverAiAnswerToUser())->execute($botUser, $htmlText);
+
+        $this->assertTrue($result);
+
+        Queue::assertPushed(SendEmailMessageJob::class);
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendEmailMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $job = $pushed[0]['job'];
+        $this->assertEquals($botUser->chat_id, $job->queryParams->to);
+        // Email receives plain text — HTML tags stripped from the AI draft.
+        $this->assertEquals('Здравствуйте! Спасибо за обращение.', $job->queryParams->text);
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'email',
+            'message_type' => 'outgoing',
+            'text' => 'Здравствуйте! Спасибо за обращение.',
+        ]);
+
+        $this->assertEquals(1, Message::where('bot_user_id', $botUser->id)->count());
+    }
+
     public function test_no_duplicate_messages_row_on_repeated_calls(): void
     {
         $botUser = BotUser::getUserByChatId(time(), 'vk');
@@ -187,6 +253,8 @@ class DeliverAiAnswerToUserTest extends TestCase
         Queue::assertNotPushed(SendVkMessageJob::class);
         Queue::assertNotPushed(SendMaxSimpleMessageJob::class);
         Queue::assertNotPushed(SendMaxMessageJob::class);
+        Queue::assertNotPushed(SendAvitoSimpleMessageJob::class);
+        Queue::assertNotPushed(SendEmailMessageJob::class);
 
         // No messages row created for unsupported platform.
         $this->assertEquals(0, Message::where('bot_user_id', $botUser->id)->count());

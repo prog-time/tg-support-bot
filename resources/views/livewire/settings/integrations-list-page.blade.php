@@ -1,4 +1,4 @@
-{{-- Раздел «Интеграции»: каналы сгруппированы — мессенджеры и (виджет + ИИ-ассистент) --}}
+{{-- Раздел «Интеграции»: каналы сгруппированы — источники и (виджет + ИИ-ассистент) --}}
 <div class="p-4 lg:p-8 lg:max-w-3xl">
 
     {{-- ── Page header --}}
@@ -7,12 +7,12 @@
         <p class="mt-0.5 text-sm text-text-secondary">Управление каналами поддержки</p>
     </div>
 
-    {{-- ── Channel cards — grouped: messengers and AI assistant ──────────── --}}
+    {{-- ── Channel cards — grouped: sources and AI assistant ──────────── --}}
     <div class="space-y-6">
 
-        {{-- ══ Группа 1: Мессенджеры ══════════════════════════════════════════ --}}
+        {{-- ══ Группа 1: Источники ══════════════════════════════════════════ --}}
         <div>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Мессенджеры</h2>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">Источники</h2>
             <div class="space-y-3">
 
                 {{-- Telegram --}}
@@ -45,7 +45,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через Telegram-бота: каждое обращение пользователя открывает отдельную тему в супергруппе поддержки.
+                        Интеграция с Telegram — приём обращений из бота.
                     </p>
                 </a>
 
@@ -86,7 +86,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через мессенджер MAX: обращения пользователей из MAX поступают операторам в общий поток.
+                        Интеграция с Max — обращения из мессенджера Max.
                     </p>
                 </a>
 
@@ -119,7 +119,85 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Поддержка через сообщество ВКонтакте: сообщения из чата сообщества поступают операторам как обращения.
+                        Интеграция с ВКонтакте — сообщения из чата сообщества.
+                    </p>
+                </a>
+
+                {{-- Email --}}
+                <a href="{{ route('admin.settings.email') }}"
+                   class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="#6B7280" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-text-primary">Email</p>
+                                @if ($channelStatuses['email']['connected'])
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#34C759">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:#34C759"></span>
+                                        Подключено
+                                    </span>
+                                @else
+                                    <span class="text-xs text-text-secondary">Не подключён</span>
+                                @endif
+                            </div>
+                        </div>
+                        @if (! $channelStatuses['email']['connected'])
+                            <span class="inline-flex items-center justify-center rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white">
+                                Подключить
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
+                        Интеграция с почтой — приём писем по IMAP, ответы по SMTP.
+                    </p>
+                </a>
+
+                {{-- Avito --}}
+                <a href="{{ route('admin.settings.avito') }}"
+                   class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            {{-- Icon: full-bleed Avito logo --}}
+                            <div class="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 90 90">
+                                    <g fill="none" fill-rule="evenodd">
+                                        <path fill="#FFF" d="M0 0h90v90H0z" />
+                                        <circle fill="#97CF26" cx="59" cy="59" r="16" />
+                                        <circle fill="#0AF" cx="29" cy="29" r="13" />
+                                        <circle fill="#FF6163" cx="59" cy="29" r="10" />
+                                        <circle fill="#A169F7" cx="28.5" cy="58.5" r="7.5" />
+                                    </g>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="flex items-center gap-1 text-sm font-semibold text-text-primary">
+                                    Avito
+                                    <span class="inline-flex items-center rounded px-1 py-px text-[8px] font-semibold leading-[1.4]" style="background:#FEF3C7; color:#B45309;">
+                                        Beta
+                                    </span>
+                                </p>
+                                @if ($avitoConnected)
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#34C759">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:#34C759"></span>
+                                        Подключено
+                                    </span>
+                                @else
+                                    <span class="text-xs text-text-secondary">Не подключён</span>
+                                @endif
+                            </div>
+                        </div>
+                        @if (! $avitoConnected)
+                            <span class="inline-flex items-center justify-center rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white">
+                                Подключить
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
+                        Интеграция с Avito — приём сообщений из объявлений по подписке.
                     </p>
                 </a>
 
@@ -169,7 +247,7 @@
                         @endif
                     </div>
                     <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Отдельный бот ИИ-помощника: публикует черновики/ответы ИИ в супергруппе.
+                        Интеграция с ботом AI-помощника — отдельный бот публикует черновики и ответы ИИ в супергруппе.
                     </p>
                 </a>
 

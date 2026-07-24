@@ -810,22 +810,41 @@
                         @endif
 
                         {{-- Text input --}}
-                        <div class="relative flex-1 flex">
-                            {{-- Auto-growing textarea: 1 line by default, grows with
-                                 content up to max-height, then scrolls. autosize() runs
-                                 on input (instant, client-side) and whenever replyText
-                                 changes programmatically (insertQuickReply / clear after
-                                 send) via $wire.$watch. --}}
+                        {{-- Auto-growing textarea: 1 line by default, grows with content
+                             up to max-height, then scrolls.
+
+                             The textarea carries wire:ignore and is bound through
+                             @entangle instead of wire:model. This is deliberate: the
+                             thread polls every 5 s (wire:poll), and a plain
+                             wire:model.live re-rendered the textarea on every keystroke
+                             AND every poll, so Livewire's morph reverted the inline
+                             height Alpine had set — collapsing the field back to one
+                             line and jerking the caret to the top (issue #211). With
+                             wire:ignore the morph never touches the field, so height and
+                             draft both survive typing and polls; @entangle keeps the
+                             value synced with $replyText, so send/clear, quick replies
+                             and AI drafts still drive it. autosize() runs on input and
+                             whenever the entangled value changes (programmatic writes). --}}
+                        <div class="relative flex-1 flex"
+                             x-data="{
+                                text: @entangle('replyText'),
+                                autosize() {
+                                    const el = this.$refs.ta;
+                                    el.style.height = 'auto';
+                                    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+                                },
+                             }"
+                             x-init="$nextTick(() => autosize()); $watch('text', () => $nextTick(() => autosize()))">
                             <textarea
-                                wire:model.live="replyText"
+                                wire:ignore
+                                x-ref="ta"
+                                x-model="text"
                                 rows="1"
                                 placeholder="Напишите сообщение..."
                                 class="w-full resize-none text-sm text-text-primary placeholder-text-secondary outline-none border-none bg-transparent"
                                 style="background:#F1F3F5; border-radius:12px; padding:12px 16px; line-height:1.25; min-height:44px; max-height:160px; overflow-y:auto;"
-                                x-data="{ autosize() { this.$el.style.height = 'auto'; this.$el.style.height = Math.min(this.$el.scrollHeight, 160) + 'px'; } }"
-                                x-init="$nextTick(() => autosize()); $wire.$watch('replyText', () => $nextTick(() => autosize()))"
                                 x-on:input="autosize()"
-                                x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); if (! $el.value.trim()) return; $wire.sendReply(); }"
+                                x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); if (! $refs.ta.value.trim()) return; $wire.sendReply(); }"
                                 aria-label="Текст сообщения"
                             ></textarea>
                             @error('replyText')

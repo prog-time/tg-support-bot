@@ -62,6 +62,7 @@ class WidgetEndpointsTest extends TestCase
 
         return BotUser::firstOrCreate([
             'chat_id' => $externalUser->id,
+            'external_user_id' => $externalUser->id,
             'platform' => $this->source->name,
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Admin;
 
+use App\Livewire\Admin\ThanksPage;
 use App\Livewire\Auth\LoginPage;
 use App\Livewire\Chat\ConversationPage;
 use App\Livewire\Settings\AiAssistantPage;
@@ -10,6 +11,8 @@ use App\Livewire\Settings\ApiWebhookSourcePage;
 use App\Livewire\Settings\ApiWebhooksPage;
 use App\Livewire\Settings\AutoRepliesPage;
 use App\Livewire\Settings\AutoReplyFormPage;
+use App\Livewire\Settings\AvitoIntegrationPage;
+use App\Livewire\Settings\EmailIntegrationPage;
 use App\Livewire\Settings\GeneralSettingsPage;
 use App\Livewire\Settings\IntegrationChannelPage;
 use App\Livewire\Settings\IntegrationsListPage;
@@ -94,6 +97,15 @@ class AdminServiceProvider extends ServiceProvider
             ->name('admin.team-member-avatar')
             ->where('user', '[0-9]+');
 
+        // «Поблагодарить автора» — static support/thanks page.
+        // Deliberately NOT under the /admin/settings prefix: it is not a setting
+        // and must stay reachable by every signed-in operator, whereas
+        // EnsureSettingsAccess redirects non-admins away from all settings
+        // screens except «Основные».
+        Route::middleware(['web', 'auth'])
+            ->get('/admin/thanks', ThanksPage::class)
+            ->name('admin.thanks');
+
         // Custom Livewire Settings routes.
         // Prefix: /admin/settings.
         // Middleware: 'web' session stack + standard `auth` guard so
@@ -157,6 +169,19 @@ class AdminServiceProvider extends ServiceProvider
                 Route::get('/auto-replies/{rule}/edit', AutoReplyFormPage::class)
                     ->name('auto-replies.edit')
                     ->where('rule', '[0-9]+');
+
+                // Avito integration screen — Avito is a built-in core module
+                // (same as Telegram/VK/Max), so the route is always registered.
+                Route::get('/avito', AvitoIntegrationPage::class)
+                    ->name('avito');
+
+                // Email integration screen — Email is a built-in core module
+                // (IMAP polling + SMTP sending), same as Avito above: a
+                // dedicated screen rather than the generic {channel} route,
+                // since its fields (IMAP/SMTP host/port/encryption) don't fit
+                // IntegrationChannelPage's telegram|telegram_ai|vk|max shape.
+                Route::get('/email', EmailIntegrationPage::class)
+                    ->name('email');
             });
     }
 }

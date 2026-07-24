@@ -47,6 +47,33 @@ class ConversationWorkspaceTest extends TestCase
 
     // ── Render ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Regression guard for #211: the reply textarea collapsed to one line while
+     * typing because wire:model.live re-rendered it on every keystroke (and every
+     * 5 s poll), letting Livewire's morph revert the height Alpine had set.
+     *
+     * The fix isolates the field from morphing with wire:ignore and binds it with
+     * Livewire entangle instead. This can't be exercised in a browser here (no
+     * Dusk), so the structural markers are pinned: reverting to wire:model.live on
+     * the reply field brings the bug back and fails this test.
+     */
+    public function test_reply_textarea_is_isolated_from_livewire_morphing(): void
+    {
+        $botUser = BotUser::create(['chat_id' => '211', 'platform' => 'telegram']);
+
+        $html = Livewire::test(ConversationPage::class)
+            ->call('selectChat', $botUser->id)
+            ->assertSee('wire:ignore', false)
+            ->assertSee('x-model="text"', false)
+            ->html();
+
+        $this->assertStringNotContainsString(
+            'wire:model.live="replyText"',
+            $html,
+            'The reply textarea must not use wire:model.live — it re-renders on every keystroke and collapses the field (#211).'
+        );
+    }
+
     public function test_page_renders_under_auth(): void
     {
         Livewire::test(ConversationPage::class)

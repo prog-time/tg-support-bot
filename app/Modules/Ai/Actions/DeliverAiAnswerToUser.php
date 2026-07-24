@@ -4,6 +4,11 @@ namespace App\Modules\Ai\Actions;
 
 use App\Models\BotUser;
 use App\Models\Message;
+use App\Modules\Avito\DTOs\AvitoTextMessageDto;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\DTOs\EmailMessageDto;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
@@ -128,6 +133,52 @@ class DeliverAiAnswerToUser
                         'methodQuery' => 'sendMessage',
                         'user_id' => $botUser->chat_id,
                         'text' => $plainText,
+                    ]),
+                );
+                return true;
+
+            case 'avito':
+                $plainText = $this->stripHtmlForPlainText($text);
+
+                Message::create([
+                    'bot_user_id' => $botUser->id,
+                    'platform' => $botUser->platform,
+                    'message_type' => 'outgoing',
+                    'from_id' => 0,
+                    'to_id' => 0,
+                    'text' => $plainText ?: null,
+                ]);
+
+                SendAvitoSimpleMessageJob::dispatch(
+                    AvitoTextMessageDto::from([
+                        'methodQuery' => 'sendMessage',
+                        'chat_id' => $botUser->chat_id,
+                        'text' => $plainText,
+                    ]),
+                );
+                return true;
+
+            case 'email':
+                $plainText = $this->stripHtmlForPlainText($text);
+
+                Message::create([
+                    'bot_user_id' => $botUser->id,
+                    'platform' => $botUser->platform,
+                    'message_type' => 'outgoing',
+                    'from_id' => 0,
+                    'to_id' => 0,
+                    'text' => $plainText ?: null,
+                ]);
+
+                $headers = app(EmailThreadStore::class)->replyHeaders($botUser->id);
+
+                SendEmailMessageJob::dispatch(
+                    EmailMessageDto::from([
+                        'to' => $botUser->chat_id,
+                        'subject' => $headers['subject'],
+                        'text' => $plainText,
+                        'inReplyTo' => $headers['inReplyTo'],
+                        'references' => $headers['references'],
                     ]),
                 );
                 return true;

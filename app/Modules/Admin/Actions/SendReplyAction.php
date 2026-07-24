@@ -8,6 +8,11 @@ use App\Models\User;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
 use App\Modules\Admin\Jobs\SendAdminDocumentJob;
 use App\Modules\Admin\Services\ChannelStatusService;
+use App\Modules\Avito\DTOs\AvitoTextMessageDto;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\DTOs\EmailMessageDto;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
@@ -66,6 +71,8 @@ class SendReplyAction
             $botUser->platform === 'telegram' => self::sendTelegramReply($botUser, $text, $file, $message),
             $botUser->platform === 'vk' => self::sendVkReply($botUser, $text, $file, $message),
             $botUser->platform === 'max' => self::sendMaxReply($botUser, $text, $file, $message),
+            $botUser->platform === 'avito' => self::sendAvitoReply($botUser, $text, $file),
+            $botUser->platform === 'email' => self::sendEmailReply($botUser, $text, $file, $message),
             default => self::sendExternalReply($botUser, $text),
         };
 
@@ -125,6 +132,121 @@ class SendReplyAction
      *
      * @return void
      */
+    /**
+     * Deliver a manager's reply to an Avito user.
+     *
+     * Avito is text-only in this iteration: an attached file cannot be
+     * delivered, so it is logged and skipped rather than silently dropped. When
+     * there is no text either, nothing is sent.
+     *
+     * @param BotUser           $botUser
+     * @param string            $text
+     * @param UploadedFile|null $file
+     *
+     * @return void
+     */
+    private static function sendAvitoReply(BotUser $botUser, string $text, ?UploadedFile $file): void
+    {
+        if ($file !== null) {
+            Log::channel('app')->warning('SendReplyAction: Avito does not support file replies, attachment skipped', [
+                'bot_user_id' => $botUser->id,
+            ]);
+        }
+
+        if ($text === '') {
+            return;
+        }
+
+        SendAvitoSimpleMessageJob::dispatch(
+            AvitoTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
+            ])
+        );
+    }
+
+    /**
+     * Deliver a manager's reply to an email user, as a plain SMTP attachment
+     * when a file is present.
+     *
+     * The attachment is a single file per reply (SMTP has no per-item preview
+     * like Telegram/VK, so there's no reason to special-case images). The
+     * `UploadedFile` cannot survive queue serialization, so it's copied to a
+     * stable path first (mirrors sendTelegramReply()) and the copied file is
+     * also recorded on the local Message via recordOutgoingAttachment() so the
+     * admin thread can render/download it — email has no provider-native
+     * re-fetchable file id to fall back on, unlike Telegram's file_id.
+     *
+     * @param BotUser           $botUser
+     * @param string            $text
+     * @param UploadedFile|null $file
+     * @param Message           $message
+     *
+     * @return void
+     */
+    private static function sendEmailReply(BotUser $botUser, string $text, ?UploadedFile $file, Message $message): void
+    {
+        if ($text === '' && $file === null) {
+            return;
+        }
+
+        $attachment = $file !== null ? self::copyEmailAttachment($file) : null;
+
+        if ($file !== null && $attachment !== null) {
+            self::recordOutgoingAttachment($message, $file);
+        }
+
+        $headers = app(EmailThreadStore::class)->replyHeaders($botUser->id);
+
+        SendEmailMessageJob::dispatch(
+            EmailMessageDto::from([
+                'to' => $botUser->chat_id,
+                'subject' => $headers['subject'],
+                'text' => $text,
+                'inReplyTo' => $headers['inReplyTo'],
+                'references' => $headers['references'],
+                'attachmentPath' => $attachment['path'] ?? null,
+                'attachmentName' => $attachment['name'] ?? null,
+                'attachmentMime' => $attachment['mime'] ?? null,
+            ])
+        );
+    }
+
+    /**
+     * Copy a manager-reply file to a queue-safe path for the Email attachment.
+     *
+     * @param UploadedFile $file
+     *
+     * @return array{path: string, name: string, mime: string}|null null on any read failure.
+     */
+    private static function copyEmailAttachment(UploadedFile $file): ?array
+    {
+        $realPath = $file->getRealPath();
+
+        if ($realPath === false) {
+            return null;
+        }
+
+        $ext = $file->getClientOriginalExtension();
+        $dir = storage_path('app/temp_attachments');
+        $destPath = $dir . '/' . Str::uuid() . ($ext ? '.' . $ext : '');
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        if (!copy($realPath, $destPath)) {
+            return null;
+        }
+
+        return [
+            'path' => $destPath,
+            'name' => $file->getClientOriginalName(),
+            'mime' => $file->getMimeType() ?? 'application/octet-stream',
+        ];
+    }
+
     private static function sendMaxReply(BotUser $botUser, string $text, ?UploadedFile $file, Message $message): void
     {
         if ($file !== null) {

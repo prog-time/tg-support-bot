@@ -51,6 +51,11 @@ class MaxMessageService extends ToTgMessageService
                 throw new \Exception('Unknown event type', 1);
             }
 
+            // Label the conversation with the real person, not just their id.
+            // MAX ships the name/username in the webhook, so this is stored before
+            // the forum topic is created (TopicCreateJob reads BotUser profile).
+            $this->captureProfile();
+
             Log::channel('app')->info('MaxMessageService: incoming update', [
                 'text' => $this->update->text,
                 'listFileUrl' => $this->update->listFileUrl,
@@ -79,6 +84,35 @@ class MaxMessageService extends ToTgMessageService
                 $e->getMessage(),
                 ['file' => $e->getFile(), 'line' => $e->getLine()]
             );
+        }
+    }
+
+    /**
+     * Persist the MAX sender's display name / username onto the BotUser.
+     *
+     * Fills the fields only when empty, so a name the operator may have set by
+     * hand is never overwritten. Fields absent from the webhook are left as-is.
+     *
+     * @return void
+     */
+    protected function captureProfile(): void
+    {
+        if ($this->botUser === null) {
+            return;
+        }
+
+        $changes = [];
+
+        if (empty($this->botUser->display_name) && !empty($this->update->senderName)) {
+            $changes['display_name'] = $this->update->senderName;
+        }
+
+        if (empty($this->botUser->username) && !empty($this->update->senderUsername)) {
+            $changes['username'] = $this->update->senderUsername;
+        }
+
+        if ($changes !== []) {
+            $this->botUser->update($changes);
         }
     }
 

@@ -4,6 +4,11 @@ namespace App\Modules\Feedback\Actions;
 
 use App\Models\BotUser;
 use App\Models\Feedback;
+use App\Modules\Avito\DTOs\AvitoTextMessageDto;
+use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
+use App\Modules\Email\DTOs\EmailMessageDto;
+use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
@@ -16,18 +21,23 @@ use Illuminate\Support\Facades\Log;
 /**
  * Send the post-close feedback form to the user on their platform.
  *
- * Creates a Feedback record with status='awaiting_rating' and dispatches
- * a platform-appropriate message carrying the rating keyboard.
+ * Creates a Feedback record with status='awaiting_rating' and dispatches a
+ * platform-appropriate message — a 1–5 rating keyboard where the platform
+ * supports one, otherwise a plain free-text prompt.
  *
  * Platform delivery:
  * - telegram — SendTelegramSimpleQueryJob with inline_keyboard (5 star buttons)
  * - vk       — SendVkSimpleMessageJob with VK callback keyboard (5 buttons)
  * - max      — SendMaxMessageJob with Max inline keyboard (5 buttons)
+ * - avito    — SendAvitoSimpleMessageJob with a plain-text review request (no
+ *              inline-keyboard equivalent on Avito Messenger — see sendAvito())
+ * - email    — SendEmailMessageJob with a plain-text rating request (no
+ *              inline-keyboard equivalent over SMTP — see sendEmail())
  * - other    — delegated to a PlatformChannel registered in PlatformChannelRegistry
- *              by a pluggable module (e.g. the paid Avito package)
+ *              by a pluggable module
  *
- * callback_data / payload format: feedback_rate_{botUserId}_{score}
- * e.g. feedback_rate_42_3
+ * callback_data / payload format (telegram/vk/max only):
+ * feedback_rate_{botUserId}_{feedbackId}_{score}
  */
 class SendFeedbackForm
 {
@@ -64,6 +74,14 @@ class SendFeedbackForm
 
             case 'max':
                 $this->sendMax($botUser, $feedback->id);
+                break;
+
+            case 'avito':
+                $this->sendAvito($botUser, $feedback->id);
+                break;
+
+            case 'email':
+                $this->sendEmail($botUser, $feedback->id);
                 break;
 
             default:
@@ -153,6 +171,68 @@ class SendFeedbackForm
      *
      * @return void
      */
+    /**
+     * Send a free-text review prompt to an Avito user.
+     *
+     * Avito Messenger has no inline-keyboard equivalent, so a numeric 1–5
+     * rating (which needs a tappable button to capture) isn't viable here —
+     * asking for a written review instead needs no callback. Any reply the
+     * user sends just arrives as a normal inbound message in the topic; there
+     * is no structured capture of it as feedback, so HandleFeedbackRating is
+     * never reached and the Feedback row stays at status='awaiting_rating'
+     * (that state means "form sent, no structured response" — it does not
+     * imply a numeric rating was requested).
+     *
+     * @param BotUser $botUser
+     * @param int     $feedbackId
+     *
+     * @return void
+     */
+    private function sendAvito(BotUser $botUser, int $feedbackId): void
+    {
+        $text = 'Пожалуйста, оставьте отзыв о качестве нашей поддержки.';
+
+        SendAvitoSimpleMessageJob::dispatch(
+            AvitoTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
+            ]),
+        );
+    }
+
+    /**
+     * Send the rating prompt to an email user.
+     *
+     * Email has no inline-keyboard equivalent (like Avito), so this is a
+     * plain text prompt. It is therefore a ONE-WAY prompt: there is no
+     * callback to carry feedback_rate_{botUserId}_{feedbackId}_{score} back,
+     * so HandleFeedbackRating is never reached and the Feedback row stays at
+     * status='awaiting_rating'. Capturing the score would require parsing the
+     * user's next inbound email reply — deliberately out of scope here.
+     *
+     * @param BotUser $botUser
+     * @param int     $feedbackId
+     *
+     * @return void
+     */
+    private function sendEmail(BotUser $botUser, int $feedbackId): void
+    {
+        $text = 'Пожалуйста, оцените качество нашей поддержки от 1 до 5.';
+
+        $headers = app(EmailThreadStore::class)->replyHeaders($botUser->id);
+
+        SendEmailMessageJob::dispatch(
+            EmailMessageDto::from([
+                'to' => $botUser->chat_id,
+                'subject' => $headers['subject'],
+                'text' => $text,
+                'inReplyTo' => $headers['inReplyTo'],
+                'references' => $headers['references'],
+            ]),
+        );
+    }
+
     private function sendMax(BotUser $botUser, int $feedbackId): void
     {
         // TODO: move text to lang/ru/messages.php when i18n infrastructure is added

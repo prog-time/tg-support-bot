@@ -10,7 +10,9 @@
 
 The Admin Panel domain provides the web management interface for the support team. Managers use the `/admin` web panel (custom Livewire/Blade screens on the standard Laravel `web` auth guard — no Filament) to view conversations and send replies. The admin panel **always works simultaneously** with the Telegram supergroup when that channel is configured.
 
-**This domain owns:** `App\Livewire\Chat\ConversationPage` (standalone Livewire chat workspace, chrome-free, at `/admin/chats`), `GeneralSettingsPage` (custom Livewire full-page at `/admin/settings/general`), `IntegrationsListPage` (custom Livewire full-page at `/admin/settings/integrations`), `IntegrationChannelPage` (custom Livewire full-page at `/admin/settings/integrations/{channel}`), `AiAssistantPage` (custom Livewire full-page at `/admin/settings/ai`), `AiProviderAccessPage` (custom Livewire full-page at `/admin/settings/ai/{provider}`), `ApiWebhooksPage` (custom Livewire full-page at `/admin/settings/api-webhooks` — source card list), `ApiWebhookSourcePage` (custom Livewire full-page at `/admin/settings/api-webhooks/{source}` — per-source edit page), the login screen (`App\Livewire\Auth\LoginPage`) + admin routing/navigation (`AdminServiceProvider`, `<x-admin.sidebar>`), the admin design system (`resources/views/components/admin/`, `resources/views/layouts/admin-settings.blade.php`, `resources/views/layouts/admin-chat.blade.php`), `SendReplyAction`, `MirrorAdminReplyToGroupJob`, `ChannelStatusService`, `WebhookRegistrationService`.
+**This domain owns:** `App\Livewire\Chat\ConversationPage` (standalone Livewire chat workspace, chrome-free, at `/admin/chats`), `GeneralSettingsPage` (custom Livewire full-page at `/admin/settings/general`), `IntegrationsListPage` (custom Livewire full-page at `/admin/settings/integrations`), `IntegrationChannelPage` (custom Livewire full-page at `/admin/settings/integrations/{channel}`), `AvitoIntegrationPage` (custom Livewire full-page at `/admin/settings/avito` — built-in Avito module credentials), `AiAssistantPage` (custom Livewire full-page at `/admin/settings/ai`), `AiProviderAccessPage` (custom Livewire full-page at `/admin/settings/ai/{provider}`), `ApiWebhooksPage` (custom Livewire full-page at `/admin/settings/api-webhooks` — source card list), `ApiWebhookSourcePage` (custom Livewire full-page at `/admin/settings/api-webhooks/{source}` — per-source edit page), the login screen (`App\Livewire\Auth\LoginPage`) + admin routing/navigation (`AdminServiceProvider`, `<x-admin.sidebar>`), the admin design system (`resources/views/components/admin/`, `resources/views/layouts/admin-settings.blade.php`, `resources/views/layouts/admin-chat.blade.php`), `SendReplyAction`, `MirrorAdminReplyToGroupJob`, `ChannelStatusService`, `WebhookRegistrationService`.
+
+**Avito note:** Avito is a built-in core channel (`app/Modules/Avito/`), not a conditionally-installed paid package. There is no "Подписки"/licensing screen and no license-key gating anywhere in the admin panel — an earlier design (`TASK-20260706-avito-module-licensing-integration`) explored a paid, licensed Avito module with a Subscriptions screen; that design was abandoned before shipping. `AvitoIntegrationPage`'s route is always registered, unconditionally.
 
 > **Redesign note:** The legacy Filament resources (Conversations, Bot Users, External Sources, Feedback, Users) were removed, and **Filament itself has since been removed entirely**. The admin now consists of fully custom Livewire/Blade screens — the login screen (`/admin/login`), the chat workspace (`/admin/chats`) and the Settings section (`/admin/settings/*`) — built on the admin design system. Authentication uses the standard Laravel `web` guard: `App\Livewire\Auth\LoginPage` signs the user in via `Auth::attempt`, and routes are protected by the framework `auth` middleware. All admin routes (login, logout, `/admin` redirect, chats, settings) are registered in `AdminServiceProvider::boot()`; the panel root `/admin` redirects to the chat workspace and post-login lands there via `redirect()->intended(route('admin.chats'))`. Sidebar navigation lives in the `<x-admin.sidebar>` Blade component. The underlying models, services, flows and artisan commands (bot users, external sources, feedback, users) are unchanged — only their admin UI was removed (their redesigned screens are pending).
 
@@ -167,6 +169,9 @@ _Enforced in:_ `TeamPage::deleteMember()`
 **BR-029** — Access to `/admin/settings/*` is role-gated by the `EnsureSettingsAccess` middleware (`app/Modules/Admin/Middleware/`), applied to the settings route group in `AdminServiceProvider::boot()` immediately after `Authenticate`. **Admins** reach every settings screen. **Managers** may open only «Основные» (`admin.settings.general`); every other settings route (Интеграции, ИИ, API и вебхуки, Команда, Автоответы — including their sub-pages) redirects them to `admin.settings.general`. The settings sidebar (`layouts/admin-settings.blade.php`) hides every entry except «Основные» for managers. The `/admin/chats` workspace and its support routes (avatars, attachments, PWA) stay available to managers. This middleware is the primary guard; the per-`mount()` `isAdmin()` redirects in `TeamPage`/`ApiWebhooksPage` are now redundant but kept as defence-in-depth.
 _Enforced in:_ `App\Modules\Admin\Middleware\EnsureSettingsAccess`, `AdminServiceProvider::boot()`
 
+**BR-030** — Avito credentials are configured at `/admin/settings/avito` (`AvitoIntegrationPage`), a standalone screen — NOT a `channel` value on `IntegrationChannelPage` (`telegram|telegram_ai|vk|max` only). Admin-only: `mount()` redirects non-admins to `admin.settings.general` (also covered by `EnsureSettingsAccess`, BR-029). Fields: `avito.client_id`, `avito.client_secret`(secret, blank-submission keeps the stored value — same guard as BR-015), `avito.base_url` (defaults to `https://api.avito.ru` when blank), `avito.webhook_secret`(secret, optional). The «Сохранить» action (`connect()`) runs verify-before-save: validates required fields, resolves the secret (entered or stored fallback), calls `AvitoVerificationService::verify()` (OAuth `client_credentials` + `core/v1/accounts/self`) — on failure nothing is persisted; on success it persists the credentials and auto-captures `avito.user_id` from the API response (never entered manually, mirroring how `telegram_ai.id`/`username` are captured from `getMe`, BR-014a). The route is always registered (Avito ships with core; no `class_exists()` conditional).
+_Enforced in:_ `app/Livewire/Settings/AvitoIntegrationPage.php`, `app/Modules/Admin/Services/AvitoVerificationService.php`, `AdminServiceProvider::boot()` (route `admin.settings.avito`)
+
 ---
 
 ## 4. Architecture Flow (always-both model)
@@ -251,10 +256,17 @@ SW strategy: HTML **navigations** are network-first with the precached `public/o
 | Telegram AI bot | `telegram_ai.token` |
 | VK | `vk.token`, `vk.secret_key`, `vk.confirm_code` |
 | MAX | `max.token`, `max.secret_key` |
+| Avito | `avito.client_id`, `avito.client_secret` (computed separately as `avitoConnected` in `IntegrationsListPage::mount()`, not via `ChannelStatusService`) |
 
 (Note: `telegram.group_id` was removed from the Telegram connection check. It is now configured and validated on the «Основные» General Settings screen — BR-009.)
 
 **Tests**: `tests/Feature/Settings/IntegrationsListPageTest.php`
+
+### AvitoIntegrationPage (`GET /admin/settings/avito`)
+
+`app/Livewire/Settings/AvitoIntegrationPage.php` — dedicated credentials screen for the built-in Avito module. Unlike Telegram/VK/MAX, Avito is NOT one of the `IntegrationChannelPage` channel values — it has its own page and its own verification service (`AvitoVerificationService`) because its verify step (OAuth `client_credentials` + `core/v1/accounts/self`) differs from the other channels' `getMe`/`groups.getById`/`GET /me` checks. See BR-030 for the full field list and verify-before-save flow.
+
+**Tests**: `tests/Unit/Livewire/Settings/AvitoIntegrationPageTest.php`, `tests/Unit/Modules/Admin/Services/AvitoVerificationServiceTest.php`
 
 ### IntegrationChannelPage (`GET /admin/settings/integrations/{channel}`)
 
@@ -422,7 +434,7 @@ The API и вебхуки section follows the same two-page pattern as Integrati
 
 ## Checklist
 
-- [ ] `BR-001` through `BR-029` read and understood
+- [ ] `BR-001` through `BR-030` read and understood
 - [ ] `shouldShowReplyForm()` returns `true` always (reply form always available)
 - [ ] `SendReplyAction` uses queue jobs, not synchronous API calls
 - [ ] `SendReplyAction::maybeMirrorToGroup()` dispatches `MirrorAdminReplyToGroupJob` (does NOT create messages row)

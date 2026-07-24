@@ -108,6 +108,107 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
+        // ── Avito (built-in module) ────────────────────────────────────────────
+        // Avito Messenger API credentials entered on the integration screen.
+        // config => null (DB-only), mirroring every other channel credential key.
+        'avito.client_id' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'avito.client_secret' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+        'avito.user_id' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'avito.base_url' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'avito.webhook_secret' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+
+        // ── Email (built-in module, IMAP/SMTP) ─────────────────────────────────
+        // Credentials entered on the dedicated Email integration screen.
+        // config => null (DB-only), mirroring every other channel credential key.
+        'email.imap_host' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.imap_port' => [
+            'type' => 'int',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.imap_encryption' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.smtp_host' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.smtp_port' => [
+            'type' => 'int',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.smtp_encryption' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.username' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.password' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+        'email.from_address' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'email.from_name' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        // Informational in v1: the `email:poll` scheduler entry runs on a
+        // fixed everyMinute() cadence (see routes/console.php). Reserved for
+        // a future dynamic-scheduling feature — see issue #214's open
+        // question on the polling interval strategy.
+        'email.poll_interval' => [
+            'type' => 'int',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        // List of ignored senders — newline-entered on the Email integration
+        // screen, stored as a JSON array of lowercased strings. Each entry is
+        // either a full address ("newsletter@example.com") or a "@domain.com"
+        // suffix to block an entire domain. See EmailIgnoreListMatcher.
+        'email.ignored_addresses' => [
+            'type' => 'json',
+            'config' => null,
+            'is_secret' => false,
+        ],
+
         // ── AI assistant ─────────────────────────────────────────────────────
         'ai.enabled' => [
             'type' => 'bool',

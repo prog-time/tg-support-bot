@@ -39,6 +39,7 @@ class ChannelStatusService
             'telegram_ai' => $this->telegramAi(),
             'vk' => $this->vk(),
             'max' => $this->max(),
+            'email' => $this->email(),
         ];
     }
 
@@ -103,6 +104,26 @@ class ChannelStatusService
     {
         $connected = $this->isNonEmpty('max.token')
             && $this->isNonEmpty('max.secret_key');
+
+        return [
+            'connected' => $connected,
+            'label' => $connected ? 'Подключён' : 'Не настроен',
+        ];
+    }
+
+    /**
+     * Email channel status.
+     *
+     * Connected when the IMAP host, SMTP host, username and password are all set.
+     *
+     * @return array{connected: bool, label: string}
+     */
+    public function email(): array
+    {
+        $connected = $this->isNonEmpty('email.imap_host')
+            && $this->isNonEmpty('email.smtp_host')
+            && $this->isNonEmpty('email.username')
+            && $this->isNonEmpty('email.password');
 
         return [
             'connected' => $connected,

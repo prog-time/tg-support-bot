@@ -13,5 +13,6 @@ storage/framework/views/*
 !.env.example
 docker/*
 !docker/php
+!docker/scripts
 *.md
 tests/

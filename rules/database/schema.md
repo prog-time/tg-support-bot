@@ -36,7 +36,7 @@ erDiagram
 
     BOT_USERS {
         bigint id PK
-        bigint chat_id
+        string chat_id
         bigint topic_id
         string platform
         string display_name
@@ -177,9 +177,9 @@ Core table. Stores every user that has interacted with the bot across all platfo
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `id` | `bigint` | No | auto | Primary key |
-| `chat_id` | `bigint` | No | — | User's ID in Telegram, VK, or External system |
+| `chat_id` | `string` | No | — | User's ID in Telegram, VK, Max, Avito, or External system. Widened from `unsignedBigInteger` to `string` (migration `2026_07_06_000001_change_bot_users_chat_id_to_string.php`) so platforms with non-numeric ids — e.g. Avito's `u2i-...` format — can be stored natively; numeric platforms still store their id as text |
 | `topic_id` | `bigint` | Yes | NULL | Telegram forum topic ID for this user's conversation |
-| `platform` | `string` | No | — | Platform: `telegram`, `vk`, `external_source` |
+| `platform` | `string` | No | — | Platform: `telegram`, `vk`, `max`, `avito`, `external_source` |
 | `display_name` | `string` | Yes | NULL | Human-readable display name (first + last name or username fallback) — populated by `EnrichBotUserProfileJob` and sync'd from webhook on Telegram |
 | `username` | `string` | Yes | NULL | Platform handle/username (e.g. Telegram @username) — populated from DTO or async job |
 | `avatar_path` | `string` | Yes | NULL | Local storage path on the `local` disk under `avatars/` (e.g. `avatars/bot-user-42.jpg`) — populated by `EnrichBotUserProfileJob` |
@@ -198,11 +198,15 @@ Core table. Stores every user that has interacted with the bot across all platfo
 - INDEX on `chat_id` — used in all user lookup queries
 - INDEX on `topic_id` — used in all topic-based lookups
 
+**Migration:** `database/migrations/2026_07_06_000001_change_bot_users_chat_id_to_string.php` — widens `chat_id` to `string`. **Irreversible once any non-numeric `chat_id` exists** (e.g. an Avito `u2i-...` id) — the `down()` migration casts back to `unsignedBigInteger`, which fails once a non-numeric value is present.
+
 **Enums:**
 
 `bot_users.platform`
 - `telegram` — user interacts via Telegram
 - `vk` — user interacts via VK
+- `max` — user interacts via Max
+- `avito` — user interacts via Avito Messenger (built-in core module, text-only in v1)
 - `external_source` — user interacts via External API
 
 ---

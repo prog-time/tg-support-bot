@@ -1,0 +1,59 @@
+#!/bin/bash
+
+echo "🔍 Checking debug code..."
+
+# Authorship-quality gate — skip during a merge commit; see no-inline-comments.sh.
+if [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]; then
+  echo "✅ Merge commit — skipping (not new authorship)"
+  exit 0
+fi
+
+TARGET_DIR="app"
+
+PATTERNS=(
+  "dd("
+  "dump("
+  "var_dump("
+  "ray("
+  "console.log("
+  "console.debug("
+)
+
+fail=0
+
+files=$(git diff --cached --name-only --diff-filter=ACM)
+
+for file in $files; do
+
+  if [[ "$file" != "$TARGET_DIR/"* ]]; then
+    continue
+  fi
+
+  if [[ ! -f "$file" ]]; then
+    continue
+  fi
+
+  for pattern in "${PATTERNS[@]}"; do
+
+    # Plain substring matching false-positives on real code: "ray(" matches
+    # inside "array("/"in_array(", "dd(" matches inside "add(". \b anchors
+    # the pattern to a real token boundary instead.
+    regex="\\b$(printf '%s' "$pattern" | sed 's/[.[\*^$(]/\\&/g')"
+
+    if grep -nE "$regex" "$file" > /dev/null; then
+      echo "❌ Debug code found: $file"
+      grep -nE "$regex" "$file"
+      fail=1
+    fi
+
+  done
+
+done
+
+if [ $fail -ne 0 ]; then
+  echo ""
+  echo "👉 Remove debug code before commit"
+  exit 1
+fi
+
+echo "✅ No debug code found"

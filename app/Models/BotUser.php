@@ -15,7 +15,8 @@ use phpDocumentor\Reflection\Exception;
 /**
  * @property int                             $id
  * @property int                             $topic_id
- * @property int                             $chat_id
+ * @property int|string                      $chat_id
+ * @property int|null                        $external_user_id
  * @property string                          $platform
  * @property string|null                     $display_name
  * @property string|null                     $username
@@ -37,6 +38,7 @@ class BotUser extends Model
 
     protected $fillable = [
         'chat_id',
+        'external_user_id',
         'topic_id',
         'platform',
         'display_name',
@@ -56,11 +58,19 @@ class BotUser extends Model
     ];
 
     /**
+     * The External Sources user behind this conversation, if any.
+     *
+     * Keyed on the dedicated `external_user_id` column rather than `chat_id`.
+     * `chat_id` used to double as this foreign key, which broke on PostgreSQL
+     * once the column became a string: a non-numeric id (Avito "u2i-…") is
+     * rejected as a bigint (22P02), and whereHas() compared varchar to bigint
+     * (42883) even with no such rows present.
+     *
      * @return HasOne
      */
     public function externalUser(): HasOne
     {
-        return $this->hasOne(ExternalUser::class, 'id', 'chat_id');
+        return $this->hasOne(ExternalUser::class, 'id', 'external_user_id');
     }
 
     /**
@@ -107,11 +117,11 @@ class BotUser extends Model
     /**
      * Get platform by chat id
      *
-     * @param int $chatId
+     * @param int|string $chatId
      *
      * @return string|null
      */
-    public static function getPlatformByChatId(int $chatId): ?string
+    public static function getPlatformByChatId(int|string $chatId): ?string
     {
         try {
             $botUser = self::select('platform')
@@ -288,10 +298,14 @@ class BotUser extends Model
 
             return BotUser::firstOrCreate(
                 [
-                    'chat_id' => $this->externalUser->id,
+                    'external_user_id' => $this->externalUser->id,
                     'platform' => $this->externalUser->source,
                 ],
                 [
+                    // chat_id is kept in sync for backward compatibility: it used
+                    // to be this foreign key, and older reads still expect it.
+                    'chat_id' => (string) $this->externalUser->id,
+
                     // External users are anonymous — give the admin card a readable
                     // label instead of the raw internal chat_id (e.g. «-1»).
                     'display_name' => 'Посетитель сайта',
@@ -321,7 +335,7 @@ class BotUser extends Model
             }
 
             return BotUser::where([
-                'chat_id' => $this->externalUser->id,
+                'external_user_id' => $this->externalUser->id,
                 'platform' => $this->externalUser->source,
             ])->first();
         } catch (\Throwable $e) {
