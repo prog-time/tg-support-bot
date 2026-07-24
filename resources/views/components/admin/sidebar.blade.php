@@ -4,13 +4,13 @@
     Props:
       $title       — sidebar heading text (default "Настройки")
       $backUrl     — URL for the back chevron (default route('admin.chats') or '/admin')
-      $version     — version string shown in footer (default "v8.0.0")
+      $version     — version string shown in footer (default "v9.0.0")
       $docsUrl     — URL for "Документация" footer link (default "https://docs.tg-support-bot.ru/")
 --}}
 @props([
     'title'   => 'Настройки',
     'backUrl' => null,
-    'version' => 'v8.0.0',
+    'version' => 'v9.0.0',
     'docsUrl' => 'https://docs.tg-support-bot.ru/',
 ])
 
