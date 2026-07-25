@@ -4,6 +4,7 @@ namespace Tests\Unit\Helpers;
 
 use App\Helpers\TelegramHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class TelegramHelperTest extends TestCase
@@ -208,5 +209,66 @@ class TelegramHelperTest extends TestCase
         $fileId = TelegramHelper::extractFileId($data);
 
         $this->assertEquals('photo_id', $fileId);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function unsupportedTypeProvider(): array
+    {
+        return [
+            'video' => ['video', 'видео'],
+            'animation (GIF)' => ['animation', 'GIF-анимация'],
+            'audio' => ['audio', 'аудио'],
+            'poll' => ['poll', 'опрос'],
+            'dice' => ['dice', 'игральная кость'],
+            'venue' => ['venue', 'место (геометка)'],
+            'game' => ['game', 'игра'],
+        ];
+    }
+
+    /**
+     * issue #46 — each of the seven unhandled Telegram content types must
+     * resolve to a distinct, human-readable Russian label.
+     */
+    #[DataProvider('unsupportedTypeProvider')]
+    public function test_detect_unsupported_type_for_each_known_type(string $telegramKey, string $expectedLabel): void
+    {
+        $data = [
+            'message' => [
+                $telegramKey => ['some' => 'payload'],
+            ],
+        ];
+
+        $this->assertEquals($expectedLabel, TelegramHelper::detectUnsupportedType($data));
+    }
+
+    public function test_detect_unsupported_type_returns_null_for_recognized_types(): void
+    {
+        $data = ['message' => ['text' => 'Hello world']];
+
+        $this->assertNull(TelegramHelper::detectUnsupportedType($data));
+    }
+
+    public function test_detect_unsupported_type_returns_null_when_no_message(): void
+    {
+        $this->assertNull(TelegramHelper::detectUnsupportedType([]));
+    }
+
+    public function test_build_unsupported_type_notice_includes_the_label(): void
+    {
+        $data = ['message' => ['video' => ['file_id' => 'v1']]];
+
+        $notice = TelegramHelper::buildUnsupportedTypeNotice($data);
+
+        $this->assertNotNull($notice);
+        $this->assertStringContainsString('видео', $notice);
+    }
+
+    public function test_build_unsupported_type_notice_returns_null_for_recognized_types(): void
+    {
+        $data = ['message' => ['photo' => [['file_id' => 'p1']]]];
+
+        $this->assertNull(TelegramHelper::buildUnsupportedTypeNotice($data));
     }
 }

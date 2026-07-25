@@ -227,6 +227,59 @@ class TgMessageServiceTest extends TestCase
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
     }
 
+    /**
+     * issue #46 — a Telegram content type this bot doesn't handle (video,
+     * GIF, audio, poll, dice, venue, game) must produce a placeholder
+     * notice instead of an empty dispatched job.
+     */
+    public function test_send_video_produces_unsupported_type_notice(): void
+    {
+        $payload = $this->basicPayload;
+        unset($payload['message']['text']);
+        $payload['message']['video'] = [
+            'file_id' => 'test_video_id',
+            'duration' => 10,
+        ];
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertNotEmpty($firstJob->queryParams->text);
+        $this->assertStringContainsString('видео', $firstJob->queryParams->text);
+    }
+
+    /**
+     * issue #46 — same as above for a poll, which (unlike video) has
+     * neither a caption-bearing field nor a file_id at all.
+     */
+    public function test_send_poll_produces_unsupported_type_notice(): void
+    {
+        $payload = $this->basicPayload;
+        unset($payload['message']['text']);
+        $payload['message']['poll'] = [
+            'id' => 'poll1',
+            'question' => 'Нравится?',
+            'options' => [],
+        ];
+
+        $dto = TelegramUpdateDtoMock::getDto($payload);
+        (new TgMessageService($dto))->handleUpdate();
+
+        /** @phpstan-ignore-next-line */
+        $pushed = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
+        $this->assertCount(1, $pushed);
+
+        $firstJob = $pushed[0]['job'];
+        $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
+        $this->assertStringContainsString('опрос', $firstJob->queryParams->text);
+    }
+
     public function test_send_message_with_inline_keyboard_from_supergroup(): void
     {
         $payload = $this->basicPayload;

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Telegram\Services\Tg;
 
+use App\Helpers\TelegramHelper;
 use App\Models\Message;
 use App\Modules\Telegram\Actions\ConversionMessageText;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
@@ -44,6 +45,8 @@ class TgMessageService extends FromTgMessageService
                 $this->sendContact();
             } elseif (!empty($this->update->text)) {
                 $this->sendMessage();
+            } else {
+                $this->sendUnsupportedTypeNotice();
             }
 
             $this->setReplyParameters();
@@ -200,6 +203,30 @@ class TgMessageService extends FromTgMessageService
     }
 
     /**
+     * Fallback for a Telegram message content type this bot does not
+     * handle (video, GIF, audio, poll, dice, venue, game): instead of
+     * silently dispatching a job with no text, fill in a placeholder
+     * notice so the manager sees that the client sent something and is
+     * waiting (issue #46).
+     *
+     * methodQuery/chat_id/message_thread_id are already set to sendMessage
+     * routing by the parent constructor — only text needs filling in here.
+     *
+     * @return void
+     */
+    protected function sendUnsupportedTypeNotice(): void
+    {
+        $notice = TelegramHelper::buildUnsupportedTypeNotice($this->update->rawData ?? []);
+
+        if ($notice !== null) {
+            $this->messageParamsDTO->text = $notice;
+        }
+    }
+
+    /**
+     * Telegram rejects sendMessage with empty text, so when the manager's
+     * message is only button syntax, substitute a non-breaking space.
+     *
      * @return void
      */
     protected function sendMessage(): void
@@ -215,8 +242,6 @@ class TgMessageService extends FromTgMessageService
             $text = $parsedMessage->text;
             $keyboard = $keyboardBuilder->buildTelegramKeyboard($parsedMessage);
 
-            // Telegram rejects sendMessage with empty text.
-            // When manager sends only button syntax, use a non-breaking space.
             if ($text === '' && $keyboard !== null) {
                 $text = "\u{200B}";
             }

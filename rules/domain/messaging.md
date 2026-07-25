@@ -2,7 +2,7 @@
 
 > **Purpose:** This file defines business rules, state machines, and invariants for the core messaging domain — the routing of messages between users (Telegram, VK, External) and the support team.
 > **Context:** Read this file before modifying anything related to message sending, editing, routing, or platform integrations.
-> **Version:** 1.1
+> **Version:** 1.3
 
 ---
 
@@ -139,6 +139,18 @@ _Enforced in:_ `app/Modules/Telegram/Services/Tg/TgMessageService.php`
 
 **BR-014 (DEFERRED, issue #172)** — AI Accept-callback operator attribution (`DeliverAiAnswerToUser`, `TelegramBotController` Accept handler) — AI paths continue to pass `null` as the author until a dedicated task implements it.
 
+**BR-018 (issue #46, unsupported Telegram content types)** — A Telegram message content type this bot does not handle (`video`, `animation`/GIF, `audio`, `poll`, `dice`, `venue`, `game`) must not be silently dropped. `TelegramHelper::detectUnsupportedType()`/`buildUnsupportedTypeNotice()` recognize these seven types from the raw update and produce a human-readable Russian placeholder notice (e.g. "⚠️ Клиент отправил сообщение неподдерживаемого типа (видео). Попросите переслать текстом, фото, документом или голосовым."). The notice is injected wherever the normal text/caption would have gone, so it flows through the **existing** incoming-message pipeline unchanged:
+- **Group ON:** `TgMessageService::sendUnsupportedTypeNotice()` fills `messageParamsDTO->text` (the group-forward message body). `SendTelegramMessageJob::saveMessage()` falls back to `queryParams->text` when `updateDto->text`/`caption` are both empty, so the same notice is also what lands in `messages.text` — visible in both the supergroup topic and `/admin/chats`.
+- **Group OFF:** `TelegramBotController::persistIncomingTelegramMessage()` falls back to `TelegramHelper::buildUnsupportedTypeNotice()` when `text`/`caption` are both empty.
+- **Unresolvable sender** (unrecognized top-level update type, or no matching `BotUser`): `TelegramBotController::__construct()` logs to `Log::channel('telegram')` (the `prog-time/tg-logger` ops channel — previously configured but unused anywhere in the codebase) instead of a bare `abort(200)`. Only non-PII context is logged (update keys, `type_source`, `chat_id`, `message_thread_id` — never the message text itself).
+- No manager-facing auto-reply is sent to the customer — the notice is informational only, for the support team to see and act on manually.
+- Out of scope for this rule: actually implementing real `video`/`audio` sending (the Telegram API methods exist in `TelegramMethods.php` but nothing calls them); the equivalent fall-through in `VkUpdateDto`/`MaxUpdateDto` (separate, not yet addressed).
+
+_Enforced in:_ `app/Helpers/TelegramHelper.php @ detectUnsupportedType()/buildUnsupportedTypeNotice()`, `app/Modules/Telegram/Services/Tg/TgMessageService.php @ sendUnsupportedTypeNotice()`, `app/Modules/Telegram/Jobs/SendTelegramMessageJob.php @ saveMessage()`, `app/Modules/Telegram/Controllers/TelegramBotController.php @ __construct()/persistIncomingTelegramMessage()`
+
+**BR-019 (issue #46 follow-up, unsupported Email reply types)** — The mirror-image case of BR-018: a **manager's** reply typed in the Telegram supergroup topic for an `email`-platform `BotUser` must not be silently dropped either. `TgEmailMessageService` only knows how to deliver text or a single photo/document as SMTP (mirrors `SendReplyAction::sendEmailReply()`'s admin-panel capability). For `voice`, `sticker`, `video_note`, `contact`, and `location` — previously empty no-op stubs that `handleUpdate()` never even called — the manager now gets an informational notice posted back into the **same** topic ("⚠️ Email не поддерживает {тип} — только текст, фото или документ. Сообщение клиенту не доставлено."), via `SendTelegramSimpleQueryJob` targeting `telegram.group_id` + the `BotUser`'s `topic_id`. Unlike BR-018, this notice is **not** persisted to `messages` — nothing was actually sent to or from the customer, so an "outgoing" row would misrepresent what happened. Contact detection uses the raw payload (`rawData['message']['contact']`), not `fileId`/`fileType`, because Telegram contacts have no `file_id` — `TelegramHelper::extractFileId()` never sets one for them.
+_Enforced in:_ `app/Modules/Telegram/Services/TgEmail/TgEmailMessageService.php @ handleUpdate()/notifyUnsupportedReplyType()/sendVoice()/sendSticker()/sendVideoNote()/sendContact()/sendLocation()`
+
 ---
 
 ## 5. Message Type State Machine
@@ -189,7 +201,8 @@ stateDiagram-v2
 - Files are downloaded from Telegram and stored locally in `storage/app/`
 - Files are served via `FilesController` (`GET /api/files/{file_id}`)
 - File metadata (file_id, file_type, file_name) is stored in `external_messages` table
-- Supported file types: photo, document, audio, video, voice
+- Fully handled incoming/outgoing file types: photo, document, voice, sticker, video_note, contact (location has partial support — no attachment file, just coordinates)
+- **`audio` and `video` are NOT actually handled** despite earlier claims in this file — no code path in `TgMessageService`, `TgEmailMessageService`, `TgExternalMessageService`, `TgVkMessageService`, or `TgMaxMessageService` sends them, even though `TelegramMethods.php` defines the `sendAudio`/`sendVideo` API method mappings. As of issue #46, an incoming `video`/`audio` update produces the unsupported-type placeholder notice (BR-018) instead of silently dropping — but real video/audio sending is still unimplemented
 
 ---
 
@@ -238,3 +251,10 @@ $keyboard = ['inline_keyboard' => [[['text' => 'Yes', 'callback_data' => 'yes']]
 - [ ] File handling rules documented
 - [ ] Button rules documented
 - [ ] No forbidden behaviors
+
+---
+
+## Changelog
+
+- 1.3 — Added BR-019 (issue #46 follow-up): manager replies to Email users via voice/sticker/video_note/contact/location, typed in the Telegram group topic, previously vanished silently (empty no-op stubs `handleUpdate()` never called) — now post an informational notice back into the topic instead
+- 1.2 — Added BR-018 (issue #46): unsupported Telegram content types (video/animation/audio/poll/dice/venue/game) now produce a placeholder notice instead of being silently dropped; unresolvable-sender cases log to `Log::channel('telegram')` instead of a bare `abort(200)`. Corrected §8 File Handling — `audio`/`video` were never actually handled despite being listed as "supported"

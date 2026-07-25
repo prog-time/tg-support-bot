@@ -103,4 +103,55 @@ class TelegramHelper
 
         return null;
     }
+
+    /**
+     * Detect a Telegram message content type this bot does not handle
+     * (video, GIF, audio, poll, dice, venue, game), returning a
+     * human-readable Russian label for the unsupported-message notice.
+     *
+     * Returns null for any recognized/handled type, so callers can tell
+     * "genuinely unsupported" apart from "just has no text" (e.g. service
+     * messages).
+     *
+     * @param array $data
+     *
+     * @return string|null
+     */
+    public static function detectUnsupportedType(array $data): ?string
+    {
+        $message = $data['message'] ?? [];
+
+        return match (true) {
+            !empty($message['video']) => 'видео',
+            !empty($message['animation']) => 'GIF-анимация',
+            !empty($message['audio']) => 'аудио',
+            !empty($message['poll']) => 'опрос',
+            !empty($message['dice']) => 'игральная кость',
+            !empty($message['venue']) => 'место (геометка)',
+            !empty($message['game']) => 'игра',
+            default => null,
+        };
+    }
+
+    /**
+     * Build the placeholder notice text for a message content type this
+     * bot does not handle, so the conversation is not silently dropped
+     * (issue #46). Returns null when the update is not one of the
+     * recognized unsupported types — callers should fall back to their
+     * normal text/caption resolution in that case.
+     *
+     * @param array $data
+     *
+     * @return string|null
+     */
+    public static function buildUnsupportedTypeNotice(array $data): ?string
+    {
+        $type = self::detectUnsupportedType($data);
+
+        if ($type === null) {
+            return null;
+        }
+
+        return "⚠️ Клиент отправил сообщение неподдерживаемого типа ({$type}). Попросите переслать текстом, фото, документом или голосовым.";
+    }
 }

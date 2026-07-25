@@ -6,11 +6,13 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
+use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\TgEmail\TgEmailMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Mocks\Tg\TelegramUpdateDto_VKMock;
 use Tests\TestCase;
 
@@ -80,6 +82,65 @@ class TgEmailMessageServiceTest extends TestCase
 
         Queue::assertNotPushed(SendEmailMessageJob::class);
         $this->assertDatabaseCount('messages', 0);
+    }
+
+    // ── Unsupported reply types → manager notice, not silent drop ───────────
+
+    /**
+     * @return array<string, array{0: string, 1: array<string, mixed>, 2: string}>
+     */
+    public static function unsupportedReplyTypeProvider(): array
+    {
+        return [
+            'voice' => ['voice', ['file_id' => 'voice_1', 'duration' => 3], 'голосовое сообщение'],
+            'sticker' => ['sticker', ['file_id' => 'sticker_1'], 'стикер'],
+            'video_note' => ['video_note', ['file_id' => 'vn_1', 'duration' => 5, 'length' => 240], 'видеосообщение (кружок)'],
+            'contact' => ['contact', ['phone_number' => '79999999999', 'first_name' => 'Тест'], 'контакт'],
+        ];
+    }
+
+    /**
+     * issue #46 follow-up — a reply type Email can't carry (voice, sticker,
+     * video_note, contact, location) must not be silently dropped: the
+     * manager gets a notice back in the SAME topic, nothing is sent to the
+     * customer, and no `messages` row is created (nothing was delivered).
+     */
+    #[DataProvider('unsupportedReplyTypeProvider')]
+    public function test_unsupported_reply_type_notifies_manager_instead_of_silent_drop(
+        string $telegramKey,
+        array $payloadValue,
+        string $expectedLabel
+    ): void {
+        $payload = $this->basicPayload;
+        unset($payload['message']['text']);
+        $payload['message'][$telegramKey] = $payloadValue;
+
+        (new TgEmailMessageService(TelegramUpdateDto_VKMock::getDto($payload)))->handleUpdate();
+
+        Queue::assertNotPushed(SendEmailMessageJob::class);
+        $this->assertDatabaseCount('messages', 0);
+
+        Queue::assertPushed(SendTelegramSimpleQueryJob::class, function ($job) use ($expectedLabel) {
+            return $job->queryParams->chat_id === $this->defaultGroupId
+                && $job->queryParams->message_thread_id === $this->botUser->topic_id
+                && str_contains((string) $job->queryParams->text, $expectedLabel);
+        });
+    }
+
+    public function test_location_reply_notifies_manager_instead_of_silent_drop(): void
+    {
+        $payload = $this->basicPayload;
+        unset($payload['message']['text']);
+        $payload['message']['location'] = ['latitude' => 55.7, 'longitude' => 37.6];
+
+        (new TgEmailMessageService(TelegramUpdateDto_VKMock::getDto($payload)))->handleUpdate();
+
+        Queue::assertNotPushed(SendEmailMessageJob::class);
+        $this->assertDatabaseCount('messages', 0);
+
+        Queue::assertPushed(SendTelegramSimpleQueryJob::class, function ($job) {
+            return str_contains((string) $job->queryParams->text, 'геолокацию');
+        });
     }
 
     // ── Photo/document reply → SMTP attachment ──────────────────────────────
