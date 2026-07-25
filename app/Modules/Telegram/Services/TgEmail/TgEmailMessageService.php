@@ -8,7 +8,10 @@ use App\Modules\Email\DTOs\EmailMessageDto;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +28,11 @@ use Illuminate\Support\Str;
  * typed into the topic is forwarded as a real SMTP attachment (see
  * {@see self::sendFileReply()}) — mirrors `SendReplyAction::sendEmailReply()`,
  * the admin-panel counterpart of this same capability.
+ *
+ * Contacts are detected via the raw payload (`rawData['message']['contact']`)
+ * rather than `fileId`/`fileType`, matching {@see \App\Modules\Telegram\Services\Tg\TgMessageService}'s
+ * own contact check — Telegram contacts have no `file_id`, so
+ * `TelegramHelper::extractFileId()` has no branch for them.
  */
 class TgEmailMessageService extends FromTgMessageService
 {
@@ -49,8 +57,20 @@ class TgEmailMessageService extends FromTgMessageService
                 $this->sendPhoto();
             } elseif (!empty($this->update->fileId) && $this->update->fileType === 'document') {
                 $this->sendDocument();
+            } elseif (!empty($this->update->fileId) && $this->update->fileType === 'voice') {
+                $this->sendVoice();
+            } elseif (!empty($this->update->fileId) && $this->update->fileType === 'sticker') {
+                $this->sendSticker();
+            } elseif (!empty($this->update->fileId) && $this->update->fileType === 'video_note') {
+                $this->sendVideoNote();
+            } elseif (!empty($this->update->rawData['message']['contact'] ?? null)) {
+                $this->sendContact();
+            } elseif (!empty($this->update->location)) {
+                $this->sendLocation();
             } elseif (!empty($text)) {
                 $this->sendMessage($text);
+            } else {
+                $this->notifyUnsupportedReplyType('это сообщение');
             }
         } catch (\Throwable $e) {
             Log::channel('app')->log(
@@ -62,6 +82,10 @@ class TgEmailMessageService extends FromTgMessageService
     }
 
     /**
+     * The send job only sends — this handler records the outgoing row
+     * itself (BR-002: every sent message stored), which is also what makes
+     * the reply visible in /admin/chats.
+     *
      * @param string $text
      *
      * @return void
@@ -72,10 +96,6 @@ class TgEmailMessageService extends FromTgMessageService
             return;
         }
 
-        // The send job only sends; the /admin/chats path records the row via
-        // SendReplyAction, so the group-topic path records it here to keep
-        // BR-002 (every sent message stored) and to surface the reply in the
-        // admin workspace.
         Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->platform,
@@ -129,6 +149,9 @@ class TgEmailMessageService extends FromTgMessageService
      * and a permanent `local`-disk copy under `chat-attachments/` for the
      * admin workspace.
      *
+     * Mirrors sendMessage(): the send job only sends, so this records the
+     * outgoing row itself (BR-002, admin workspace).
+     *
      * @param string|null $fallbackExtension Used when neither the original filename nor the CDN URL has one (Telegram photos).
      * @param string|null $originalName      The document's original filename, if Telegram sent one.
      *
@@ -173,8 +196,6 @@ class TgEmailMessageService extends FromTgMessageService
 
         $caption = $this->update->caption ?? '';
 
-        // Mirrors sendMessage(): the send job only sends, so the group-topic
-        // path records the outgoing row itself (BR-002, admin workspace).
         $message = Message::create([
             'bot_user_id' => $this->botUser->id,
             'platform' => $this->botUser->platform,
@@ -211,7 +232,7 @@ class TgEmailMessageService extends FromTgMessageService
      */
     protected function sendLocation(): void
     {
-        //
+        $this->notifyUnsupportedReplyType('геолокацию');
     }
 
     /**
@@ -219,7 +240,7 @@ class TgEmailMessageService extends FromTgMessageService
      */
     protected function sendVoice(): void
     {
-        //
+        $this->notifyUnsupportedReplyType('голосовое сообщение');
     }
 
     /**
@@ -227,7 +248,7 @@ class TgEmailMessageService extends FromTgMessageService
      */
     protected function sendSticker(): void
     {
-        //
+        $this->notifyUnsupportedReplyType('стикер');
     }
 
     /**
@@ -235,7 +256,7 @@ class TgEmailMessageService extends FromTgMessageService
      */
     protected function sendVideoNote(): void
     {
-        //
+        $this->notifyUnsupportedReplyType('видеосообщение (кружок)');
     }
 
     /**
@@ -243,6 +264,41 @@ class TgEmailMessageService extends FromTgMessageService
      */
     protected function sendContact(): void
     {
-        //
+        $this->notifyUnsupportedReplyType('контакт');
+    }
+
+    /**
+     * A manager's reply typed in the topic used a message type Email delivery
+     * doesn't support (only text or a single photo/document attachment can be
+     * delivered — see sendPhoto()/sendDocument()). Rather than silently
+     * dropping it (issue #46 follow-up), post an informational notice back
+     * into the SAME supergroup topic so the manager knows nothing reached
+     * the customer and can resend in a supported format.
+     *
+     * Deliberately does NOT create a `messages` row — nothing was actually
+     * sent to/from the customer, so recording an "outgoing" row would be
+     * misleading.
+     *
+     * @param string $typeLabel Human-readable Russian label for what was sent, e.g. "стикер".
+     *
+     * @return void
+     */
+    protected function notifyUnsupportedReplyType(string $typeLabel): void
+    {
+        if ($this->botUser === null || empty($this->botUser->topic_id)) {
+            return;
+        }
+
+        $groupId = (string) app(SettingsService::class)->get('telegram.group_id');
+        if ($groupId === '') {
+            return;
+        }
+
+        SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
+            'methodQuery' => 'sendMessage',
+            'chat_id' => $groupId,
+            'message_thread_id' => $this->botUser->topic_id,
+            'text' => "⚠️ Email не поддерживает {$typeLabel} — только текст, фото или документ. Сообщение клиенту не доставлено.",
+        ]));
     }
 }

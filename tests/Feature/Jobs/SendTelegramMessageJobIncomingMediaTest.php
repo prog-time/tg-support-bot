@@ -122,6 +122,35 @@ class SendTelegramMessageJobIncomingMediaTest extends TestCase
         ]);
     }
 
+    /**
+     * issue #46 — when Telegram gives no text/caption at all (e.g. video,
+     * poll, GIF), the unsupported-type placeholder built into
+     * queryParams->text by TgMessageService::sendUnsupportedTypeNotice()
+     * must still end up in messages.text — it's the only "real" content
+     * we have to show the manager.
+     */
+    public function test_incoming_unsupported_type_falls_back_to_query_params_text(): void
+    {
+        $botUser = $this->makeBotUser();
+
+        // No 'text', no 'caption' — mirrors a video/poll/etc. update.
+        $dto = $this->incomingDtoWith([], $botUser);
+
+        $params = TGTextMessageDto::from([
+            'methodQuery' => 'sendMessage',
+            'chat_id' => '-100123456',
+            'text' => '⚠️ Клиент отправил сообщение неподдерживаемого типа (видео). Попросите переслать текстом, фото, документом или голосовым.',
+        ]);
+
+        (new SendTelegramMessageJob($botUser->id, $dto, $params, 'incoming', $this->mockTelegram()))->handle();
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'message_type' => 'incoming',
+            'text' => '⚠️ Клиент отправил сообщение неподдерживаемого типа (видео). Попросите переслать текстом, фото, документом или голосовым.',
+        ]);
+    }
+
     public function test_incoming_plain_text_still_saved(): void
     {
         $botUser = $this->makeBotUser();

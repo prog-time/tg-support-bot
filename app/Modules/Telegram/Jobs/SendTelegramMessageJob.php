@@ -124,6 +124,11 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
     /**
      * Save message to database after successful sending.
      *
+     * Incoming text falls back from `text` to `caption` (photo/document
+     * carry it there) to `queryParams->text` — the latter covers content
+     * types Telegram gives no text/caption for at all: contacts, and the
+     * unsupported-type placeholder from TgMessageService::sendUnsupportedTypeNotice().
+     *
      * @param BotUser $botUser
      * @param mixed   $resultQuery
      *
@@ -141,10 +146,8 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
             'message_type' => $this->typeMessage,
             'from_id' => $this->updateDto->messageId,
             'to_id' => $resultQuery->message_id,
-            // Photos/documents carry their text in `caption`, not `text` —
-            // fall back to it so the caption is persisted (and shown in the admin).
             'text' => $this->typeMessage === 'incoming'
-                ? ($this->updateDto->text ?? $this->updateDto->caption ?? null)
+                ? ($this->updateDto->text ?? $this->updateDto->caption ?? $this->queryParams->text ?? null)
                 : ($this->queryParams->text ?? $this->queryParams->caption ?? null),
         ]);
 
@@ -191,6 +194,5 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
      */
     protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
-        //
     }
 }

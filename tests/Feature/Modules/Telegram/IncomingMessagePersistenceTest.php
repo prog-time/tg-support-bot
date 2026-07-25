@@ -219,6 +219,44 @@ class IncomingMessagePersistenceTest extends TestCase
         ]);
     }
 
+    /**
+     * issue #46 — a Telegram content type this bot doesn't handle (video,
+     * GIF, audio, poll, dice, venue, game) must not be silently dropped:
+     * with the group OFF, persistIncomingTelegramMessage() must fall back
+     * to the unsupported-type placeholder notice instead of null text.
+     */
+    public function test_telegram_incoming_unsupported_type_with_group_off_persists_notice(): void
+    {
+        Queue::fake();
+
+        $this->seedSettings([
+            'telegram.token' => 'bot:TOKEN',
+            'telegram.secret_key' => 'test-secret',
+        ]);
+        $this->clearGroupId();
+
+        $botUser = BotUser::create(['chat_id' => 789012, 'platform' => 'telegram']);
+
+        $payload = $this->telegramPayload($botUser, [
+            'video' => ['file_id' => 'VIDEO_FILE_ID', 'duration' => 12],
+        ]);
+        // Videos carry no 'text' field.
+        unset($payload['message']['text']);
+
+        $this->postTgWebhook($payload)->assertOk();
+
+        $message = Message::where('bot_user_id', $botUser->id)->where('message_type', 'incoming')->first();
+        $this->assertNotNull($message, 'Expected an incoming message row even for an unsupported content type');
+        $this->assertNotNull($message->text, 'Expected the unsupported-type placeholder, not null');
+        $this->assertStringContainsString('видео', $message->text);
+
+        // Exactly one row — no duplicate.
+        $this->assertSame(
+            1,
+            Message::where('bot_user_id', $botUser->id)->where('message_type', 'incoming')->count()
+        );
+    }
+
     // ── Telegram — group ON ───────────────────────────────────────────────────
 
     /**

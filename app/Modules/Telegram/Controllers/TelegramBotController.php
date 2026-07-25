@@ -2,6 +2,7 @@
 
 namespace App\Modules\Telegram\Controllers;
 
+use App\Helpers\TelegramHelper;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Admin\Services\ChannelStatusService;
@@ -30,6 +31,7 @@ use App\Modules\Telegram\Services\TgVk\TgVkEditService;
 use App\Modules\Telegram\Services\TgVk\TgVkMessageService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TelegramBotController
 {
@@ -39,10 +41,21 @@ class TelegramBotController
 
     private ?BotUser $botUser;
 
+    /**
+     * Resolves the sender from the Telegram update. When the update type
+     * can't be parsed, or no matching BotUser is found, logs to the
+     * `telegram` channel instead of a silent drop, then aborts with 200 so
+     * Telegram doesn't retry indefinitely (issue #46).
+     *
+     * @param Request $request
+     */
     public function __construct(Request $request)
     {
         $dataHook = TelegramUpdateDto::fromRequest($request);
         if (empty($dataHook)) {
+            Log::channel('telegram')->warning('TelegramBotController: unrecognized update, could not parse sender', [
+                'keys' => array_keys($request->all()),
+            ]);
             abort(200);
         }
         $this->dataHook = $dataHook;
@@ -56,6 +69,12 @@ class TelegramBotController
         }
 
         if (empty($this->botUser) || empty($this->platform)) {
+            Log::channel('telegram')->warning('TelegramBotController: could not resolve BotUser for update', [
+                'type_query' => $this->dataHook->typeQuery,
+                'type_source' => $this->dataHook->typeSource,
+                'chat_id' => $this->dataHook->chatId,
+                'message_thread_id' => $this->dataHook->messageThreadId,
+            ]);
             abort(200);
         }
     }
@@ -205,21 +224,15 @@ class TelegramBotController
      */
     private function notifyIncomingMessage(): void
     {
-        // Forward to supergroup only when Telegram channel is fully configured.
         if (app(ChannelStatusService::class)->telegram()['connected']
             && !empty((string) app(SettingsService::class)->get('telegram.group_id'))
         ) {
-            // Ensure the forum topic exists first.
             if (empty($this->botUser->topic_id)) {
                 TopicCreateJob::dispatch($this->botUser->id);
             }
 
-            // Group path: TgMessageService dispatches SendTelegramMessageJob which
-            // calls saveMessage() after the group API call succeeds.
             (new TgMessageService($this->dataHook))->handleUpdate();
         } else {
-            // Group-OFF path: persist the incoming message directly so the admin
-            // workspace shows it even when no supergroup is configured.
             $this->persistIncomingTelegramMessage();
         }
     }
@@ -232,25 +245,33 @@ class TelegramBotController
      * persists via SendTelegramMessageJob::saveMessage() instead, so the two
      * branches are mutually exclusive and produce exactly one row each.
      *
+     * Text resolution falls back from `text` to `caption` (media messages)
+     * to a placeholder notice built by TelegramHelper::buildUnsupportedTypeNotice()
+     * for content types Telegram gives no text/caption for — video, GIF,
+     * audio, poll, dice, venue, game (issue #46); it returns null for
+     * genuinely recognized/handled types, leaving normal behavior unchanged.
+     * `from_id` stores the user's Telegram message_id, matching the column
+     * semantics SendTelegramMessageJob uses, so reply threading stays
+     * consistent if the group is enabled later.
+     *
      * @return void
      */
     private function persistIncomingTelegramMessage(): void
     {
         try {
+            $text = $this->dataHook->text
+                ?? $this->dataHook->caption
+                ?? TelegramHelper::buildUnsupportedTypeNotice($this->dataHook->rawData ?? []);
+
             $message = Message::create([
                 'bot_user_id' => $this->botUser->id,
                 'platform' => $this->botUser->platform,
                 'message_type' => 'incoming',
-                // from_id: the user's Telegram message_id — matches the column
-                // semantics used by SendTelegramMessageJob (where from_id = updateDto->messageId)
-                // so in-group reply threading stays consistent if the group is later enabled.
                 'from_id' => $this->dataHook->messageId ?? 0,
                 'to_id' => 0,
-                // Capture caption for media messages (photo / document) per BR-002a.
-                'text' => $this->dataHook->text ?? $this->dataHook->caption ?? null,
+                'text' => $text,
             ]);
 
-            // Persist any media attachment so the admin can preview it.
             if (!empty($this->dataHook->fileId)) {
                 $message->attachments()->create([
                     'file_id' => $this->dataHook->fileId,
