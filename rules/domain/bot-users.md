@@ -2,7 +2,7 @@
 
 > **Purpose:** This file defines business rules, state machines, and invariants for the Bot User management domain — creation, identification, banning, and platform association of users.
 > **Context:** Read this file before modifying anything related to `BotUser` model, user creation, banning, topic management, or platform identification.
-> **Version:** 1.0
+> **Version:** 1.1
 
 ---
 
@@ -68,6 +68,9 @@ _Enforced in:_ `app/Jobs/EnrichBotUserProfileJob.php`, `app/Models/BotUser.php`
 _Enforced in:_ `app/Modules/Admin/Actions/DeleteBotUser.php`
 
 **BR-013** — In the admin chat workspace, `display_name` is shown wherever the user's name appears (dialog list, chat header, right panel). If `display_name` is NULL, `chat_id` is used as the fallback. If `avatar_path` is set, the avatar image is shown instead of the initials circle.
+
+**BR-014 (issue #114)** — When Telegram reports 403 Forbidden on a send attempt (the user blocked the bot), besides posting the "⛔️ Пользователь заблокировал бота!" notice into the topic, the topic's icon is flipped to the same "done" checkmark used for closed/banned topics (`icons.blocked`, currently the same custom-emoji id as `icons.outgoing`/`icons.close`) — so a manager can tell from the topic list, without opening it, that further replies won't reach the user. This is purely a Telegram-UI signal: it does **not** set `is_banned`/`banned_at` (that column means the *support team* banned the customer, not the customer blocking the bot — see BR forbidden-behaviors below) and there is no separate DB column tracking "user blocked the bot". If the topic doesn't exist yet, the icon update is skipped — `SendTelegramMessageJob` creates the topic on demand with the default `icons.incoming` icon, so there is nothing to edit yet.
+_Enforced in:_ `app/Modules/Telegram/Actions/BanMessage.php`, `app/Jobs/SendMessage/AbstractSendMessageJob.php @ telegramResponseHandler()` (403 branch), `resources/lang/{ru,en}/icons.php`
 _Enforced in:_ `resources/views/components/chat-item.blade.php`, `resources/views/livewire/chat/conversation-page.blade.php`
 
 **BR-020** — When `CloseTopic::execute()` successfully closes a conversation (`is_closed = true`), a `Feedback` record with `status = 'awaiting_rating'` must be created and a rating form must be sent to the user on their platform. Every close event creates a new feedback record — history accumulates.
