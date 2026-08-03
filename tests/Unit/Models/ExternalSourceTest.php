@@ -32,4 +32,22 @@ class ExternalSourceTest extends TestCase
         $this->assertFalse($source->isIpAllowed('5.6.7.8'));
         $this->assertFalse($source->isIpAllowed(null));
     }
+
+    public function test_is_widget_true_for_widget_type(): void
+    {
+        $source = new ExternalSource();
+        $source->type = ExternalSource::TYPE_WIDGET;
+
+        $this->assertTrue($source->isWidget());
+        $this->assertFalse($source->isApi());
+    }
+
+    public function test_is_widget_false_for_api_type(): void
+    {
+        $source = new ExternalSource();
+        $source->type = ExternalSource::TYPE_API;
+
+        $this->assertFalse($source->isWidget());
+        $this->assertTrue($source->isApi());
+    }
 }

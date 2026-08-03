@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 /**
  * @property int                     $id
  * @property string                  $name
+ * @property string                  $type
  * @property string                  $webhook_url
  * @property int                     $user_id
  * @property array<int, string>|null $allowed_ips
@@ -21,8 +22,15 @@ class ExternalSource extends Model
 {
     use HasFactory;
 
+    /** Generic bearer-token API source (webhook_url + access token). */
+    public const TYPE_API = 'api';
+
+    /** JS live-chat widget source (public_key only, no bearer token). */
+    public const TYPE_WIDGET = 'widget';
+
     protected $fillable = [
         'name',
+        'type',
         'webhook_url',
         'user_id',
         'allowed_ips',
@@ -39,6 +47,26 @@ class ExternalSource extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Whether this source is a JS live-chat widget source.
+     *
+     * @return bool
+     */
+    public function isWidget(): bool
+    {
+        return $this->type === self::TYPE_WIDGET;
+    }
+
+    /**
+     * Whether this source is a generic bearer-token API source.
+     *
+     * @return bool
+     */
+    public function isApi(): bool
+    {
+        return $this->type !== self::TYPE_WIDGET;
     }
 
     /**
@@ -106,29 +134,24 @@ class ExternalSource extends Model
 
         foreach ($allowed as $entry) {
             if (filter_var($entry, FILTER_VALIDATE_IP)) {
-                // IP entry: compare to request IP
                 if ($requestIp !== null && $requestIp === $entry) {
                     return true;
                 }
             } else {
-                // Domain entry: compare to the host from Origin / Referer
                 if ($originHost === null) {
                     continue;
                 }
 
                 if (str_starts_with($entry, '*.')) {
-                    // Wildcard: *.example.com matches foo.example.com only (one subdomain level)
                     $base = strtolower(substr($entry, 2));
                     $suffix = '.' . $base;
                     if (str_ends_with($originHost, $suffix)) {
                         $sub = substr($originHost, 0, strlen($originHost) - strlen($suffix));
-                        // Reject if the sub-part itself contains a dot (more than one level)
                         if ($sub !== '' && ! str_contains($sub, '.')) {
                             return true;
                         }
                     }
                 } else {
-                    // Exact domain match (case-insensitive)
                     if ($originHost === strtolower($entry)) {
                         return true;
                     }
