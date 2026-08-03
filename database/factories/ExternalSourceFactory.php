@@ -23,4 +23,17 @@ class ExternalSourceFactory extends Factory
             'webhook_url' => $this->faker->optional()->url(),
         ];
     }
+
+    /**
+     * State: a live-chat widget source (public_key only, no bearer token/webhook).
+     *
+     * @return static
+     */
+    public function widget(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => \App\Models\ExternalSource::TYPE_WIDGET,
+            'webhook_url' => null,
+        ]);
+    }
 }
