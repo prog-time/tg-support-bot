@@ -21,6 +21,7 @@ This domain does not own: message routing to Telegram (see `domain/messaging.md`
 | Concept | Description |
 |---|---|
 | External Source | A registered third-party system that integrates with the support bot via REST API |
+| Type | `external_sources.type` — `'api'` (default, bearer token + webhook) or `'widget'` (public key only, no token). Drives which admin-panel form/fields apply; does NOT change runtime auth (`ApiQuery`/`WidgetGate` still authenticate by token/public_key regardless of `type`) |
 | Access Token | A bearer token (64 chars) that authenticates requests from an External Source |
 | Public Key | A low-privilege widget key (`pub_` prefix + 36 random chars) stored in `external_sources.public_key`; identifies the source in browser-embedded widget scripts; NOT a secret |
 | external_id | The user's ID within the external system (not the same as Telegram/VK chat_id) |
@@ -35,15 +36,14 @@ This domain does not own: message routing to Telegram (see `domain/messaging.md`
 **BR-001** — Every request from an External Source must be authenticated with a valid, active bearer token from `external_source_access_tokens`.
 _Enforced in:_ `app/Http/Middleware/ApiQuery.php`
 
-**BR-001a** — An External Source may restrict which IP addresses and/or domains are allowed to call the API via `external_sources.allowed_ips` (a JSON array, managed from `/admin/settings/api-webhooks/{source}`; the UI labels it "Разрешённые IP/домены"). Each entry is matched against the request using the following rules:
-- **IP address** — matched against `$request->ip()` (exact match)
-- **Domain string** — matched against the host extracted from the `Origin` header (fallback: `Referer` header host); case-insensitive exact match
-- **Wildcard domain** `*.example.com` — matches exactly one subdomain level (e.g. `shop.example.com`), case-insensitive
-- **OR semantics** — any single entry matching allows the request
-- **Empty/NULL list** — no restriction (allow all origins and IPs)
+**BR-001a** — An External Source may restrict which requests are allowed via `external_sources.allowed_ips` (a JSON array, managed from `/admin/settings/api-webhooks/{source}`). The two consumers check **different subsets** of the same list — domain entries have no effect on the bearer-token API, and are the only thing that matters for the widget gateway:
 
-The bearer-token API enforces this via `ApiQuery` → `ExternalSource::isIpAllowed()` (legacy name; wraps `isRequestAllowed()`). The widget gateway enforces it via `WidgetGate` → `ExternalSource::isRequestAllowed($request)`.
-_Enforced in:_ `App\Modules\External\Middleware\ApiQuery`, `App\Modules\External\Middleware\WidgetGate`
+- **Bearer-token API** (`ApiQuery` → `ExternalSource::isIpAllowed($ip)`): pure IP comparison against `$request->ip()` (exact match). Domain entries in the list are silently ignored — `isIpAllowed()` does NOT delegate to `isRequestAllowed()` despite the similar name. The UI reflects this: the API-type source edit page labels the field "Разрешённые IP-адреса" and its hint mentions only IPs.
+- **Widget gateway** (`WidgetGate` → `ExternalSource::isRequestAllowed($request)`): checks both IP entries (against `$request->ip()`) AND domain entries (against the host from the `Origin` header, fallback `Referer`), case-insensitive; `*.example.com` wildcard matches exactly one subdomain level. The UI reflects this: the widget-type source edit page labels the field "Разрешённые домены" and its hint mentions only domains (IP entries still technically work here via `isRequestAllowed()`, but are not the widget's realistic use case since the visitor's browser IP is not the embedding site's IP).
+- **OR semantics** — any single matching entry (of the kind the consumer actually checks) allows the request.
+- **Empty/NULL list** — no restriction (allow all origins and IPs) for both consumers.
+
+_Enforced in:_ `App\Modules\External\Middleware\ApiQuery`, `App\Modules\External\Middleware\WidgetGate`, `App\Models\ExternalSource` (`isIpAllowed()`, `isRequestAllowed()`)
 
 **BR-002** — An External Source must be registered in `external_sources` before it can send or receive messages.
 _Enforced in:_ `app/Models/ExternalSource.php`, `app/Services/External/ExternalTrafficService.php`
@@ -140,6 +140,15 @@ $token = 'my-secret-token-123';
 ## 8. Widget Gateway
 
 The widget gateway is a browser-friendly entry point for external sources that embeds a support chat widget into third-party websites. It is a distinct authentication surface from the bearer-token REST API.
+
+### Source type & admin creation flow
+
+- `external_sources.type` is `'api'` (default) or `'widget'` — see `ExternalSource::TYPE_API` / `TYPE_WIDGET`, `isApi()` / `isWidget()`.
+- On `/admin/settings/api-webhooks` (`ApiWebhooksPage`), clicking «Добавить источник» opens a modal to choose the type before creating the source; each choice calls `addSource(string $type = ExternalSource::TYPE_API)`.
+- `ExternalSourceService::create()` branches on the created source's type: `api` sources get an auto-issued bearer token (`ExternalSourceTokensService::setAccessToken()`); `widget` sources get an auto-issued public key (`rotatePublicKey()`) instead — no bearer token row is ever created for a widget source.
+- The per-source edit page (`ApiWebhookSourcePage` / `admin.settings.api-webhooks.source`) renders conditionally on `$isWidget` (loaded from `$externalSource->isWidget()` in `mount()`): API sources see the webhook URL + bearer token blocks and the REST API/Swagger panel; widget sources see the public key block, a ready-to-paste `<script>` embed snippet (shown once a `public_key` exists), and a live-chat instructions panel instead. The source name field is shared by both types; the `allowed_ips` allowlist field is also shared (same underlying column/textarea) but its **label, hint, and placeholder are type-specific** — "Разрешённые IP-адреса" (API) vs "Разрешённые домены" (widget) — since only IP entries are enforced for API sources and only domain entries are realistic for widget sources (see BR-001a).
+- Existing rows created before this column existed default to `type = 'api'` via the migration's DB-level `DEFAULT`, since they were all created through the (then-only) bearer-token flow.
+- The list page (`ApiWebhooksPage`) shows a type badge per source card ("API" / "Живой чат") and adapts the webhook/status columns for widget rows (status reflects `public_key` presence, not `accessTokens`).
 
 ### Public key
 

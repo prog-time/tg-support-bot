@@ -140,8 +140,8 @@ _Enforced in:_ `AiAssistantPage::updatedAutoReply()`, `confirmAutoReply()`, `can
 _Enforced in:_ `AdminPanelProvider::panel()` → `->navigationItems([...])`
 
 **BR-023** — The "API и вебхуки" section consists of two pages, both restricted to admin-role users only. Non-admin authenticated users are redirected to `admin.settings.general` in `mount()` via `Auth::user()->isAdmin()`.
-- **List page** (`/admin/settings/api-webhooks`, `ApiWebhooksPage`): shows External Source cards with token/webhook status; "Добавить источник" creates a source and redirects to the edit page.
-- **Edit page** (`/admin/settings/api-webhooks/{source}`, `ApiWebhookSourcePage`): per-source configuration — bearer token regeneration (one-time reveal, 64 chars, never logged), webhook URL editing, and an **allowed-IPs allowlist** (`external_sources.allowed_ips`). The previous secret-key and events design placeholders were removed.
+- **List page** (`/admin/settings/api-webhooks`, `ApiWebhooksPage`): shows External Source cards (with a type badge) with token/webhook or public-key status; "Добавить источник" opens a type-choice modal ("API источник" / "Живой чат", see BR-031) then creates a source and redirects to the edit page.
+- **Edit page** (`/admin/settings/api-webhooks/{source}`, `ApiWebhookSourcePage`): per-source configuration, rendered conditionally by `type` (BR-031) — API sources get bearer token regeneration (one-time reveal, 64 chars, never logged) + webhook URL editing; widget sources get a public key block + embed snippet instead. Both share the **allowed-IPs/domains allowlist** (`external_sources.allowed_ips`). The previous secret-key and events design placeholders were removed.
 Token values are never logged or displayed in full — only a one-time reveal banner shown immediately after regeneration, stored in `$newToken` and cleared on dismiss.
 _Enforced in:_ `ApiWebhooksPage::mount()` and `ApiWebhookSourcePage::mount()` — `isAdmin()` check; `ApiWebhookSourcePage::regenerateToken()` — stores raw token in `$newToken` only, never logged
 
@@ -150,6 +150,9 @@ _Enforced in:_ `App\Modules\External\Middleware\ApiQuery` — checks `active = t
 
 **BR-025** — Token generation uses `Str::random(64)` (64-character alphanumeric string). This matches the `external_source_access_tokens.token` column `varchar(64)` defined in the migration. The prior value `Str::random(60)` has been corrected to 64.
 _Enforced in:_ `ExternalSourceTokensService::generateToken()`
+
+**BR-031** — Every `ExternalSource` has a `type` column (`ExternalSource::TYPE_API` default, or `TYPE_WIDGET`) that drives which admin-panel form applies — it does not change runtime authentication (`ApiQuery`/`WidgetGate` still authenticate by token/`public_key` regardless of `type`). On `ApiWebhooksPage`, «Добавить источник» opens a modal to choose "API источник" or "Живой чат" before creating the source; `addSource(string $type = ExternalSource::TYPE_API)` passes the choice through. `ExternalSourceService::create()` branches on it: `api` sources get an auto-issued bearer token (as before); `widget` sources get an auto-issued public key instead (`ExternalSourceTokensService::rotatePublicKey()`) and never get a bearer-token row. `ApiWebhookSourcePage` renders conditionally on `$isWidget` (set in `mount()` from `$externalSource->isWidget()`): widget sources see the public key block, a ready-to-paste `<script>` embed snippet (once a key exists), and a live-chat instructions panel in place of the webhook URL field, bearer-token block, and REST API/Swagger panel — the source name stays shared, and the `allowed_ips` allowlist field is shared too but its label/hint/placeholder switch per type ("Разрешённые IP-адреса" for API vs "Разрешённые домены" for widget, matching which entries `ApiQuery`/`WidgetGate` actually enforce — see external-sources.md BR-001a). The list page shows a type badge per card and reports widget status from `public_key` presence, not `accessTokens`. Existing rows predating this column default to `api` via the migration's DB-level `DEFAULT`.
+_Enforced in:_ `App\Models\ExternalSource` (`TYPE_API`/`TYPE_WIDGET`, `isApi()`/`isWidget()`), `App\Modules\External\Services\Source\ExternalSourceService::create()`, `ApiWebhooksPage::addSource()`, `ApiWebhookSourcePage::mount()`
 
 **BR-021** — The dialog list in `ConversationPage` is ordered by the most recent message date descending. Because `BotUser::messages()` has swapped FK args (`hasMany(Message::class, 'id', 'bot_user_id')`), `withMax()` produces a wrong query. Use a raw correlated subquery: `COALESCE((SELECT MAX(m.created_at) FROM messages m WHERE m.bot_user_id = bot_users.id), '1970-01-01') DESC`. Do not use `withMax('messages', 'created_at')` until the model relation is corrected.
 _Enforced in:_ `ConversationPage::loadDialogList()`
@@ -342,7 +345,7 @@ The API и вебхуки section follows the same two-page pattern as Integrati
 
 **Source cards**: vertical stack of link cards mirroring the Integrations list channel cards — each is a `<a>` with icon tile, source name, token status line ("Токен активен" green-dot / "Нет токена"), webhook status line ("Вебхук настроен" / "Вебхук не задан"), and a right chevron. Clicking navigates to the per-source edit page.
 
-**Add source**: «+ Добавить источник» opens an inline form (name only). Submitting calls `ExternalSourceService::create()` (persists the `ExternalSource` + auto-issues initial token) then **redirects** to the per-source edit page (`admin.settings.api-webhooks.source`) where the one-time token reveal is shown. Name is required, ≤255 chars, unique.
+**Add source**: «+ Добавить источник» opens a modal to choose the source type — "API источник" or "Живой чат" (BR-031). Choosing one calls `addSource(string $type)`, which builds a type-specific placeholder name ("Новый источник"/"Живой чат") and calls `ExternalSourceService::create()` — this persists the `ExternalSource` and auto-issues either a bearer token (`api`) or a public key (`widget`) — then **redirects** to the per-source edit page (`admin.settings.api-webhooks.source`), rendered per-type. Name is required, ≤255 chars, unique.
 
 **Routes**: `GET /admin/settings/api-webhooks` → name `admin.settings.api-webhooks`; registered in `AdminServiceProvider::boot()`.
 
@@ -434,7 +437,7 @@ The API и вебхуки section follows the same two-page pattern as Integrati
 
 ## Checklist
 
-- [ ] `BR-001` through `BR-030` read and understood
+- [ ] `BR-001` through `BR-031` read and understood
 - [ ] `shouldShowReplyForm()` returns `true` always (reply form always available)
 - [ ] `SendReplyAction` uses queue jobs, not synchronous API calls
 - [ ] `SendReplyAction::maybeMirrorToGroup()` dispatches `MirrorAdminReplyToGroupJob` (does NOT create messages row)
