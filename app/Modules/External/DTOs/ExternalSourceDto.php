@@ -12,6 +12,7 @@ class ExternalSourceDto extends Data
      * @param string|null $webhook_url
      * @param string|null $created_at
      * @param string|null $updated_at
+     * @param string      $type        'api' (default, bearer token + webhook) or 'widget' (public key only)
      */
     public function __construct(
         public ?int $id,
@@ -19,6 +20,7 @@ class ExternalSourceDto extends Data
         public ?string $webhook_url,
         public ?string $created_at,
         public ?string $updated_at,
+        public string $type = 'api',
     ) {
     }
 
