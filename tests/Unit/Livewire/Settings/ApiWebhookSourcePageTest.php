@@ -72,7 +72,7 @@ class ApiWebhookSourcePageTest extends TestCase
             ->assertSee('My Integration')
             ->assertSee('Ключ API')
             ->assertSee('URL вебхука')
-            ->assertSee('Разрешённые IP/домены')
+            ->assertSee('Разрешённые IP-адреса')
             ->assertSee('REST API')
             ->assertSee('Swagger')
             // Removed sections must no longer render.
@@ -105,6 +105,91 @@ class ApiWebhookSourcePageTest extends TestCase
 
         Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
             ->assertSee('токен не выпущен');
+    }
+
+    // ── Widget (live-chat) sources ──────────────────────────────────────────────
+
+    public function test_widget_source_renders_public_key_fields_not_api_fields(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->widget()->create(['name' => 'My Widget']);
+
+        Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->assertSee('My Widget')
+            ->assertSee('Живой чат')
+            ->assertSee('Публичный ключ виджета')
+            ->assertSee('Разрешённые домены')
+            ->assertDontSee('URL вебхука')
+            ->assertDontSee('Ключ API')
+            ->assertDontSee('REST API');
+    }
+
+    public function test_api_source_does_not_render_widget_only_panel_copy(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->create(['name' => 'My API']);
+
+        Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->assertDontSee('Публичный ключ виджета')
+            ->assertDontSee('Код для вставки на сайт');
+    }
+
+    public function test_widget_source_does_not_render_ip_only_allowlist_label(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->widget()->create(['name' => 'My Widget']);
+
+        Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->assertDontSee('Разрешённые IP-адреса');
+    }
+
+    public function test_api_source_does_not_render_domain_only_allowlist_label(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->create(['name' => 'My API']);
+
+        Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->assertDontSee('Разрешённые домены');
+    }
+
+    public function test_widget_source_save_notice_does_not_mention_webhook(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->widget()->create(['name' => 'My Widget']);
+
+        Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->call('saveWebhookUrl')
+            ->assertSet('saved', true)
+            ->assertSee('Настройки сохранены.')
+            ->assertDontSee('URL вебхука сохранён.');
+    }
+
+    public function test_generate_public_key_on_widget_source_shows_embed_snippet(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $source = ExternalSource::factory()->widget()->create(['name' => 'My Widget']);
+
+        $component = Livewire::test(ApiWebhookSourcePage::class, ['source' => $source->id])
+            ->call('generatePublicKey');
+
+        $newKey = $component->get('newPublicKey');
+        $this->assertNotNull($newKey);
+        $this->assertStringStartsWith('pub_', $newKey);
+
+        $component->assertSee('Код для вставки на сайт')
+            ->assertSee('data-key="' . $source->fresh()->public_key . '"', false);
     }
 
     // ── Token regeneration ─────────────────────────────────────────────────────

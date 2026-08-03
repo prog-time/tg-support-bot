@@ -32,6 +32,9 @@ class ApiWebhookSourcePage extends Component
     /** @var string The External Source name */
     public string $sourceName = '';
 
+    /** @var bool Whether this source is a live-chat widget source (vs. a generic API source) */
+    public bool $isWidget = false;
+
     /** @var bool Whether an access token record exists */
     public bool $hasToken = false;
 
@@ -100,6 +103,7 @@ class ApiWebhookSourcePage extends Component
 
         $this->sourceId = $externalSource->id;
         $this->sourceName = $externalSource->name;
+        $this->isWidget = $externalSource->isWidget();
         $this->webhookUrl = (string) ($externalSource->webhook_url ?? '');
         $this->allowedIps = implode("\n", $externalSource->allowed_ips ?? []);
         $this->publicKey = $externalSource->public_key;
@@ -228,15 +232,12 @@ class ApiWebhookSourcePage extends Component
             }
 
             if (filter_var($entry, FILTER_VALIDATE_IP)) {
-                // Valid IP address
                 $entries[] = $entry;
                 continue;
             }
 
-            // Allow wildcard domains: *.example.com
             $check = str_starts_with($entry, '*.') ? substr($entry, 2) : $entry;
 
-            // Validate as a hostname: letters, digits, hyphens, dots; no leading/trailing dots
             if (! preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)+$/', $check)) {
                 $this->allowedIpsError = "Некорректный IP-адрес или домен: {$entry}";
 
@@ -295,8 +296,6 @@ class ApiWebhookSourcePage extends Component
     {
         return view('livewire.settings.api-webhook-source-page');
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
      * Reload token state from DB.
