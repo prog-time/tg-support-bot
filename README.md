@@ -17,9 +17,7 @@
 
 **Документация:** [https://docs.tg-support-bot.ru/](https://docs.tg-support-bot.ru/docs/getting-started.html)
 
-**Презентация работы бота:** [https://youtu.be/hIpYreHOxIk](https://youtu.be/hIpYreHOxIk)
-
-**Инструкция по установке через Docker Compose:** [https://youtu.be/ZAtP9qJ5q9M](https://youtu.be/ZAtP9qJ5q9M)
+**Презентация работы бота и инструкция по установке:** [https://youtu.be/KRJkr4a1RtQ](https://youtu.be/KRJkr4a1RtQ)
 
 **Telegram-группа поддержки:** [https://t.me/pt_tg_support](https://t.me/pt_tg_support)
 
