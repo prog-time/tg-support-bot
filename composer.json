@@ -12,6 +12,7 @@
         "laravel/telescope": "^5.20",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.7",
+        "minishlink/web-push": "^11.0",
         "monolog/monolog": "^3.9",
         "prog-time/max-php-sdk": "^1.0",
         "prog-time/tg-logger": "^1.0",
