@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Modules\Feedback\Actions;
 
+use App\Jobs\SendWebPushNotificationJob;
 use App\Models\BotUser;
 use App\Models\Feedback;
 use App\Modules\Feedback\Actions\HandleFeedbackRating;
@@ -82,7 +83,10 @@ class HandleFeedbackRatingTest extends TestCase
 
         (new HandleFeedbackRating())->execute(callbackData: $callbackData);
 
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(SendTelegramSimpleQueryJob::class);
+        // The rating is saved as an incoming `messages` row, so it does fan
+        // out a Web Push notification like any other incoming message.
+        Queue::assertPushed(SendWebPushNotificationJob::class);
     }
 
     public function test_does_nothing_for_invalid_callback_data(): void
