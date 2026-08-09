@@ -58,8 +58,9 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && \
     npm run build
 
-# Меняем пользователя на www-data
-USER www-data
+# Меняем пользователя на www-data (uid 33 — числовой ID, чтобы юзер
+# резолвился и на хостах без записи www-data в /etc/passwd)
+USER 33:33
 
 EXPOSE 9000
 ENTRYPOINT ["/bin/bash", "/var/www/docker/scripts/entrypoint.sh"]
