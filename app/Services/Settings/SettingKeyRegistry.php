@@ -21,7 +21,7 @@ class SettingKeyRegistry
      * @var array<string, array{type: string, config: string|null, is_secret: bool}>
      */
     private static array $keys = [
-        // ── App ─────────────────────────────────────────────────────────────
+        /** App */
         'app.bot_name' => [
             'type' => 'string',
             'config' => null,
@@ -33,7 +33,7 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
-        // ── Telegram (main bot) ──────────────────────────────────────────────
+        /** Telegram (main bot) */
         'telegram.token' => [
             'type' => 'string',
             'config' => null,
@@ -55,7 +55,7 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
-        // ── Telegram AI bot ──────────────────────────────────────────────────
+        /** Telegram AI bot */
         'telegram_ai.token' => [
             'type' => 'string',
             'config' => null,
@@ -71,15 +71,17 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
-        // Numeric id + @username are captured automatically from getMe on save
-        // (no manual entry). Informational — not compared at runtime.
+        /**
+         * Numeric id + @username are captured automatically from getMe on save
+         * (no manual entry). Informational — not compared at runtime.
+         */
         'telegram_ai.id' => [
             'type' => 'int',
             'config' => null,
             'is_secret' => false,
         ],
 
-        // ── VK ───────────────────────────────────────────────────────────────
+        /** VK */
         'vk.token' => [
             'type' => 'string',
             'config' => null,
@@ -96,7 +98,7 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
-        // ── Max ──────────────────────────────────────────────────────────────
+        /** Max */
         'max.token' => [
             'type' => 'string',
             'config' => null,
@@ -108,9 +110,11 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
-        // ── Avito (built-in module) ────────────────────────────────────────────
-        // Avito Messenger API credentials entered on the integration screen.
-        // config => null (DB-only), mirroring every other channel credential key.
+        /** Avito (built-in module) */
+        /**
+         * Avito Messenger API credentials entered on the integration screen.
+         * config => null (DB-only), mirroring every other channel credential key.
+         */
         'avito.client_id' => [
             'type' => 'string',
             'config' => null,
@@ -137,9 +141,11 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
-        // ── Email (built-in module, IMAP/SMTP) ─────────────────────────────────
-        // Credentials entered on the dedicated Email integration screen.
-        // config => null (DB-only), mirroring every other channel credential key.
+        /** Email (built-in module, IMAP/SMTP) */
+        /**
+         * Credentials entered on the dedicated Email integration screen.
+         * config => null (DB-only), mirroring every other channel credential key.
+         */
         'email.imap_host' => [
             'type' => 'string',
             'config' => null,
@@ -190,26 +196,30 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
-        // Informational in v1: the `email:poll` scheduler entry runs on a
-        // fixed everyMinute() cadence (see routes/console.php). Reserved for
-        // a future dynamic-scheduling feature — see issue #214's open
-        // question on the polling interval strategy.
+        /**
+         * Informational in v1: the `email:poll` scheduler entry runs on a
+         * fixed everyMinute() cadence (see routes/console.php). Reserved for
+         * a future dynamic-scheduling feature — see issue #214's open
+         * question on the polling interval strategy.
+         */
         'email.poll_interval' => [
             'type' => 'int',
             'config' => null,
             'is_secret' => false,
         ],
-        // List of ignored senders — newline-entered on the Email integration
-        // screen, stored as a JSON array of lowercased strings. Each entry is
-        // either a full address ("newsletter@example.com") or a "@domain.com"
-        // suffix to block an entire domain. See EmailIgnoreListMatcher.
+        /**
+         * List of ignored senders — newline-entered on the Email integration
+         * screen, stored as a JSON array of lowercased strings. Each entry is
+         * either a full address ("newsletter@example.com") or a "@domain.com"
+         * suffix to block an entire domain. See EmailIgnoreListMatcher.
+         */
         'email.ignored_addresses' => [
             'type' => 'json',
             'config' => null,
             'is_secret' => false,
         ],
 
-        // ── AI assistant ─────────────────────────────────────────────────────
+        /** AI assistant */
         'ai.enabled' => [
             'type' => 'bool',
             'config' => null,
@@ -276,16 +286,18 @@ class SettingKeyRegistry
             'is_secret' => true,
         ],
 
-        // ── AI system prompt ─────────────────────────────────────────────────
-        // Stored only in the DB (no .env/config fallback, no file, no default).
-        // Empty until an admin saves one — see AiSystemPromptLoader.
+        /** AI system prompt */
+        /**
+         * Stored only in the DB (no .env/config fallback, no file, no default).
+         * Empty until an admin saves one — see AiSystemPromptLoader.
+         */
         'ai.system_prompt' => [
             'type' => 'string',
             'config' => null,
             'is_secret' => false,
         ],
 
-        // ── OpenAI extended fields ────────────────────────────────────────────
+        /** OpenAI extended fields */
         'ai.openai_base_url' => [
             'type' => 'string',
             'config' => null,
@@ -302,7 +314,7 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
-        // ── DeepSeek extended fields ──────────────────────────────────────────
+        /** DeepSeek extended fields */
         'ai.deepseek_base_url' => [
             'type' => 'string',
             'config' => null,
@@ -324,7 +336,7 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
-        // ── GigaChat extended fields ──────────────────────────────────────────
+        /** GigaChat extended fields */
         'ai.gigachat_base_url' => [
             'type' => 'string',
             'config' => null,
@@ -350,9 +362,33 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
-        // OAuth scope: GIGACHAT_API_PERS (individuals) | GIGACHAT_API_B2B |
-        // GIGACHAT_API_CORP (legal entities). Defaults to PERS in code when unset.
+        /**
+         * OAuth scope: GIGACHAT_API_PERS (individuals) | GIGACHAT_API_B2B |
+         * GIGACHAT_API_CORP (legal entities). Defaults to PERS in code when unset.
+         */
         'ai.gigachat_scope' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+
+        /** Web Push (admin PWA) */
+        /**
+         * VAPID keypair, generated once via `php artisan webpush:generate-vapid-keys`
+         * (no settings screen — same "auto-captured, not manually entered"
+         * pattern as avito.user_id / telegram_ai.id).
+         */
+        'webpush.vapid_public_key' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
+        'webpush.vapid_private_key' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+        'webpush.vapid_subject' => [
             'type' => 'string',
             'config' => null,
             'is_secret' => false,
