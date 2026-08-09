@@ -20,6 +20,8 @@ class PwaTest extends TestCase
         $this->assertStringContainsString('/offline.html', $body);
         $this->assertStringContainsString("req.mode === 'navigate'", $body);
         $this->assertStringContainsString("addEventListener('notificationclick'", $body);
+        $this->assertStringContainsString("addEventListener('push'", $body);
+        $this->assertStringContainsString('self.registration.showNotification', $body);
     }
 
     public function test_manifest_route_serves_valid_manifest_publicly(): void
