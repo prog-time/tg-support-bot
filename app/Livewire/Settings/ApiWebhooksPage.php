@@ -116,21 +116,28 @@ class ApiWebhooksPage extends Component
      * Create a new External Source and redirect to its edit page.
      *
      * The source is created with a unique placeholder name (set properly on the
-     * edit page) and an auto-issued bearer token.
+     * edit page). API sources get an auto-issued bearer token; widget (live-chat)
+     * sources get an auto-issued public key instead — see ExternalSourceService::create().
      *
      * @param ExternalSourceService $service
+     * @param string                $type    ExternalSource::TYPE_API (default) or ExternalSource::TYPE_WIDGET
      */
-    public function addSource(ExternalSourceService $service): void
+    public function addSource(ExternalSourceService $service, string $type = ExternalSource::TYPE_API): void
     {
         $this->addError = null;
+
+        if (! in_array($type, [ExternalSource::TYPE_API, ExternalSource::TYPE_WIDGET], true)) {
+            $type = ExternalSource::TYPE_API;
+        }
 
         try {
             $source = $service->create(new ExternalSourceDto(
                 id: null,
-                name: $this->placeholderName(),
+                name: $this->placeholderName($type),
                 webhook_url: null,
                 created_at: null,
                 updated_at: null,
+                type: $type,
             ));
         } catch (\Throwable $e) {
             $this->addError = 'Не удалось создать источник.';
@@ -156,11 +163,13 @@ class ApiWebhooksPage extends Component
     /**
      * Build a unique placeholder name for a newly created source.
      *
+     * @param string $type ExternalSource::TYPE_API or ExternalSource::TYPE_WIDGET
+     *
      * @return string
      */
-    private function placeholderName(): string
+    private function placeholderName(string $type): string
     {
-        $base = 'Новый источник';
+        $base = $type === ExternalSource::TYPE_WIDGET ? 'Живой чат' : 'Новый источник';
         $name = $base;
         $i = 1;
 
@@ -170,6 +179,18 @@ class ApiWebhooksPage extends Component
         }
 
         return $name;
+    }
+
+    /**
+     * Human-readable label for a source's type, shown as a badge in the list.
+     *
+     * @param ExternalSource $source
+     *
+     * @return string
+     */
+    public function typeLabel(ExternalSource $source): string
+    {
+        return $source->isWidget() ? 'Живой чат' : 'API';
     }
 
     /**

@@ -28,7 +28,11 @@ class ExternalSourceService
             ->create($data->toArray())
             ->getModel();
 
-        $this->externalSourceTokensService->setAccessToken($item->id);
+        if ($item->isWidget()) {
+            $this->externalSourceTokensService->rotatePublicKey($item);
+        } else {
+            $this->externalSourceTokensService->setAccessToken($item->id);
+        }
 
         return $item;
     }

@@ -24,7 +24,8 @@ rules/
 ├─ README.md                          ← You are here
 ├─ master-promt.md                    ← Template for generating rules (do not edit)
 ├─ _meta/
-│  └─ how-to-write-rules.md           ← File structure and writing standards
+│  ├─ how-to-write-rules.md           ← File structure and writing standards
+│  └─ external-documentation.md       ← Where the public docs site source lives (sibling repo)
 ├─ database/
 │  └─ schema.md                       ← Database schema documentation
 ├─ domain/
@@ -75,6 +76,7 @@ When performing a task, the AI agent **must follow this sequence**:
 | # | File | Purpose |
 |---|------|---------|
 | 1 | `_meta/how-to-write-rules.md` | Understand formatting, structure, and standards for all rules files |
+| — | `_meta/external-documentation.md` | Read before touching user-facing docs — the public docs site is a separate sibling repository, not part of `rules/` |
 | 2 | `process/architecture-design.md` | Perform pre-implementation design. Document diagrams, affected layers, boundaries |
 | 3 | `process/ai-workflow.md` | Review lifecycle rules: understand, design, implement, verify, document |
 | 4 | `database/schema.md` | Read database schema before touching migrations, tables, or relations |

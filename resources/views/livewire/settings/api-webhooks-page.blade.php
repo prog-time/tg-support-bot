@@ -1,4 +1,4 @@
-<div class="p-6 lg:p-8">
+<div class="p-6 lg:p-8" x-data="{ typeModalOpen: false }" x-on:keydown.escape.window="typeModalOpen = false">
 
     {{-- ── Page header + add button ────────────────────────────────────────────── --}}
     <div class="mb-6 flex items-start justify-between gap-3">
@@ -9,17 +9,85 @@
 
         <x-admin.button-primary
             type="button"
-            wire:click="addSource"
-            wire:loading.attr="disabled"
-            wire:target="addSource"
+            x-on:click="typeModalOpen = true"
             class="shrink-0"
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span wire:loading.remove wire:target="addSource">Добавить источник</span>
-            <span wire:loading wire:target="addSource">Создание...</span>
+            Добавить источник
         </x-admin.button-primary>
+    </div>
+
+    {{-- ── "Choose source type" modal ───────────────────────────────────────────── --}}
+    <div
+        x-show="typeModalOpen"
+        x-cloak
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        x-on:click="typeModalOpen = false"
+        class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+    >
+        <div
+            x-show="typeModalOpen"
+            x-cloak
+            x-on:click.stop
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="w-full max-w-sm rounded-2xl border border-border-light bg-bg-primary shadow-2xl"
+            style="padding: 24px;"
+        >
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-base font-semibold text-text-primary">Тип источника</h3>
+                <button type="button" x-on:click="typeModalOpen = false" class="text-text-secondary hover:text-text-primary" aria-label="Закрыть">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button
+                    type="button"
+                    wire:click="addSource('{{ \App\Models\ExternalSource::TYPE_API }}')"
+                    wire:loading.attr="disabled"
+                    wire:target="addSource('{{ \App\Models\ExternalSource::TYPE_API }}')"
+                    class="flex items-start gap-3 rounded-xl border border-border-light p-4 text-left transition hover:border-accent hover:bg-bg-secondary/40"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span class="min-w-0">
+                        <span class="block text-[13px] font-medium text-text-primary">API источник</span>
+                        <span class="block text-[12px] text-text-secondary">Bearer-токен + вебхук — для внешних систем, интегрируемых через REST API</span>
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    wire:click="addSource('{{ \App\Models\ExternalSource::TYPE_WIDGET }}')"
+                    wire:loading.attr="disabled"
+                    wire:target="addSource('{{ \App\Models\ExternalSource::TYPE_WIDGET }}')"
+                    class="flex items-start gap-3 rounded-xl border border-border-light p-4 text-left transition hover:border-accent hover:bg-bg-secondary/40"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span class="min-w-0">
+                        <span class="block text-[13px] font-medium text-text-primary">Живой чат</span>
+                        <span class="block text-[12px] text-text-secondary">Публичный ключ для JS-виджета — для встраивания на сторонний сайт</span>
+                    </span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Creation error --}}
@@ -49,11 +117,13 @@
         @forelse ($sources as $source)
             @php
                 /** @var \App\Models\ExternalSource $source */
-                $hasActiveToken = $source->accessTokens->isNotEmpty();
+                $isWidget       = $source->isWidget();
+                $hasActiveToken = $isWidget ? ! empty($source->public_key) : $source->accessTokens->isNotEmpty();
                 $hasWebhook     = ! empty($source->webhook_url);
                 $editUrl        = route('admin.settings.api-webhooks.source', $source->id);
                 $avatarColor    = $this->avatarColor($source);
                 $initials       = $this->avatarInitials($source);
+                $typeLabel      = $this->typeLabel($source);
             @endphp
 
             {{-- Divider (not before first row) --}}
@@ -72,14 +142,22 @@
                         aria-hidden="true"
                     >{{ $initials }}</div>
                     <div class="min-w-0">
-                        <p class="truncate text-[13px] font-medium text-text-primary">{{ $source->name }}</p>
+                        <p class="flex items-center gap-1.5 truncate text-[13px] font-medium text-text-primary">
+                            {{ $source->name }}
+                            <span
+                                class="inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+                                style="{{ $isWidget ? 'background:#EDE9FE; color:#6D28D9' : 'background:#DBEAFE; color:#1D4ED8' }}"
+                            >{{ $typeLabel }}</span>
+                        </p>
                         <p class="truncate text-[12px] text-text-secondary">ID: {{ $source->id }}</p>
                     </div>
                 </a>
 
                 {{-- Webhook column --}}
                 <div class="min-w-0">
-                    @if ($hasWebhook)
+                    @if ($isWidget)
+                        <span class="text-[13px] text-text-secondary">Виджет — см. публичный ключ</span>
+                    @elseif ($hasWebhook)
                         <span class="truncate text-[13px] text-text-primary" title="{{ $source->webhook_url }}">{{ $source->webhook_url }}</span>
                     @else
                         <span class="text-[13px] text-text-secondary">Не задан</span>
@@ -96,7 +174,7 @@
                     @else
                         <span class="inline-flex items-center rounded-md px-2.5 py-1 text-[12px] font-normal"
                               style="background:#F3F4F6; color:#6B7280">
-                            Нет токена
+                            {{ $isWidget ? 'Нет ключа' : 'Нет токена' }}
                         </span>
                     @endif
                 </div>
@@ -126,8 +204,16 @@
                         aria-hidden="true"
                     >{{ $initials }}</div>
                     <div class="min-w-0">
-                        <p class="truncate text-[13px] font-medium text-text-primary">{{ $source->name }}</p>
-                        @if ($hasWebhook)
+                        <p class="flex items-center gap-1.5 truncate text-[13px] font-medium text-text-primary">
+                            {{ $source->name }}
+                            <span
+                                class="inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+                                style="{{ $isWidget ? 'background:#EDE9FE; color:#6D28D9' : 'background:#DBEAFE; color:#1D4ED8' }}"
+                            >{{ $typeLabel }}</span>
+                        </p>
+                        @if ($isWidget)
+                            <p class="text-[12px] text-text-secondary">Виджет — см. публичный ключ</p>
+                        @elseif ($hasWebhook)
                             <p class="truncate text-[12px] text-text-secondary">{{ $source->webhook_url }}</p>
                         @else
                             <p class="text-[12px] text-text-secondary">Вебхук не задан</p>
@@ -140,7 +226,7 @@
                               style="background:#DCFCE7; color:#15803D">Активен</span>
                     @else
                         <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-normal"
-                              style="background:#F3F4F6; color:#6B7280">Нет токена</span>
+                              style="background:#F3F4F6; color:#6B7280">{{ $isWidget ? 'Нет ключа' : 'Нет токена' }}</span>
                     @endif
                     <button
                         type="button"

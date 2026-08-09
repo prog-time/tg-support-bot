@@ -24,15 +24,24 @@
             {{-- Card header: icon + titles --}}
             <div class="flex items-center gap-3.5">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style="background:#EEF2FF">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none"
-                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
+                    @if ($isWidget)
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    @else
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    @endif
                 </div>
                 <div>
                     <h2 class="text-lg font-bold text-text-primary">{{ $sourceName }}</h2>
-                    <p class="mt-0.5 text-xs text-text-secondary">Bearer-токен и вебхук внешнего источника</p>
+                    <p class="mt-0.5 text-xs text-text-secondary">
+                        {{ $isWidget ? 'Публичный ключ для JS-виджета живого чата' : 'Bearer-токен и вебхук внешнего источника' }}
+                    </p>
                 </div>
             </div>
 
@@ -59,34 +68,38 @@
             {{-- ── URL вебхука ───────────────────────────────────────────────── --}}
             <div class="space-y-5">
 
-                <x-admin.form-field
-                    label="URL вебхука"
-                    for="webhook_url"
-                    hint="URL для получения событий"
-                    :error="$webhookError"
-                >
-                    <input
-                        id="webhook_url"
-                        type="url"
-                        wire:model="webhookUrl"
-                        placeholder="https://example.com/webhook"
-                        class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
-                            @if ($webhookError) border-red-400 @endif"
-                    />
-                </x-admin.form-field>
+                @unless ($isWidget)
+                    <x-admin.form-field
+                        label="URL вебхука"
+                        for="webhook_url"
+                        hint="URL для получения событий"
+                        :error="$webhookError"
+                    >
+                        <input
+                            id="webhook_url"
+                            type="url"
+                            wire:model="webhookUrl"
+                            placeholder="https://example.com/webhook"
+                            class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
+                                @if ($webhookError) border-red-400 @endif"
+                        />
+                    </x-admin.form-field>
+                @endunless
 
-                {{-- Разрешённые IP/домены — allowlist for bearer token and widget key requests --}}
+                {{-- Разрешённые IP (API) или домены (виджет) — WidgetGate checks domains, ApiQuery checks IP only --}}
                 <x-admin.form-field
-                    label="Разрешённые IP/домены"
+                    :label="$isWidget ? 'Разрешённые домены' : 'Разрешённые IP-адреса'"
                     for="allowed_ips"
-                    hint="По одной записи в строке. Допустимы IP-адреса и домены (например: example.com, *.example.com для поддоменов). Пусто — без ограничений."
+                    :hint="$isWidget
+                        ? 'По одной записи в строке. Домены сайтов, где будет встроен виджет (например: example.com, *.example.com для поддоменов). Пусто — без ограничений.'
+                        : 'По одной записи в строке. IP-адреса, с которых разрешены запросы к API. Пусто — без ограничений.'"
                     :error="$allowedIpsError"
                 >
                     <textarea
                         id="allowed_ips"
                         wire:model="allowedIps"
                         rows="4"
-                        placeholder="203.0.113.10&#10;example.com&#10;*.example.com"
+                        placeholder="{{ $isWidget ? "example.com\n*.example.com" : "203.0.113.10\n198.51.100.5" }}"
                         class="block w-full resize-y rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 font-mono text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
                             @if ($allowedIpsError) border-red-400 @endif"
                     ></textarea>
@@ -102,17 +115,18 @@
                 </x-admin.button-primary>
             </div>
 
-            {{-- Webhook save result notice --}}
+            {{-- Save result notice --}}
             @if ($saved)
                 <div class="mt-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-green-500"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    URL вебхука сохранён.
+                    {{ $isWidget ? 'Настройки сохранены.' : 'URL вебхука сохранён.' }}
                 </div>
             @endif
 
+            @unless ($isWidget)
             <div class="my-6 h-px bg-border-light"></div>
 
             {{-- ── API-ключ block ────────────────────────────────────────────── --}}
@@ -188,8 +202,10 @@
                     </x-admin.button-primary>
                 </div>
             </div>
+            @endunless
 
         {{-- ── Публичный ключ виджета ──────────────────────────────────────── --}}
+        @if ($isWidget)
         <div class="mt-8">
 
             <div class="my-6 h-px bg-border-light"></div>
@@ -265,47 +281,77 @@
 
             </div>
 
+            {{-- Ready-to-paste embed snippet --}}
+            @if ($publicKey)
+                <div class="mt-6 flex flex-col gap-1.5">
+                    <span class="text-[13px] font-medium text-text-primary">Код для вставки на сайт</span>
+                    <code class="block break-all rounded-lg border border-border-light bg-bg-input px-3.5 py-3 font-mono text-xs text-text-primary select-all">&lt;script src="{{ rtrim(config('app.url'), '/') }}/widget/widget.js" data-domain="{{ rtrim(config('app.url'), '/') }}" data-key="{{ $publicKey }}" defer&gt;&lt;/script&gt;</code>
+                    <span class="text-xs text-text-secondary">Вставьте перед закрывающим &lt;/body&gt; на стороннем сайте.</span>
+                </div>
+            @endif
+
         </div>{{-- /public key block --}}
+        @endif
 
         </div>
 
-        {{-- ── Instruction panel (REST API reference) ──────────────────────── --}}
+        {{-- ── Instruction panel (REST API reference / live-chat embed) ─────── --}}
         <div>
             <div class="rounded-xl border border-border-light bg-bg-primary p-4 lg:p-6">
 
-                {{-- Panel header --}}
-                <div class="mb-5 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none"
-                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span class="text-sm font-semibold text-text-primary">REST API</span>
-                </div>
+                @if ($isWidget)
+                    {{-- Panel header --}}
+                    <div class="mb-5 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm font-semibold text-text-primary">Живой чат</span>
+                    </div>
 
-                {{-- Base URL --}}
-                <p class="mb-3 text-xs text-text-secondary">Базовый URL:</p>
-                <code class="mb-4 block break-all rounded bg-bg-input px-2.5 py-1.5 font-mono text-xs text-text-primary">{{ rtrim(config('app.url'), '/') }}</code>
+                    <p class="mb-3 text-xs text-text-secondary">
+                        Сгенерируйте публичный ключ слева, затем вставьте готовый код (появится под кнопкой «Сгенерировать ключ») перед закрывающим &lt;/body&gt; на стороннем сайте.
+                    </p>
 
-                {{-- Auth note --}}
-                <div class="mt-4 rounded-lg bg-bg-input px-3 py-2.5">
-                    <p class="mb-1 text-[11px] font-semibold text-text-primary">Авторизация</p>
-                    <code class="block font-mono text-[11px] text-text-secondary">Authorization: Bearer {token}</code>
-                </div>
+                    <div class="rounded-lg bg-bg-input px-3 py-2.5">
+                        <p class="mb-1 text-[11px] font-semibold text-text-primary">Разрешённые домены</p>
+                        <p class="text-[11px] text-text-secondary">Укажите домен сайта в поле «Разрешённые домены» слева — иначе виджет будет работать с любого сайта, использующего этот ключ.</p>
+                    </div>
+                @else
+                    {{-- Panel header --}}
+                    <div class="mb-5 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="text-sm font-semibold text-text-primary">REST API</span>
+                    </div>
 
-                {{-- Swagger link plate --}}
-                <a href="/docs/swagger-v1-ui"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   class="mt-5 flex items-center gap-2 rounded-lg px-3.5 py-3 text-xs font-medium text-accent transition hover:opacity-80"
-                   style="background:#F0F4FF">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"
-                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Открыть Swagger UI
-                </a>
+                    {{-- Base URL --}}
+                    <p class="mb-3 text-xs text-text-secondary">Базовый URL:</p>
+                    <code class="mb-4 block break-all rounded bg-bg-input px-2.5 py-1.5 font-mono text-xs text-text-primary">{{ rtrim(config('app.url'), '/') }}</code>
+
+                    {{-- Auth note --}}
+                    <div class="mt-4 rounded-lg bg-bg-input px-3 py-2.5">
+                        <p class="mb-1 text-[11px] font-semibold text-text-primary">Авторизация</p>
+                        <code class="block font-mono text-[11px] text-text-secondary">Authorization: Bearer {token}</code>
+                    </div>
+
+                    {{-- Swagger link plate --}}
+                    <a href="/docs/swagger-v1-ui"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="mt-5 flex items-center gap-2 rounded-lg px-3.5 py-3 text-xs font-medium text-accent transition hover:opacity-80"
+                       style="background:#F0F4FF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Открыть Swagger UI
+                    </a>
+                @endif
 
             </div>
         </div>

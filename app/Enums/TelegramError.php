@@ -10,7 +10,7 @@ enum TelegramError: string
 
     case TOPIC_NOT_FOUND = 'Bad Request: message thread not found';
     case TOPIC_DELETED = 'Bad Request: TOPIC_DELETED';
-    case TOPIC_ID_INVALID = 'Bad Request: TOPIC_ID_INVALID';
+    case TOPIC_ID_INVALID = 'Bad Request: invalid forum topic identifier specified';
     case TOPIC_NOT_MODIFIED = 'Bad Request: TOPIC_NOT_MODIFIED';
 
     case CHAT_NOT_FOUND = 'Bad Request: chat not found';

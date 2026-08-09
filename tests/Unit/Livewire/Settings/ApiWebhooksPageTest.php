@@ -116,6 +116,63 @@ class ApiWebhooksPageTest extends TestCase
         ]);
     }
 
+    public function test_add_source_with_widget_type_creates_public_key_not_token(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        Livewire::test(ApiWebhooksPage::class)
+            ->call('addSource', ExternalSource::TYPE_WIDGET)
+            ->assertRedirect();
+
+        $source = ExternalSource::first();
+        $this->assertNotNull($source);
+        $this->assertSame('Живой чат', $source->name);
+        $this->assertSame(ExternalSource::TYPE_WIDGET, $source->type);
+        $this->assertNotNull($source->public_key);
+        $this->assertDatabaseMissing('external_source_access_tokens', [
+            'external_source_id' => $source->id,
+        ]);
+    }
+
+    public function test_add_source_with_invalid_type_falls_back_to_api(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        Livewire::test(ApiWebhooksPage::class)
+            ->call('addSource', 'bogus-type')
+            ->assertRedirect();
+
+        $source = ExternalSource::first();
+        $this->assertSame(ExternalSource::TYPE_API, $source->type);
+    }
+
+    public function test_type_choice_modal_is_rendered(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        Livewire::test(ApiWebhooksPage::class)
+            ->assertSee('API источник')
+            ->assertSee('Живой чат');
+    }
+
+    public function test_renders_widget_badge_for_widget_source(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        ExternalSource::factory()->create([
+            'name' => 'My Widget',
+            'type' => ExternalSource::TYPE_WIDGET,
+        ]);
+
+        Livewire::test(ApiWebhooksPage::class)
+            ->assertSee('My Widget')
+            ->assertSee('Виджет — см. публичный ключ');
+    }
+
     public function test_add_source_generates_unique_placeholder_name(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

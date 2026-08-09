@@ -40,6 +40,42 @@ class ExternalSourceServiceTest extends TestCase
         ]);
     }
 
+    public function test_create_widget_source_issues_public_key_not_token(): void
+    {
+        $dto = ExternalSourceDto::from([
+            'name' => 'test_widget_source',
+            'webhook_url' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'type' => ExternalSource::TYPE_WIDGET,
+        ]);
+
+        $result = $this->service->create($dto);
+
+        $this->assertInstanceOf(ExternalSource::class, $result);
+        $this->assertSame(ExternalSource::TYPE_WIDGET, $result->type);
+        $this->assertTrue($result->isWidget());
+        $this->assertNotNull($result->fresh()->public_key);
+        $this->assertDatabaseMissing('external_source_access_tokens', [
+            'external_source_id' => $result->id,
+        ]);
+    }
+
+    public function test_create_source_defaults_to_api_type(): void
+    {
+        $dto = ExternalSourceDto::from([
+            'name' => 'test_default_type_source',
+            'webhook_url' => 'https://example.com/hook',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $result = $this->service->create($dto);
+
+        $this->assertSame(ExternalSource::TYPE_API, $result->type);
+        $this->assertTrue($result->isApi());
+    }
+
     public function test_update_source_updates_webhook_url(): void
     {
         $source = $this->service->create(ExternalSourceDto::from([
