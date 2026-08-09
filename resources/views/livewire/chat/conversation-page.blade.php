@@ -30,12 +30,19 @@
             // Don't interrupt while the operator is actively looking at the workspace —
             // the dialog-list badge already covers that case.
             if (document.hasFocus()) { return; }
-            const n = new Notification(detail.title, {
-                body: detail.body,
-                tag: 'tg-support-chat',
-                renotify: true,
+            // Routed through the service worker rather than the page-level
+            // Notification constructor — iOS Safari only supports
+            // ServiceWorkerRegistration.showNotification(), even for an
+            // installed home-screen PWA. The click handler that used to live
+            // here now lives in the SW's `notificationclick` listener.
+            if (!('serviceWorker' in navigator)) { return; }
+            navigator.serviceWorker.ready.then((reg) => {
+                reg.showNotification(detail.title, {
+                    body: detail.body,
+                    tag: 'tg-support-chat',
+                    renotify: true,
+                });
             });
-            n.onclick = () => { window.focus(); n.close(); };
         },
         playSound() {
             // Sound on/off lives in localStorage; the chosen preset and the actual

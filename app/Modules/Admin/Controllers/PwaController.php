@@ -103,7 +103,12 @@ class PwaController
      *  - navigations (HTML): network-first, fall back to the precached offline
      *    shell — authenticated HTML is NEVER written to the cache;
      *  - static assets (`/build/`, `/icons/`, manifest): cache-first;
-     *  - everything else (Livewire/AJAX/POST, cross-origin): passthrough.
+     *  - everything else (Livewire/AJAX/POST, cross-origin): passthrough;
+     *  - `notificationclick`: focuses an open `/admin/` client or opens
+     *    `/admin/chats`. Notifications themselves are shown by the page via
+     *    `ServiceWorkerRegistration.showNotification()` (not `new Notification()`)
+     *    since iOS Safari only supports the SW-routed API, even for an
+     *    installed home-screen PWA.
      *
      * @param string $version
      *
@@ -141,15 +146,12 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) { return; }
 
-    // HTML navigations: network-first, offline shell as fallback.
-    // The authenticated response is intentionally NOT cached.
-    if (req.mode === 'navigate') {
+    if (req.mode === 'navigate') { /* HTML navigations: network-first, offline shell as fallback (authenticated response intentionally NOT cached) */
         event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
         return;
     }
 
-    // Static assets: cache-first, populate on first fetch.
-    if (isStaticAsset(url)) {
+    if (isStaticAsset(url)) { /* static assets: cache-first, populate on first fetch */
         event.respondWith(
             caches.match(req).then((hit) => hit || fetch(req).then((res) => {
                 const copy = res.clone();
@@ -159,8 +161,17 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
+});  /* everything else (Livewire, AJAX, cross-path) is left to the network */
 
-    // Everything else (Livewire, AJAX, cross-path) — leave to the network.
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({type: 'window', includeUncontrolled: true}).then((clients) => {
+            const existing = clients.find((c) => c.url.includes('/admin/'));
+            if (existing) { return existing.focus(); }
+            return self.clients.openWindow('/admin/chats');
+        })
+    );
 });
 JS;
     }
