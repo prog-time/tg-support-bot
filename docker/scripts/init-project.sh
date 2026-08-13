@@ -79,60 +79,60 @@ restore_non_empty_from() {
 }
 
 echo ""
-echo -e "${GREEN}🚀 Инициализация проекта...${NC}"
+echo -e "${GREEN}🚀 Initializing project...${NC}"
 echo ""
 
 if [[ ! -f .env.example ]]; then
-    echo -e "${RED}❌ .env.example не найден${NC}"
+    echo -e "${RED}❌ .env.example not found${NC}"
     exit 1
 fi
 
 OLD_ENV_BACKUP=""
 if [[ -f .env ]]; then
-    echo -e "${YELLOW}⚠️  .env файл уже существует${NC}"
-    read -r -p "Перезаписать? (y/N) " REPLY || true
+    echo -e "${YELLOW}⚠️  .env file already exists${NC}"
+    read -r -p "Overwrite? (y/N) " REPLY || true
     if [[ ! "${REPLY:-}" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}❌ Отменено${NC}"
+        echo -e "${YELLOW}❌ Cancelled${NC}"
         exit 1
     fi
     OLD_ENV_BACKUP="$(mktemp)"
     cp .env "$OLD_ENV_BACKUP"
 fi
 
-echo -e "${BLUE}📝 Копирование .env.example в .env...${NC}"
+echo -e "${BLUE}📝 Copying .env.example to .env...${NC}"
 cp .env.example .env
 if [[ -n "$OLD_ENV_BACKUP" ]]; then
     restore_non_empty_from "$OLD_ENV_BACKUP"
     rm -f "$OLD_ENV_BACKUP"
-    echo -e "${GREEN}✅ .env обновлён (непустые значения сохранены)${NC}"
+    echo -e "${GREEN}✅ .env updated (non-empty values kept)${NC}"
 else
-    echo -e "${GREEN}✅ .env создан${NC}"
+    echo -e "${GREEN}✅ .env created${NC}"
 fi
 
 # --------------------------------------------
 # Secrets / DB credentials — only if empty
 # --------------------------------------------
 if env_is_empty "APP_KEY"; then
-    echo -e "${BLUE}🔑 Генерация APP_KEY...${NC}"
+    echo -e "${BLUE}🔑 Generating APP_KEY...${NC}"
     if command -v php >/dev/null 2>&1; then
         APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
         set_env "APP_KEY" "$APP_KEY"
-        echo -e "${GREEN}✅ APP_KEY сгенерирован${NC}"
+        echo -e "${GREEN}✅ APP_KEY generated${NC}"
     else
-        echo -e "${YELLOW}⚠️  PHP не найден, пропускаем генерацию APP_KEY${NC}"
+        echo -e "${YELLOW}⚠️  PHP not found, skipping APP_KEY generation${NC}"
     fi
 else
-    echo -e "${GREEN}✅ APP_KEY уже задан — пропускаем${NC}"
+    echo -e "${GREEN}✅ APP_KEY already set — skipping${NC}"
 fi
 
 if env_is_empty "DB_PASSWORD"; then
-    echo -e "${BLUE}🔑 Генерация DB_PASSWORD...${NC}"
+    echo -e "${BLUE}🔑 Generating DB_PASSWORD...${NC}"
     DB_PASSWORD="$(openssl rand -base64 32 2>/dev/null | tr -d '\n' || echo 'secret')"
     set_env "DB_PASSWORD" "$DB_PASSWORD"
-    echo -e "${GREEN}✅ DB_PASSWORD сгенерирован${NC}"
-    echo -e "${YELLOW}   Если Postgres volume уже был создан со старым паролем — после init выполните: make clean && make up${NC}"
+    echo -e "${GREEN}✅ DB_PASSWORD generated${NC}"
+    echo -e "${YELLOW}   If the Postgres volume was already created with an old password — after init run: make clean && make up${NC}"
 else
-    echo -e "${GREEN}✅ DB_PASSWORD уже задан — пропускаем${NC}"
+    echo -e "${GREEN}✅ DB_PASSWORD already set — skipping${NC}"
 fi
 
 if env_is_empty "DB_DATABASE"; then
@@ -142,7 +142,7 @@ if env_is_empty "DB_DATABASE"; then
     set_env "DB_DATABASE" "$DB_DATABASE_INPUT"
     echo -e "${GREEN}✅ DB_DATABASE = ${DB_DATABASE_INPUT}${NC}"
 else
-    echo -e "${GREEN}✅ DB_DATABASE уже задан ($(get_env DB_DATABASE)) — пропускаем${NC}"
+    echo -e "${GREEN}✅ DB_DATABASE already set ($(get_env DB_DATABASE)) — skipping${NC}"
 fi
 
 if env_is_empty "DB_USERNAME"; then
@@ -152,7 +152,7 @@ if env_is_empty "DB_USERNAME"; then
     set_env "DB_USERNAME" "$DB_USERNAME_INPUT"
     echo -e "${GREEN}✅ DB_USERNAME = ${DB_USERNAME_INPUT}${NC}"
 else
-    echo -e "${GREEN}✅ DB_USERNAME уже задан ($(get_env DB_USERNAME)) — пропускаем${NC}"
+    echo -e "${GREEN}✅ DB_USERNAME already set ($(get_env DB_USERNAME)) — skipping${NC}"
 fi
 
 # --------------------------------------------
@@ -161,25 +161,25 @@ fi
 USE_PROD=false
 if env_is_empty "APP_ENV"; then
     echo ""
-    echo -e "${BLUE}⚙️  Выбор режима:${NC}"
-    echo "  1) dev  - Режим разработки (Xdebug, Vite, сиды)"
-    echo "  2) prod - Продакшен режим (оптимизация, без dev-инструментов)"
+    echo -e "${BLUE}⚙️  Choose mode:${NC}"
+    echo "  1) dev  - Development mode (Xdebug, Vite, seeders)"
+    echo "  2) prod - Production mode (optimize, no dev tools)"
     echo ""
-    read -r -p "Выберите режим (1/2) [1]: " APP_ENV_CHOICE || true
+    read -r -p "Select mode (1/2) [1]: " APP_ENV_CHOICE || true
     APP_ENV_CHOICE="${APP_ENV_CHOICE:-1}"
     if [[ "$APP_ENV_CHOICE" == "2" ]]; then
         set_env "APP_ENV" "production"
         set_env_if_empty "APP_DEBUG" "false" || true
-        echo -e "${GREEN}✅ Режим: production${NC}"
+        echo -e "${GREEN}✅ Mode: production${NC}"
         USE_PROD=true
     else
         set_env "APP_ENV" "local"
         set_env_if_empty "APP_DEBUG" "true" || true
-        echo -e "${GREEN}✅ Режим: development${NC}"
+        echo -e "${GREEN}✅ Mode: development${NC}"
     fi
 else
     CURRENT_APP_ENV="$(get_env APP_ENV)"
-    echo -e "${GREEN}✅ APP_ENV уже задан (${CURRENT_APP_ENV}) — пропускаем${NC}"
+    echo -e "${GREEN}✅ APP_ENV already set (${CURRENT_APP_ENV}) — skipping${NC}"
     if [[ "$CURRENT_APP_ENV" == "production" || "$CURRENT_APP_ENV" == "prod" ]]; then
         USE_PROD=true
     fi
@@ -198,8 +198,8 @@ fi
 MAIN_DOMAIN="$(get_env MAIN_DOMAIN)"
 if env_is_empty "MAIN_DOMAIN"; then
     echo ""
-    echo -e "${BLUE}🌐 Настройка домена:${NC}"
-    read -r -p "Введите домен (например, example.com) [localhost]: " MAIN_DOMAIN || true
+    echo -e "${BLUE}🌐 Domain setup:${NC}"
+    read -r -p "Enter domain (e.g. example.com) [localhost]: " MAIN_DOMAIN || true
     MAIN_DOMAIN="${MAIN_DOMAIN:-localhost}"
 
     if [[ "$MAIN_DOMAIN" != "localhost" && -n "$MAIN_DOMAIN" ]]; then
@@ -213,19 +213,19 @@ if env_is_empty "MAIN_DOMAIN"; then
         echo -e "${GREEN}✅ MAIN_DOMAIN = ${MAIN_DOMAIN}${NC}"
         echo -e "${GREEN}✅ APP_URL = $(get_env APP_URL)${NC}"
     else
-        echo -e "${YELLOW}⚠️  Домен не указан, используем localhost${NC}"
+        echo -e "${YELLOW}⚠️  No domain provided, using localhost${NC}"
         set_env "MAIN_DOMAIN" "localhost"
         MAIN_DOMAIN="localhost"
         if [[ "$USE_PROD" == "true" ]]; then
-            echo -e "${RED}❌ Для продакшена домен обязателен!${NC}"
-            echo -e "${YELLOW}   Пожалуйста, укажите домен при следующем запуске make init${NC}"
+            echo -e "${RED}❌ Domain is required for production!${NC}"
+            echo -e "${YELLOW}   Please provide a domain on the next make init run${NC}"
             exit 1
         fi
         set_env_if_empty "APP_URL" "http://localhost" || true
         echo -e "${GREEN}✅ APP_URL = $(get_env APP_URL)${NC}"
     fi
 else
-    echo -e "${GREEN}✅ MAIN_DOMAIN уже задан (${MAIN_DOMAIN}) — пропускаем${NC}"
+    echo -e "${GREEN}✅ MAIN_DOMAIN already set (${MAIN_DOMAIN}) — skipping${NC}"
     if env_is_empty "APP_URL"; then
         if [[ "$USE_PROD" == "true" && "$MAIN_DOMAIN" != "localhost" ]]; then
             set_env "APP_URL" "https://${MAIN_DOMAIN}"
@@ -244,7 +244,7 @@ USE_SSL=false
 NGINX_CHOICE="1"
 
 if ! env_is_empty "NGINX_PORT"; then
-    echo -e "${GREEN}✅ NGINX_PORT уже задан ($(get_env NGINX_PORT)) — пропускаем${NC}"
+    echo -e "${GREEN}✅ NGINX_PORT already set ($(get_env NGINX_PORT)) — skipping${NC}"
     if [[ "$(get_env NGINX_PORT)" == "8080:80" ]]; then
         NGINX_CHOICE="2"
     fi
@@ -257,98 +257,98 @@ if ! env_is_empty "NGINX_PORT"; then
 else
     if [[ "$USE_PROD" == "true" && "$MAIN_DOMAIN" != "localhost" ]]; then
         echo ""
-        echo -e "${BLUE}🔒 SSL сертификат:${NC}"
-        read -r -p "Установить SSL сертификат для ${MAIN_DOMAIN}? (y/n) [y]: " SSL_CHOICE || true
+        echo -e "${BLUE}🔒 SSL certificate:${NC}"
+        read -r -p "Install SSL certificate for ${MAIN_DOMAIN}? (y/n) [y]: " SSL_CHOICE || true
         SSL_CHOICE="${SSL_CHOICE:-y}"
         if [[ "$SSL_CHOICE" == "y" || "$SSL_CHOICE" == "Y" ]]; then
             USE_SSL=true
-            echo -e "${GREEN}✅ SSL будет установлен${NC}"
+            echo -e "${GREEN}✅ SSL will be installed${NC}"
         else
-            echo -e "${YELLOW}⚠️  SSL не будет установлен, сайт будет работать по HTTP${NC}"
+            echo -e "${YELLOW}⚠️  SSL will not be installed; the site will run over HTTP${NC}"
         fi
     fi
 
     echo ""
-    echo -e "${BLUE}🌐 Настройка Nginx:${NC}"
-    echo "  1) Nginx наружу (порты 80:80, 443:443) — сам обрабатывает HTTP/HTTPS"
-    echo "  2) Nginx внутри (порт 8080:80) — только для внутреннего прокси от внешнего веб-сервера (Caddy, Nginx, Traefik и т.д.)"
+    echo -e "${BLUE}🌐 Nginx setup:${NC}"
+    echo "  1) Nginx exposed (ports 80:80, 443:443) — handles HTTP/HTTPS itself"
+    echo "  2) Nginx internal (port 8080:80) — only for reverse proxy from an external web server (Caddy, Nginx, Traefik, etc.)"
     echo ""
-    read -r -p "Выберите вариант (1/2) [1]: " NGINX_CHOICE || true
+    read -r -p "Select option (1/2) [1]: " NGINX_CHOICE || true
     NGINX_CHOICE="${NGINX_CHOICE:-1}"
 
     if [[ "$NGINX_CHOICE" == "1" ]]; then
-        echo -e "${GREEN}✅ Nginx будет наружу (порты 80, 443)${NC}"
-        echo -e "${YELLOW}   Контейнерный Nginx сам обрабатывает HTTP и HTTPS запросы${NC}"
+        echo -e "${GREEN}✅ Nginx will be exposed (ports 80, 443)${NC}"
+        echo -e "${YELLOW}   Container Nginx will handle HTTP and HTTPS itself${NC}"
         set_env "NGINX_PORT" "80:80"
         if [[ "$USE_SSL" == "true" ]]; then
             set_env "NGINX_HTTPS_PORT" "443:443"
             echo -e "${GREEN}✅ NGINX_HTTPS_PORT = 443:443${NC}"
         else
             set_env "NGINX_HTTPS_PORT" "127.0.0.1:8443:443"
-            echo -e "${YELLOW}⚠️  HTTPS наружу отключен (NGINX_HTTPS_PORT=127.0.0.1:8443:443)${NC}"
+            echo -e "${YELLOW}⚠️  Public HTTPS disabled (NGINX_HTTPS_PORT=127.0.0.1:8443:443)${NC}"
         fi
         echo -e "${GREEN}✅ NGINX_PORT = 80:80${NC}"
     else
-        echo -e "${GREEN}✅ Nginx будет внутри (порт 8080)${NC}"
-        echo -e "${YELLOW}   Контейнерный Nginx будет доступен только внутри Docker-сети${NC}"
-        echo -e "${YELLOW}   Внешний веб-сервер будет проксировать на 127.0.0.1:8080${NC}"
+        echo -e "${GREEN}✅ Nginx will be internal (port 8080)${NC}"
+        echo -e "${YELLOW}   Container Nginx will only be reachable inside the Docker network${NC}"
+        echo -e "${YELLOW}   External web server should proxy to 127.0.0.1:8080${NC}"
         set_env "NGINX_PORT" "8080:80"
         set_env "NGINX_HTTPS_PORT" "127.0.0.1:8443:443"
         echo -e "${GREEN}✅ NGINX_PORT = 8080:80${NC}"
-        echo -e "${YELLOW}⚠️  HTTPS наружу отключен (прокси на внешнем сервере)${NC}"
+        echo -e "${YELLOW}⚠️  Public HTTPS disabled (TLS terminated on the external server)${NC}"
     fi
 fi
 
 if [[ "$USE_SSL" == "true" && "$NGINX_CHOICE" == "1" ]]; then
     echo ""
-    echo -e "${YELLOW}📌 Установка SSL сертификата...${NC}"
+    echo -e "${YELLOW}📌 Installing SSL certificate...${NC}"
     if ! command -v certbot >/dev/null 2>&1; then
-        echo -e "${YELLOW}📦 Установка Certbot...${NC}"
+        echo -e "${YELLOW}📦 Installing Certbot...${NC}"
         if [[ "$(uname)" == "Linux" ]] && command -v apt >/dev/null 2>&1; then
             sudo apt update 2>/dev/null || true
-            sudo apt install -y certbot 2>/dev/null || echo -e "${YELLOW}⚠️  Не удалось установить certbot через apt${NC}"
+            sudo apt install -y certbot 2>/dev/null || echo -e "${YELLOW}⚠️  Failed to install certbot via apt${NC}"
         else
-            echo -e "${YELLOW}⚠️  Автоустановка certbot поддерживается только через apt (Linux)${NC}"
-            echo -e "${YELLOW}   Установите certbot вручную и перезапустите make init${NC}"
+            echo -e "${YELLOW}⚠️  Auto-install of certbot is only supported via apt (Linux)${NC}"
+            echo -e "${YELLOW}   Install certbot manually and re-run make init${NC}"
         fi
     else
-        echo -e "${GREEN}✅ Certbot уже установлен${NC}"
+        echo -e "${GREEN}✅ Certbot already installed${NC}"
     fi
 
     if command -v certbot >/dev/null 2>&1; then
-        echo -e "${YELLOW}🔒 Выпуск сертификата для ${MAIN_DOMAIN}...${NC}"
-        echo -e "${YELLOW}   (порт 80 должен быть свободен)${NC}"
+        echo -e "${YELLOW}🔒 Issuing certificate for ${MAIN_DOMAIN}...${NC}"
+        echo -e "${YELLOW}   (port 80 must be free)${NC}"
         sudo certbot certonly --standalone -d "${MAIN_DOMAIN}" --non-interactive --agree-tos --email "admin@${MAIN_DOMAIN}" \
-            || echo -e "${YELLOW}⚠️  Не удалось получить сертификат. Убедитесь что порт 80 свободен${NC}"
+            || echo -e "${YELLOW}⚠️  Failed to obtain certificate. Make sure port 80 is free${NC}"
 
         if [[ -f "/etc/letsencrypt/live/${MAIN_DOMAIN}/fullchain.pem" ]]; then
-            echo -e "${GREEN}✅ SSL сертификат получен${NC}"
-            echo -e "${YELLOW}📌 Настройка автоматического обновления сертификата...${NC}"
+            echo -e "${GREEN}✅ SSL certificate obtained${NC}"
+            echo -e "${YELLOW}📌 Configuring automatic certificate renewal...${NC}"
             (crontab -l 2>/dev/null | grep -v "certbot renew"; echo "0 3 * * * /usr/bin/certbot renew --quiet --post-hook 'docker compose exec nginx nginx -s reload'") | crontab - 2>/dev/null || true
-            echo -e "${GREEN}✅ Автообновление настроено (ежедневно в 3:00)${NC}"
+            echo -e "${GREEN}✅ Auto-renewal configured (daily at 03:00)${NC}"
         else
-            echo -e "${YELLOW}⚠️  SSL сертификат не получен${NC}"
+            echo -e "${YELLOW}⚠️  SSL certificate was not obtained${NC}"
             USE_SSL=false
             set_env "NGINX_HTTPS_PORT" "127.0.0.1:8443:443"
         fi
     else
-        echo -e "${YELLOW}⚠️  Certbot не установлен, пропускаем получение сертификата${NC}"
+        echo -e "${YELLOW}⚠️  Certbot is not installed, skipping certificate issuance${NC}"
         USE_SSL=false
         set_env "NGINX_HTTPS_PORT" "127.0.0.1:8443:443"
     fi
 fi
 
 echo ""
-echo -e "${YELLOW}📝 Генерация конфига Nginx...${NC}"
+echo -e "${YELLOW}📝 Generating Nginx config...${NC}"
 mkdir -p docker/nginx
 
 if [[ "$USE_SSL" == "true" && "$MAIN_DOMAIN" != "localhost" ]]; then
     if [[ -f docker/nginx/default.ssl.conf.template ]]; then
-        echo -e "${GREEN}✅ Найден шаблон с SSL (default.ssl.conf.template)${NC}"
+        echo -e "${GREEN}✅ Found SSL template (default.ssl.conf.template)${NC}"
         sed "s|__MAIN_DOMAIN__|${MAIN_DOMAIN}|g" docker/nginx/default.ssl.conf.template > docker/nginx/default.conf
-        echo -e "${GREEN}✅ Конфиг с SSL создан для ${MAIN_DOMAIN}${NC}"
+        echo -e "${GREEN}✅ SSL config created for ${MAIN_DOMAIN}${NC}"
     else
-        echo -e "${YELLOW}⚠️  Шаблон default.ssl.conf.template не найден, создаю вручную...${NC}"
+        echo -e "${YELLOW}⚠️  Template default.ssl.conf.template not found, creating manually...${NC}"
         cat > docker/nginx/default.conf <<EOF
 server {
     listen 80;
@@ -391,7 +391,7 @@ server {
     }
 }
 EOF
-        echo -e "${GREEN}✅ Конфиг с SSL создан для ${MAIN_DOMAIN}${NC}"
+        echo -e "${GREEN}✅ SSL config created for ${MAIN_DOMAIN}${NC}"
     fi
 else
     TEMPLATE_DOMAIN="$MAIN_DOMAIN"
@@ -399,11 +399,11 @@ else
         TEMPLATE_DOMAIN="localhost"
     fi
     if [[ -f docker/nginx/default.http.conf.template ]]; then
-        echo -e "${GREEN}✅ Найден шаблон без SSL (default.http.conf.template)${NC}"
+        echo -e "${GREEN}✅ Found HTTP template (default.http.conf.template)${NC}"
         sed "s|__MAIN_DOMAIN__|${TEMPLATE_DOMAIN}|g" docker/nginx/default.http.conf.template > docker/nginx/default.conf
-        echo -e "${GREEN}✅ Конфиг без SSL создан для ${TEMPLATE_DOMAIN}${NC}"
+        echo -e "${GREEN}✅ HTTP config created for ${TEMPLATE_DOMAIN}${NC}"
     else
-        echo -e "${YELLOW}⚠️  Шаблон default.http.conf.template не найден, создаю вручную...${NC}"
+        echo -e "${YELLOW}⚠️  Template default.http.conf.template not found, creating manually...${NC}"
         cat > docker/nginx/default.conf <<EOF
 server {
     listen 80;
@@ -437,13 +437,13 @@ server {
     }
 }
 EOF
-        echo -e "${GREEN}✅ Конфиг без SSL создан для ${TEMPLATE_DOMAIN}${NC}"
+        echo -e "${GREEN}✅ HTTP config created for ${TEMPLATE_DOMAIN}${NC}"
     fi
 fi
 
 if [[ "$NGINX_CHOICE" == "2" ]]; then
     echo ""
-    echo -e "${YELLOW}📌 Пример конфига для внешнего веб-сервера:${NC}"
+    echo -e "${YELLOW}📌 Example config for an external web server:${NC}"
     echo -e "${BLUE}---${NC}"
     if [[ "$MAIN_DOMAIN" != "localhost" && -n "$MAIN_DOMAIN" ]]; then
         if [[ "$USE_SSL" == "true" ]]; then
@@ -476,7 +476,7 @@ server {
 EOF
         else
             cat <<EOF
-📌 Nginx (только HTTP):
+📌 Nginx (HTTP only):
 server {
     listen 80;
     server_name ${MAIN_DOMAIN};
@@ -506,19 +506,19 @@ EOF
     fi
     echo -e "${BLUE}---${NC}"
     echo ""
-    echo -e "${YELLOW}📌 Сохраните конфиг и перезагрузите внешний веб-сервер${NC}"
+    echo -e "${YELLOW}📌 Save this config and reload the external web server${NC}"
 fi
 
 echo ""
-echo -e "${GREEN}✅ Инициализация завершена!${NC}"
+echo -e "${GREEN}✅ Initialization complete!${NC}"
 echo ""
-echo -e "${YELLOW}📋 Следующие шаги:${NC}"
-echo -e "  1. Проверьте .env файл: ${BLUE}cat .env${NC}"
-echo -e "  2. Проверьте конфиг Nginx: ${BLUE}cat docker/nginx/default.conf${NC}"
-echo -e "  3. Запустите проект: ${BLUE}make up${NC}"
+echo -e "${YELLOW}📋 Next steps:${NC}"
+echo -e "  1. Review .env: ${BLUE}cat .env${NC}"
+echo -e "  2. Review Nginx config: ${BLUE}cat docker/nginx/default.conf${NC}"
+echo -e "  3. Start the project: ${BLUE}make up${NC}"
 if [[ "$USE_SSL" == "true" ]]; then
     echo ""
-    echo -e "${GREEN}✅ SSL сертификат установлен!${NC}"
-    echo -e "${YELLOW}   Автообновление настроено (ежедневно в 3:00)${NC}"
+    echo -e "${GREEN}✅ SSL certificate installed!${NC}"
+    echo -e "${YELLOW}   Auto-renewal configured (daily at 03:00)${NC}"
 fi
 echo ""

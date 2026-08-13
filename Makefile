@@ -1,5 +1,5 @@
 # ============================================
-# ПЕРЕМЕННЫЕ
+# VARIABLES
 # ============================================
 SHELL := /bin/bash
 
@@ -32,138 +32,138 @@ export DOCKERFILE_TARGET
 export IMAGE_TAG
 
 # ============================================
-# ПОМОЩЬ
+# HELP
 # ============================================
 .PHONY: help
 help:
 	@echo ""
-	@echo "$(GREEN)📋 Доступные команды:$(NC)"
+	@echo "$(GREEN)📋 Available commands:$(NC)"
 	@echo ""
-	@echo "$(BLUE)🚀 Запуск:$(NC)"
-	@echo "  make init      - Инициализация проекта (создание .env, настройка Nginx)"
-	@echo "  make up        - Запуск проекта (режим определяется из APP_ENV)"
-	@echo "  make build     - Пересборка общего образа (app/queue/scheduler)"
+	@echo "$(BLUE)🚀 Start:$(NC)"
+	@echo "  make init      - Initialize project (.env, Nginx config)"
+	@echo "  make up        - Start the stack (mode from APP_ENV)"
+	@echo "  make build     - Rebuild shared image (app/queue/scheduler)"
 	@echo ""
-	@echo "$(BLUE)🛠️  Управление:$(NC)"
-	@echo "  make stop      - Остановка всех контейнеров"
-	@echo "  make reload    - Перезапуск всех контейнеров с пересборкой"
-	@echo "  make down      - Остановка и удаление контейнеров"
-	@echo "  make clean     - Полная очистка (контейнеры + volumes)"
+	@echo "$(BLUE)🛠️  Manage:$(NC)"
+	@echo "  make stop      - Stop all containers"
+	@echo "  make reload    - Rebuild and restart all containers"
+	@echo "  make down      - Stop and remove containers"
+	@echo "  make clean     - Full cleanup (containers + volumes)"
 	@echo ""
-	@echo "$(BLUE)📊 Логи:$(NC)"
-	@echo "  make logs           - Логи всех контейнеров"
-	@echo "  make logs-app       - Логи только app"
-	@echo "  make logs-nginx     - Логи только nginx"
-	@echo "  make logs-queue     - Логи только queue"
-	@echo "  make logs-scheduler - Логи только scheduler"
+	@echo "$(BLUE)📊 Logs:$(NC)"
+	@echo "  make logs           - Logs for all containers"
+	@echo "  make logs-app       - App logs only"
+	@echo "  make logs-nginx     - Nginx logs only"
+	@echo "  make logs-queue     - Queue logs only"
+	@echo "  make logs-scheduler - Scheduler logs only"
 	@echo ""
 	@echo "$(BLUE)🐚 Shell:$(NC)"
-	@echo "  make shell           - Вход в контейнер app"
-	@echo "  make shell-queue     - Вход в контейнер queue"
-	@echo "  make shell-scheduler - Вход в контейнер scheduler"
-	@echo "  make shell-db        - Вход в PostgreSQL"
+	@echo "  make shell           - Shell into app"
+	@echo "  make shell-queue     - Shell into queue"
+	@echo "  make shell-scheduler - Shell into scheduler"
+	@echo "  make shell-db        - Shell into PostgreSQL"
 	@echo ""
-	@echo "$(BLUE)🗄️  База данных:$(NC)"
-	@echo "  make migrate   - Запуск миграций"
-	@echo "  make fresh     - Сброс БД + миграции + сиды"
-	@echo "  make seed      - Запуск сидов"
-	@echo "  make rollback  - Откат миграций"
+	@echo "$(BLUE)🗄️  Database:$(NC)"
+	@echo "  make migrate   - Run migrations"
+	@echo "  make fresh     - Reset DB + migrations + seeds"
+	@echo "  make seed      - Run seeders"
+	@echo "  make rollback  - Roll back migrations"
 	@echo ""
-	@echo "$(BLUE)🧹 Очистка / очередь / тесты:$(NC)"
-	@echo "  make clear          - Очистка кэша Laravel"
-	@echo "  make optimize       - Оптимизация для продакшена"
-	@echo "  make queue-restart  - Перезапуск очередей"
-	@echo "  make test           - Запуск тестов"
-	@echo "  make init-smoke     - Smoke-тест make init (изолированно)"
+	@echo "$(BLUE)🧹 Cache / queue / tests:$(NC)"
+	@echo "  make clear          - Clear Laravel caches"
+	@echo "  make optimize       - Optimize for production"
+	@echo "  make queue-restart  - Restart queues"
+	@echo "  make test           - Run tests"
+	@echo "  make init-smoke     - Smoke-test make init (isolated)"
 	@echo ""
 
 # ============================================
-# ИНИЦИАЛИЗАЦИЯ
+# INIT
 # ============================================
 .PHONY: init
 init:
 	@bash docker/scripts/init-project.sh
 
 # ============================================
-# ЗАПУСК
+# START
 # ============================================
 .PHONY: up
 up:
 	@if [ ! -f .env ]; then \
-		echo "$(RED)❌ .env файл не найден!$(NC)"; \
-		echo "$(YELLOW)💡 Запустите: make init$(NC)"; \
+		echo "$(RED)❌ .env file not found!$(NC)"; \
+		echo "$(YELLOW)💡 Run: make init$(NC)"; \
 		exit 1; \
 	fi
 	@if [ -n "$(IS_PROD)" ]; then \
-		echo "$(GREEN)🚀 Запуск в продакшен режиме...$(NC)"; \
+		echo "$(GREEN)🚀 Starting in production mode...$(NC)"; \
 	else \
-		echo "$(GREEN)🚀 Запуск в режиме разработки...$(NC)"; \
+		echo "$(GREEN)🚀 Starting in development mode...$(NC)"; \
 	fi
 	$(DOCKER_COMPOSE) up -d --build
 	@echo ""
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 	@if [ -n "$(IS_PROD)" ]; then \
-		echo "$(YELLOW)📱 Приложение: $(or $(APP_URL_VAL),https://your-domain.com)$(NC)"; \
+		echo "$(YELLOW)📱 App: $(or $(APP_URL_VAL),https://your-domain.com)$(NC)"; \
 	else \
-		echo "$(YELLOW)📱 Приложение: $(or $(APP_URL_VAL),http://localhost)$(NC)"; \
+		echo "$(YELLOW)📱 App: $(or $(APP_URL_VAL),http://localhost)$(NC)"; \
 	fi
 	@if [ "$(NGINX_PORT_VAL)" = "8080:80" ]; then \
-		echo "$(YELLOW)🔧 Nginx внутри на порту 8080 (прокси от внешнего веб-сервера)$(NC)"; \
+		echo "$(YELLOW)🔧 Nginx on port 8080 (proxied by an external web server)$(NC)"; \
 	elif [ "$(NGINX_HTTPS_PORT_VAL)" = "443:443" ]; then \
-		echo "$(YELLOW)🔧 Nginx наружу (HTTP + HTTPS)$(NC)"; \
+		echo "$(YELLOW)🔧 Nginx exposed (HTTP + HTTPS)$(NC)"; \
 	else \
-		echo "$(YELLOW)🔧 Nginx наружу (HTTP)$(NC)"; \
+		echo "$(YELLOW)🔧 Nginx exposed (HTTP)$(NC)"; \
 	fi
 	@echo ""
 
 .PHONY: build
 build:
-	@echo "$(GREEN)🔨 Пересборка образа (target=$(DOCKERFILE_TARGET), tag=$(IMAGE_TAG))...$(NC)"
+	@echo "$(GREEN)🔨 Rebuilding image (target=$(DOCKERFILE_TARGET), tag=$(IMAGE_TAG))...$(NC)"
 	$(DOCKER_COMPOSE) build app
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 # ============================================
-# УПРАВЛЕНИЕ
+# MANAGE
 # ============================================
 .PHONY: stop
 stop:
-	@echo "$(YELLOW)⏹️  Остановка контейнеров...$(NC)"
+	@echo "$(YELLOW)⏹️  Stopping containers...$(NC)"
 	$(DOCKER_COMPOSE) stop
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 .PHONY: reload
 reload:
-	@echo "$(YELLOW)🔄 Перезапуск контейнеров с пересборкой...$(NC)"
-	@echo "$(YELLOW)📦 Остановка...$(NC)"
+	@echo "$(YELLOW)🔄 Rebuilding and restarting containers...$(NC)"
+	@echo "$(YELLOW)📦 Stopping...$(NC)"
 	$(DOCKER_COMPOSE) down
-	@echo "$(YELLOW)🔨 Пересборка (target=$(DOCKERFILE_TARGET))...$(NC)"
+	@echo "$(YELLOW)🔨 Rebuilding (target=$(DOCKERFILE_TARGET))...$(NC)"
 	$(DOCKER_COMPOSE) build app
-	@echo "$(YELLOW)🚀 Запуск...$(NC)"
+	@echo "$(YELLOW)🚀 Starting...$(NC)"
 	$(DOCKER_COMPOSE) up -d
 	@echo ""
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 	@if [ -n "$(IS_PROD)" ]; then \
-		echo "$(YELLOW)📱 Приложение: $(or $(APP_URL_VAL),https://your-domain.com)$(NC)"; \
+		echo "$(YELLOW)📱 App: $(or $(APP_URL_VAL),https://your-domain.com)$(NC)"; \
 	else \
-		echo "$(YELLOW)📱 Приложение: $(or $(APP_URL_VAL),http://localhost)$(NC)"; \
+		echo "$(YELLOW)📱 App: $(or $(APP_URL_VAL),http://localhost)$(NC)"; \
 	fi
 	@echo ""
 
 .PHONY: down
 down:
-	@echo "$(YELLOW)⏹️  Остановка и удаление контейнеров...$(NC)"
+	@echo "$(YELLOW)⏹️  Stopping and removing containers...$(NC)"
 	$(DOCKER_COMPOSE) down
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 .PHONY: clean
 clean:
-	@echo "$(RED)🧹 Полная очистка (удаление контейнеров + volumes)...$(NC)"
+	@echo "$(RED)🧹 Full cleanup (removing containers + volumes)...$(NC)"
 	$(DOCKER_COMPOSE) down -v --remove-orphans
 	docker system prune -f
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 # ============================================
-# ЛОГИ
+# LOGS
 # ============================================
 .PHONY: logs logs-app logs-nginx logs-queue logs-scheduler
 logs:
@@ -196,60 +196,60 @@ shell-scheduler:
 
 shell-db:
 	@if [ -z "$(DB_USERNAME_VAL)" ] || [ -z "$(DB_DATABASE_VAL)" ]; then \
-		echo "$(RED)❌ DB_USERNAME/DB_DATABASE не заданы в .env$(NC)"; \
+		echo "$(RED)❌ DB_USERNAME/DB_DATABASE are not set in .env$(NC)"; \
 		exit 1; \
 	fi
 	$(DOCKER_COMPOSE) exec pgdb psql -U "$(DB_USERNAME_VAL)" -d "$(DB_DATABASE_VAL)"
 
 # ============================================
-# БАЗА ДАННЫХ
+# DATABASE
 # ============================================
 .PHONY: migrate fresh seed rollback
 migrate:
-	@echo "$(YELLOW)🗄️ Запуск миграций...$(NC)"
+	@echo "$(YELLOW)🗄️ Running migrations...$(NC)"
 	$(PHP_EXEC) php artisan migrate --force
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 fresh:
-	@echo "$(RED)🗄️ Сброс БД + миграции + сиды...$(NC)"
+	@echo "$(RED)🗄️ Resetting DB + migrations + seeds...$(NC)"
 	$(PHP_EXEC) php artisan migrate:fresh --seed --force
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 seed:
-	@echo "$(YELLOW)🌱 Запуск сидов...$(NC)"
+	@echo "$(YELLOW)🌱 Running seeders...$(NC)"
 	$(PHP_EXEC) php artisan db:seed --force
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 rollback:
-	@echo "$(YELLOW)↩️ Откат миграций...$(NC)"
+	@echo "$(YELLOW)↩️ Rolling back migrations...$(NC)"
 	$(PHP_EXEC) php artisan migrate:rollback
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 # ============================================
 # LARAVEL / QUEUE / TESTS
 # ============================================
 .PHONY: clear optimize queue-restart test
 clear:
-	@echo "$(YELLOW)🧹 Очистка кэша...$(NC)"
+	@echo "$(YELLOW)🧹 Clearing caches...$(NC)"
 	$(PHP_EXEC) php artisan cache:clear
 	$(PHP_EXEC) php artisan config:clear
 	$(PHP_EXEC) php artisan view:clear
 	$(PHP_EXEC) php artisan route:clear
 	$(PHP_EXEC) php artisan optimize:clear
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 optimize:
-	@echo "$(YELLOW)⚡ Оптимизация для продакшена...$(NC)"
+	@echo "$(YELLOW)⚡ Optimizing for production...$(NC)"
 	$(PHP_EXEC) php artisan optimize
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 queue-restart:
-	@echo "$(YELLOW)🔄 Перезапуск очередей...$(NC)"
+	@echo "$(YELLOW)🔄 Restarting queues...$(NC)"
 	$(PHP_EXEC) php artisan queue:restart
-	@echo "$(GREEN)✅ Готово!$(NC)"
+	@echo "$(GREEN)✅ Done!$(NC)"
 
 test:
-	@echo "$(YELLOW)🧪 Запуск всех тестов...$(NC)"
+	@echo "$(YELLOW)🧪 Running all tests...$(NC)"
 	$(PHP_EXEC) php artisan test
 
 .PHONY: init-smoke
@@ -257,6 +257,6 @@ init-smoke:
 	@bash checks/scripts/init-smoke.sh
 
 # ============================================
-# ДЕФОЛТ
+# DEFAULT
 # ============================================
 .DEFAULT_GOAL := help

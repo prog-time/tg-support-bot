@@ -2,7 +2,7 @@
 set -e
 
 # ============================================
-# КОНФИГУРАЦИЯ
+# CONFIG
 # ============================================
 MAX_ATTEMPTS=30
 SLEEP_INTERVAL=2
@@ -13,7 +13,7 @@ DB_USERNAME="${DB_USERNAME:-pet}"
 DB_PASSWORD="${DB_PASSWORD:-secret}"
 
 # ============================================
-# ЦВЕТА ДЛЯ ВЫВОДА
+# COLORS
 # ============================================
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -37,42 +37,42 @@ log_step() {
 }
 
 # ============================================
-# 1. ПРОВЕРКА .ENV
+# 1. CHECK .ENV
 # ============================================
 check_env() {
-    log_step "Проверка .env файла..."
+    log_step "Checking .env file..."
 
     if [ ! -f .env ]; then
-        log_error ".env файл не найден!"
-        log_error "Скопируйте .env.example в .env и заполните переменные:"
+        log_error ".env file not found!"
+        log_error "Copy .env.example to .env and fill in the values:"
         log_error "  cp .env.example .env"
         log_error "  vim .env"
         exit 1
     fi
 
-    log_info ".env найден"
+    log_info ".env found"
 }
 
 # ============================================
-# 2. ПРОВЕРКА VENDOR
+# 2. CHECK VENDOR
 # ============================================
 check_vendor() {
-    log_step "Проверка vendor..."
+    log_step "Checking vendor..."
 
     if [ ! -f vendor/autoload.php ]; then
-        log_error "vendor/autoload.php не найден!"
-        log_error "Пересоберите образ: docker compose build --no-cache"
+        log_error "vendor/autoload.php not found!"
+        log_error "Rebuild the image: docker compose build --no-cache"
         exit 1
     fi
 
-    log_info "Vendor найден"
+    log_info "Vendor found"
 }
 
 # ============================================
-# 3. ОЖИДАНИЕ БД
+# 3. WAIT FOR DB
 # ============================================
 wait_for_db() {
-    log_step "Ожидание PostgreSQL (${DB_HOST}:${DB_PORT})..."
+    log_step "Waiting for PostgreSQL (${DB_HOST}:${DB_PORT})..."
 
     local attempt=0
     local start_time=$(date +%s)
@@ -97,13 +97,13 @@ wait_for_db() {
         if [ $attempt -ge $MAX_ATTEMPTS ]; then
             local elapsed=$(($(date +%s) - start_time))
             echo ""
-            log_error "PostgreSQL не ответил после ${MAX_ATTEMPTS} попыток (${elapsed}с)"
+            log_error "PostgreSQL did not respond after ${MAX_ATTEMPTS} attempts (${elapsed}s)"
             if [ -n "$last_error" ]; then
                 log_error "PDO: ${last_error}"
             fi
-            log_error "Проверьте:"
-            log_error "  - Запущен ли контейнер: docker compose ps pgdb"
-            log_error "  - Совпадает ли DB_PASSWORD в .env с паролем volume (после смены пароля: make clean && make up)"
+            log_error "Check:"
+            log_error "  - Container is running: docker compose ps pgdb"
+            log_error "  - DB_PASSWORD in .env matches the volume password (after changing the password: make clean && make up)"
             exit 1
         fi
 
@@ -113,152 +113,136 @@ wait_for_db() {
 
     local elapsed=$(($(date +%s) - start_time))
     echo ""
-    log_info "PostgreSQL готов (${elapsed}с)"
+    log_info "PostgreSQL is ready (${elapsed}s)"
 }
 
 # ============================================
-# 4. МИГРАЦИИ
+# 4. MIGRATIONS
 # ============================================
 run_migrations() {
-    log_step "Проверка миграций..."
+    log_step "Checking migrations..."
 
     if php artisan db:table --table=migrations > /dev/null 2>&1; then
         local pending=$(php artisan migrate:status 2>/dev/null | grep -c "pending" || echo "0")
 
         if [ "$pending" -gt 0 ]; then
-            log_warning "Найдено ${pending} немигрированных миграций"
-            log_step "Запуск миграций..."
+            log_warning "Found ${pending} pending migration(s)"
+            log_step "Running migrations..."
 
             if php artisan migrate --force; then
-                log_info "Миграции выполнены успешно"
+                log_info "Migrations completed successfully"
             else
-                log_error "Ошибка при выполнении миграций"
+                log_error "Migration failed"
                 exit 1
             fi
         else
-            log_info "Все миграции уже применены"
+            log_info "All migrations already applied"
         fi
     else
-        log_warning "Таблица migrations не найдена (первый запуск)"
-        log_step "Выполнение всех миграций..."
+        log_warning "migrations table not found (first run)"
+        log_step "Running all migrations..."
 
         if php artisan migrate --force; then
-            log_info "Миграции выполнены успешно"
+            log_info "Migrations completed successfully"
         else
-            log_error "Ошибка при выполнении миграций"
+            log_error "Migration failed"
             exit 1
         fi
     fi
 }
 
 # ============================================
-# 5. СИДЫ (только для dev)
+# 5. SEEDS (dev only)
 # ============================================
 run_seeds() {
     if [ "$APP_ENV" != "production" ] && [ -f database/seeders/DatabaseSeeder.php ]; then
         if [ ! -f storage/.seeded ]; then
-            log_step "Запуск сидов..."
+            log_step "Running seeders..."
 
             if php artisan db:seed --force; then
                 touch storage/.seeded
-                log_info "Сиды выполнены успешно"
+                log_info "Seeders completed successfully"
             else
-                log_warning "Ошибка при выполнении сидов (продолжаем)"
+                log_warning "Seeding failed (continuing)"
             fi
         fi
     fi
 }
 
 # ============================================
-# 6. ОПТИМИЗАЦИЯ (для продакшена)
+# 6. OPTIMIZE (production)
 # ============================================
 optimize_production() {
     if [ "$APP_ENV" = "production" ]; then
-        log_step "Оптимизация для продакшена..."
+        log_step "Optimizing for production..."
 
         if php artisan optimize; then
-            log_info "Оптимизация выполнена"
+            log_info "Optimization completed"
         else
-            log_warning "Ошибка при оптимизации (продолжаем)"
+            log_warning "Optimization failed (continuing)"
         fi
     fi
 }
 
 # ============================================
-# 7. ОЧИСТКА КЭША (для dev)
+# 7. CLEAR CACHE (dev)
 # ============================================
 clear_cache() {
     if [ "$APP_ENV" != "production" ]; then
-        log_step "Очистка кэша..."
+        log_step "Clearing caches..."
         php artisan cache:clear > /dev/null 2>&1 || true
         php artisan view:clear > /dev/null 2>&1 || true
         php artisan config:clear > /dev/null 2>&1 || true
         php artisan route:clear > /dev/null 2>&1 || true
-        log_info "Кэш очищен"
+        log_info "Caches cleared"
     fi
 }
 
 # ============================================
-# 8. ОЖИДАНИЕ APP ДЛЯ WORKER
+# 8. WAIT FOR APP (workers)
 # ============================================
 wait_for_app() {
     if [ "$CONTAINER_ROLE" = "worker" ]; then
-        log_step "Ожидание готовности app (порт 9000)..."
+        log_step "Waiting for app readiness (port 9000)..."
 
         local attempt=0
         while ! nc -z app 9000 2>/dev/null; do
             attempt=$((attempt + 1))
             if [ $attempt -ge 30 ]; then
-                log_error "App не ответил после 30 попыток"
+                log_error "App did not respond after 30 attempts"
                 exit 1
             fi
             sleep 2
             echo -n "."
         done
         echo ""
-        log_info "App готов!"
+        log_info "App is ready!"
     fi
 }
 
 # ============================================
-# ГЛАВНАЯ ЛОГИКА
+# MAIN
 # ============================================
 main() {
-    echo "🚀 Запуск entrypoint (режим: ${APP_ENV:-production})"
-    echo "📦 Контейнер: ${CONTAINER_ROLE:-app}"
+    echo "🚀 Starting entrypoint (mode: ${APP_ENV:-production})"
+    echo "📦 Container: ${CONTAINER_ROLE:-app}"
     echo ""
 
-    # Проверяем .env
     check_env
-
-    # Проверяем vendor
     check_vendor
-
-    # Ждём БД
     wait_for_db
-
-    # Очищаем кэш (dev)
     clear_cache
-
-    # Запускаем миграции
     run_migrations
-
-    # Запускаем сиды (dev)
     run_seeds
-
-    # Оптимизация (prod)
     optimize_production
-
-    # Ждём app для worker
     wait_for_app
 
     echo ""
-    log_info "Entrypoint завершен успешно"
-    echo "🚀 Запуск: $@"
+    log_info "Entrypoint finished successfully"
+    echo "🚀 Exec: $@"
     echo ""
 
     exec "$@"
 }
 
-# Запускаем
 main "$@"

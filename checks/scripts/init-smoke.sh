@@ -70,7 +70,7 @@ printf 'y\n' | bash docker/scripts/init-project.sh >/tmp/init-smoke-2.out
 
 [[ "$(grep '^APP_KEY=' .env)" == "$KEY1" ]] && pass "APP_KEY preserved" || bad "APP_KEY preserved"
 [[ "$(grep '^DB_PASSWORD=' .env)" == "$PASS1" ]] && pass "DB_PASSWORD preserved" || bad "DB_PASSWORD preserved"
-grep -q 'уже задан' /tmp/init-smoke-2.out && pass "skip messages present" || bad "skip messages present"
+grep -q 'already set' /tmp/init-smoke-2.out && pass "skip messages present" || bad "skip messages present"
 
 echo "➡️ Partial fill only empty DB_USERNAME"
 awk 'BEGIN{FS=OFS="="} /^DB_USERNAME=/{print "DB_USERNAME="; next} {print}' .env >.env.tmp
@@ -89,7 +89,7 @@ cancel_rc=$?
 set -e
 [[ $cancel_rc -ne 0 ]] && pass "cancel exits non-zero" || bad "cancel should exit non-zero"
 diff -q .env .env.before_cancel >/dev/null && pass "cancel leaves .env intact" || bad "cancel left .env intact"
-grep -q 'Отменено' /tmp/init-smoke-4.out && pass "cancel message" || bad "cancel message"
+grep -q 'Cancelled' /tmp/init-smoke-4.out && pass "cancel message" || bad "cancel message"
 
 cd "$ROOT_DIR"
 
