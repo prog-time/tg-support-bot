@@ -98,6 +98,7 @@ RUN apt-get update \
         netcat-openbsd \
     && install-php-extensions \
         bcmath \
+        gd \
         intl \
         opcache \
         pcntl \
