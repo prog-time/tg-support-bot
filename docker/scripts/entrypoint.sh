@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # ============================================
 # CONFIG
@@ -11,6 +11,13 @@ DB_PORT="${DB_PORT:-5432}"
 DB_DATABASE="${DB_DATABASE:-pet}"
 DB_USERNAME="${DB_USERNAME:-pet}"
 DB_PASSWORD="${DB_PASSWORD:-secret}"
+APP_ENV="${APP_ENV:-production}"
+
+# Only the `app` container runs migrations/seeds/optimize/cache-clear — `queue`
+# and `scheduler` share the same image and bind-mounted directory, so having
+# all three race those steps would risk concurrent migration/seed/cache-write
+# corruption. Workers wait for `app` to become ready instead (wait_for_app).
+ROLE="${CONTAINER_ROLE:-app}"
 
 # ============================================
 # COLORS
@@ -44,9 +51,9 @@ check_env() {
 
     if [ ! -f .env ]; then
         log_error ".env file not found!"
-        log_error "Copy .env.example to .env and fill in the values:"
-        log_error "  cp .env.example .env"
-        log_error "  vim .env"
+        log_error "Run the interactive bootstrap instead of copying .env.example by hand —"
+        log_error "it generates APP_KEY/DB_PASSWORD and the Nginx config for you:"
+        log_error "  make init"
         exit 1
     fi
 
@@ -120,34 +127,16 @@ wait_for_db() {
 # 4. MIGRATIONS
 # ============================================
 run_migrations() {
-    log_step "Checking migrations..."
+    log_step "Running migrations..."
 
-    if php artisan db:table --table=migrations > /dev/null 2>&1; then
-        local pending=$(php artisan migrate:status 2>/dev/null | grep -c "pending" || echo "0")
-
-        if [ "$pending" -gt 0 ]; then
-            log_warning "Found ${pending} pending migration(s)"
-            log_step "Running migrations..."
-
-            if php artisan migrate --force; then
-                log_info "Migrations completed successfully"
-            else
-                log_error "Migration failed"
-                exit 1
-            fi
-        else
-            log_info "All migrations already applied"
-        fi
+    # `migrate --force` is idempotent — it prints "Nothing to migrate." and
+    # exits 0 when the schema is already up to date, so no separate
+    # "check pending migrations first" step is needed.
+    if php artisan migrate --force; then
+        log_info "Migrations completed successfully"
     else
-        log_warning "migrations table not found (first run)"
-        log_step "Running all migrations..."
-
-        if php artisan migrate --force; then
-            log_info "Migrations completed successfully"
-        else
-            log_error "Migration failed"
-            exit 1
-        fi
+        log_error "Migration failed"
+        exit 1
     fi
 }
 
@@ -202,7 +191,7 @@ clear_cache() {
 # 8. WAIT FOR APP (workers)
 # ============================================
 wait_for_app() {
-    if [ "$CONTAINER_ROLE" = "worker" ]; then
+    if [ "$ROLE" = "worker" ]; then
         log_step "Waiting for app readiness (port 9000)..."
 
         local attempt=0
@@ -225,17 +214,21 @@ wait_for_app() {
 # ============================================
 main() {
     echo "🚀 Starting entrypoint (mode: ${APP_ENV:-production})"
-    echo "📦 Container: ${CONTAINER_ROLE:-app}"
+    echo "📦 Container: ${ROLE}"
     echo ""
 
     check_env
     check_vendor
     wait_for_db
-    clear_cache
-    run_migrations
-    run_seeds
-    optimize_production
-    wait_for_app
+
+    if [ "$ROLE" = "app" ]; then
+        clear_cache
+        run_migrations
+        run_seeds
+        optimize_production
+    else
+        wait_for_app
+    fi
 
     echo ""
     log_info "Entrypoint finished successfully"
