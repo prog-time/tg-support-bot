@@ -203,29 +203,17 @@ https://t.me/TgSupportTest1Bot
 
 ### Установка через Docker Compose: с нуля
 
-`docker-compose.yml` монтирует рабочую копию в контейнер (`.:/var/www`), и этот bind-mount перекрывает содержимое образа. Поэтому `vendor/`, `node_modules/` и `public/build/`, собранные на этапе `docker build`, в смонтированном каталоге не видны. `docker/scripts/entrypoint.sh` подхватывает это автоматически при первом старте контейнера `app`: если `vendor/autoload.php` или `public/build/manifest.json` отсутствуют, он сам выполняет `composer install` и `npm ci && npm run build`, прежде чем стартовать `php-fpm` — руками эти команды выполнять не нужно. Контейнеры `queue`/`scheduler` в это время ждут, пока `app` закончит установку (не запускают её параллельно — иначе три процесса писали бы в один и тот же смонтированный каталог одновременно). Все процессы внутри (php-fpm, queue, scheduler) работают под `www-data` — **uid 33**, поэтому каталоги, в которые пишет приложение, должны принадлежать этому uid на хосте *до* запуска — сам entrypoint работает под тем же www-data и не может создать/перевладеть их сам.
+Установка выполняется через `Makefile`: `make init` — интерактивный bootstrap (генерирует `.env` — секреты вроде `APP_KEY`/`DB_PASSWORD` создаются автоматически, если пусты — и рендерит `docker/nginx/default.conf` из шаблонов `docker/nginx/*.template`), затем `make up` собирает и поднимает стек. `vendor/`, `node_modules/` и `public/build/` собираются на этапе `docker build` (multi-stage `Dockerfile`) и попадают прямо в образ — раздельной установки зависимостей в рантайме через bind-mount больше нет.
 
 ```bash
-# 1. Конфигурация
-cp .env.example .env
+# 1. Интерактивная настройка — .env, Nginx-конфиг
+make init
 
-# 2. Каталоги под запись + владелец www-data (uid 33).
-#    Без этого шага entrypoint (composer/npm) и artisan упрутся в permission denied.
-mkdir -p vendor node_modules storage bootstrap/cache public/build
-chown -R 33:33 vendor node_modules storage bootstrap/cache public/build
-
-# 3. Сборка образа и запуск — первый старт займёт минуту-две: entrypoint
-#    ставит PHP/JS-зависимости и собирает фронтенд, прежде чем открыть порт.
-#    Прогресс можно смотреть через `docker compose logs -f app`.
-docker compose up -d --build
-
-# 4. Ключ приложения и миграции
-docker exec -it pet php artisan key:generate
-docker exec -it pet php artisan migrate
-docker exec -it pet php artisan storage:link
+# 2. Сборка образа и запуск (первый старт — минуту-две)
+make up
 ```
 
-Каталоги из шага 2 не отслеживаются git и не синхронизируются mutagen, поэтому выставленный владелец сохраняется между деплоями. При следующих `docker compose up` (без `--build`) entrypoint отрабатывает мгновенно — `vendor/`/`public/build/` уже на месте, повторно `composer install`/`npm run build` не запускаются.
+`docker/scripts/entrypoint.sh` при старте контейнера ждёт готовности PostgreSQL, а затем — только в контейнере `app` (`CONTAINER_ROLE=app`) — прогоняет миграции, сиды (dev) и `artisan optimize` (prod); `queue`/`scheduler` (`CONTAINER_ROLE=worker`) не запускают эти шаги параллельно, а ждут готовности `app`. Ключ приложения (`APP_KEY`) генерируется `make init`, `storage:link` не требуется — `storage/app/public` не используется для публичных файлов проекта. Полный список команд — `make help`.
 
 > После запуска войдите в админ-панель `/admin/login` и настройте каналы и AI на странице **Настройки** (`/admin/settings/*`). Все токены и ключи хранятся в БД в зашифрованном виде — править `.env` для этого не нужно.
 
