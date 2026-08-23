@@ -103,7 +103,15 @@ class PwaController
      *  - navigations (HTML): network-first, fall back to the precached offline
      *    shell — authenticated HTML is NEVER written to the cache;
      *  - static assets (`/build/`, `/icons/`, manifest): cache-first;
-     *  - everything else (Livewire/AJAX/POST, cross-origin): passthrough.
+     *  - everything else (Livewire/AJAX/POST, cross-origin): passthrough;
+     *  - `push`: shows a notification from the Web Push payload — this is how
+     *    a new message reaches the operator even while the PWA is closed or
+     *    the device is locked (see `App\Jobs\SendWebPushNotificationJob`);
+     *  - `notificationclick`: focuses an open `/admin/` client or opens
+     *    `/admin/chats`. Foreground notifications (tab open/backgrounded) are
+     *    shown by the page via `ServiceWorkerRegistration.showNotification()`
+     *    (not `new Notification()`) since iOS Safari only supports the
+     *    SW-routed API, even for an installed home-screen PWA.
      *
      * @param string $version
      *
@@ -141,15 +149,12 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) { return; }
 
-    // HTML navigations: network-first, offline shell as fallback.
-    // The authenticated response is intentionally NOT cached.
-    if (req.mode === 'navigate') {
+    if (req.mode === 'navigate') { /* HTML navigations: network-first, offline shell as fallback (authenticated response intentionally NOT cached) */
         event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
         return;
     }
 
-    // Static assets: cache-first, populate on first fetch.
-    if (isStaticAsset(url)) {
+    if (isStaticAsset(url)) { /* static assets: cache-first, populate on first fetch */
         event.respondWith(
             caches.match(req).then((hit) => hit || fetch(req).then((res) => {
                 const copy = res.clone();
@@ -159,8 +164,29 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
+});  /* everything else (Livewire, AJAX, cross-path) is left to the network */
 
-    // Everything else (Livewire, AJAX, cross-path) — leave to the network.
+self.addEventListener('push', (event) => {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'TG Support', {
+            body: data.body || '',
+            tag: 'tg-support-chat',
+            renotify: true,
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({type: 'window', includeUncontrolled: true}).then((clients) => {
+            const existing = clients.find((c) => c.url.includes('/admin/'));
+            if (existing) { return existing.focus(); }
+            return self.clients.openWindow('/admin/chats');
+        })
+    );
 });
 JS;
     }

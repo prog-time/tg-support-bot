@@ -15,8 +15,12 @@
     class="flex h-screen overflow-hidden"
     {{-- .keep-alive keeps polling while the tab is in the background, so desktop
          notifications / sound / favicon badge fire even when the operator is on
-         another tab (Livewire pauses a plain wire:poll when the tab is hidden). --}}
-    wire:poll.5s.keep-alive="pollUpdates"
+         another tab (Livewire pauses a plain wire:poll when the tab is hidden).
+         document.hasFocus() is passed through so pollUpdates() only bumps the
+         read marker while the operator is actually looking at the tab — otherwise
+         a dialog left open before backgrounding would silently mark every new
+         message read without anyone seeing it. --}}
+    wire:poll.5s.keep-alive="pollUpdates(document.hasFocus())"
     x-data="{
         lightboxSrc: '',
         lightboxOpen: false,
@@ -30,12 +34,19 @@
             // Don't interrupt while the operator is actively looking at the workspace —
             // the dialog-list badge already covers that case.
             if (document.hasFocus()) { return; }
-            const n = new Notification(detail.title, {
-                body: detail.body,
-                tag: 'tg-support-chat',
-                renotify: true,
+            // Routed through the service worker rather than the page-level
+            // Notification constructor — iOS Safari only supports
+            // ServiceWorkerRegistration.showNotification(), even for an
+            // installed home-screen PWA. The click handler that used to live
+            // here now lives in the SW's `notificationclick` listener.
+            if (!('serviceWorker' in navigator)) { return; }
+            navigator.serviceWorker.ready.then((reg) => {
+                reg.showNotification(detail.title, {
+                    body: detail.body,
+                    tag: 'tg-support-chat',
+                    renotify: true,
+                });
             });
-            n.onclick = () => { window.focus(); n.close(); };
         },
         playSound() {
             // Sound on/off lives in localStorage; the chosen preset and the actual

@@ -74,13 +74,33 @@
 
     {{-- Card: Notifications & sound — browser-level preferences (no DB) --}}
     <x-admin.card title="Оповещения о новых сообщениях" class="mt-6">
-        <div x-data="{
+        <div
+            x-data="{
+            vapidPublicKey: @js($vapidPublicKey),
             notifyPermission: (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'),
             soundEnabled: (localStorage.getItem('tg-support-sound') !== '0'),
             enableNotifications() {
                 if (window.tgSupportSound) { window.tgSupportSound.unlock(); }
                 if (typeof Notification === 'undefined') { return; }
-                Notification.requestPermission().then(p => { this.notifyPermission = p; });
+                Notification.requestPermission().then(p => {
+                    this.notifyPermission = p;
+                    if (p === 'granted') { this.subscribePush(); }
+                });
+            },
+            subscribePush() {
+                // Push delivery (works even while the device is locked) is a
+                // best-effort add-on to the local `Notification` permission
+                // above — skip quietly if the SW or VAPID key aren't ready.
+                if (!('serviceWorker' in navigator) || !this.vapidPublicKey) { return; }
+                navigator.serviceWorker.ready.then((reg) => {
+                    if (!reg.pushManager) { return; }
+                    reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(this.vapidPublicKey),
+                    }).then((sub) => {
+                        $wire.savePushSubscription(sub.toJSON());
+                    }).catch(() => {});
+                });
             },
             setSound(val) {
                 this.soundEnabled = val;
@@ -92,7 +112,7 @@
             }
         }">
             <p class="mb-5 text-sm text-text-secondary">
-                Работают в открытой вкладке раздела «Чаты». Настройки сохраняются в этом браузере.
+                Приходят даже при заблокированном экране или закрытом приложении (после установки PWA на главный экран). Настройки сохраняются в этом браузере.
             </p>
 
             <div class="space-y-5">

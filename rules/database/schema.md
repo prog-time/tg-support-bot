@@ -131,6 +131,15 @@ erDiagram
         timestamps
     }
 
+    PUSH_SUBSCRIPTIONS {
+        bigint id PK
+        bigint user_id FK
+        text endpoint UK
+        string public_key
+        string auth_token
+        timestamps
+    }
+
     BOT_USERS ||--o{ MESSAGES : "has many"
     USERS ||--o{ MESSAGES : "sender (nullable)"
     MESSAGES ||--o| EXTERNAL_MESSAGES : "has one"
@@ -139,6 +148,7 @@ erDiagram
     BOT_USERS ||--o{ AI_MESSAGES : "has many"
     BOT_USERS ||--o{ FEEDBACKS : "has many"
     EXTERNAL_SOURCES ||--o{ EXTERNAL_SOURCE_ACCESS_TOKENS : "has many"
+    USERS ||--o{ PUSH_SUBSCRIPTIONS : "has many"
 ```
 
 ---
@@ -448,6 +458,31 @@ Auto-reply rules: a trigger phrase and the response sent when it matches. Manage
 **Note:** Matching the trigger against incoming messages and sending the response is NOT yet wired into the message pipeline — the table and admin CRUD exist, runtime triggering is a separate future task.
 
 **Migration:** `database/migrations/2026_06_05_000001_create_auto_replies_table.php`
+
+---
+
+### `push_subscriptions`
+
+Web Push (VAPID) subscriptions for the admin PWA — one row per subscribed browser/device, used to deliver background notifications even while the PWA is closed or the screen is locked. See `domain/admin-panel.md` → «Web Push (background delivery)».
+
+| Column | Type | Nullable | Default | Description |
+|---|---|---|---|---|
+| `id` | `bigint` | No | auto | Primary key |
+| `user_id` | `bigint` | No | — | FK → `users.id` (cascade delete) |
+| `endpoint` | `text` | No | — | Push service endpoint URL from `PushSubscription.toJSON()`; unique per browser/device |
+| `public_key` | `varchar` | No | — | `keys.p256dh` from the browser subscription |
+| `auth_token` | `varchar` | No | — | `keys.auth` from the browser subscription |
+| `created_at` | `timestamp` | Yes | NULL | Creation time |
+| `updated_at` | `timestamp` | Yes | NULL | Last update time |
+
+**Indexes:**
+- PRIMARY on `id`
+- UNIQUE on `endpoint` — re-subscribing the same browser upserts instead of duplicating
+- FOREIGN KEY `user_id` → `users.id` ON DELETE CASCADE
+
+**Model:** `App\Models\PushSubscription` (`belongsTo(User)`).
+
+**Migration:** `database/migrations/2026_08_09_223224_create_push_subscriptions_table.php`
 
 ---
 

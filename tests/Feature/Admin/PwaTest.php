@@ -19,6 +19,9 @@ class PwaTest extends TestCase
         $this->assertStringContainsString("const CACHE = 'admin-pwa-", $body);
         $this->assertStringContainsString('/offline.html', $body);
         $this->assertStringContainsString("req.mode === 'navigate'", $body);
+        $this->assertStringContainsString("addEventListener('notificationclick'", $body);
+        $this->assertStringContainsString("addEventListener('push'", $body);
+        $this->assertStringContainsString('self.registration.showNotification', $body);
     }
 
     public function test_manifest_route_serves_valid_manifest_publicly(): void
@@ -62,5 +65,17 @@ class PwaTest extends TestCase
             $this->assertStringContainsString('name="theme-color"', $html, "{$layout} missing theme-color");
             $this->assertStringContainsString('apple-touch-icon', $html, "{$layout} missing apple-touch-icon");
         }
+    }
+
+    public function test_chat_workspace_shows_notifications_through_the_service_worker(): void
+    {
+        // Regression: a bare `new Notification(...)` call is unsupported by iOS
+        // Safari (even for an installed home-screen PWA) — notifications must be
+        // routed through ServiceWorkerRegistration.showNotification() instead.
+        $html = (string) file_get_contents(resource_path('views/livewire/chat/conversation-page.blade.php'));
+
+        $this->assertStringContainsString('serviceWorker.ready', $html);
+        $this->assertStringContainsString('.showNotification(', $html);
+        $this->assertStringNotContainsString('new Notification(', $html);
     }
 }
