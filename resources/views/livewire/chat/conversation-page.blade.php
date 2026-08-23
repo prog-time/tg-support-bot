@@ -15,8 +15,12 @@
     class="flex h-screen overflow-hidden"
     {{-- .keep-alive keeps polling while the tab is in the background, so desktop
          notifications / sound / favicon badge fire even when the operator is on
-         another tab (Livewire pauses a plain wire:poll when the tab is hidden). --}}
-    wire:poll.5s.keep-alive="pollUpdates"
+         another tab (Livewire pauses a plain wire:poll when the tab is hidden).
+         document.hasFocus() is passed through so pollUpdates() only bumps the
+         read marker while the operator is actually looking at the tab — otherwise
+         a dialog left open before backgrounding would silently mark every new
+         message read without anyone seeing it. --}}
+    wire:poll.5s.keep-alive="pollUpdates(document.hasFocus())"
     x-data="{
         lightboxSrc: '',
         lightboxOpen: false,

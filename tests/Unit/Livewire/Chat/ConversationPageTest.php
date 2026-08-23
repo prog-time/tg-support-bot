@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -330,6 +331,76 @@ class ConversationPageTest extends TestCase
         $msgs = $component->get('chatMessages');
         $this->assertCount(61, $msgs);
         $this->assertSame('fresh', $msgs->last()->text);
+    }
+
+    // ── Read marker & background focus gate ──────────────────────────────────────
+
+    public function test_poll_does_not_mark_conversation_read_while_tab_is_unfocused(): void
+    {
+        Carbon::setTestNow('2026-01-01 10:00:00');
+
+        $botUser = BotUser::create(['chat_id' => 2001, 'platform' => 'telegram']);
+
+        $component = Livewire::test(ConversationPage::class)
+            ->call('selectChat', $botUser->id);
+
+        $readAfterSelect = $botUser->fresh()->manager_last_read_at;
+
+        Carbon::setTestNow('2026-01-01 10:05:00');
+
+        Message::create([
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
+            'message_type' => 'incoming',
+            'from_id' => 0,
+            'to_id' => 0,
+            'text' => 'arrived while backgrounded',
+        ]);
+
+        // wire:poll.5s.keep-alive keeps firing in the background so desktop/push
+        // notifications still work, but must not silently mark this read.
+        $component->call('pollUpdates', false)
+            ->assertDispatched('messages-updated');
+
+        $this->assertTrue($botUser->fresh()->manager_last_read_at->equalTo($readAfterSelect));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_poll_catches_up_the_read_marker_once_focus_returns(): void
+    {
+        Carbon::setTestNow('2026-01-01 10:00:00');
+
+        $botUser = BotUser::create(['chat_id' => 2002, 'platform' => 'telegram']);
+
+        $component = Livewire::test(ConversationPage::class)
+            ->call('selectChat', $botUser->id);
+
+        Carbon::setTestNow('2026-01-01 10:05:00');
+
+        Message::create([
+            'bot_user_id' => $botUser->id,
+            'platform' => 'telegram',
+            'message_type' => 'incoming',
+            'from_id' => 0,
+            'to_id' => 0,
+            'text' => 'arrived while backgrounded',
+        ]);
+
+        $component->call('pollUpdates', false); // loaded, but not marked read
+
+        Carbon::setTestNow('2026-01-01 10:05:05');
+
+        // Next tick after focus returns has no *new* messages of its own, but
+        // must still catch up the pending read marker.
+        $component->call('pollUpdates', true);
+
+        $this->assertEquals(
+            '2026-01-01 10:05:05',
+            $botUser->fresh()->manager_last_read_at->format('Y-m-d H:i:s')
+        );
+
+        Carbon::setTestNow();
     }
 
     public function test_select_chat_zero_clears_active_dialog(): void

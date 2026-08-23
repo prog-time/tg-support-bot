@@ -41,8 +41,6 @@ class ConversationPage extends Component
 {
     use WithFileUploads;
 
-    // ── Dialog list ────────────────────────────────────────────────────────────
-
     public string $search = '';
 
     public string $statusFilter = 'all';
@@ -63,8 +61,6 @@ class ConversationPage extends Component
 
     /** Whether more dialogs remain below the loaded window. */
     public bool $hasMoreDialogs = false;
-
-    // ── Chat area ──────────────────────────────────────────────────────────────
 
     #[Locked]
     public Collection $chatMessages;
@@ -108,7 +104,15 @@ class ConversationPage extends Component
     #[Locked]
     public int $lastSeenMessageId = 0;
 
-    // ── Lifecycle ──────────────────────────────────────────────────────────────
+    /**
+     * Set when `pollUpdates()` loads new messages for the active dialog while
+     * the tab/PWA is backgrounded (`$hasFocus = false`) — the read marker was
+     * deliberately not bumped then, so the next poll tick where focus has
+     * returned must "catch up" and mark it read even if no further messages
+     * arrived in that tick. Cleared by `selectChat()` and once caught up.
+     */
+    #[Locked]
+    public bool $pendingReadMark = false;
 
     /**
      * Initialise the workspace: empty collections, load dialog list.
@@ -134,8 +138,6 @@ class ConversationPage extends Component
         return '5s';
     }
 
-    // ── Dialog list ────────────────────────────────────────────────────────────
-
     /**
      * Load the dialog list, applying search and status filters.
      * Ordered by the most-recent message date (desc).
@@ -144,14 +146,19 @@ class ConversationPage extends Component
      * so withMax() cannot be used here. A raw correlated subquery is used
      * instead to avoid touching the model.
      *
+     * Loads only the current window (one extra row to detect more below).
+     * `unread_count` is a correlated subquery counting incoming messages that
+     * arrived after the manager last read the dialog — drives the numeric
+     * badge in the dialog list (see unreadCount()). Results are ordered by
+     * the date of the most recent message (newest dialogs on top), tie-broken
+     * by the newest message id — this matches the lastMessage relation
+     * exactly, so the order never disagrees with the preview/time shown for
+     * each dialog and stays stable across polls on same-second ties.
+     *
      * @return void
      */
     public function loadDialogList(): void
     {
-        // Load only the current window (one extra row to detect more below).
-        // `unread_count` is a correlated subquery counting incoming messages that
-        // arrived after the manager last read the dialog — drives the numeric
-        // badge in the dialog list (see unreadCount()).
         $rows = BotUser::with(['lastMessage'])
             ->selectRaw(
                 'bot_users.*, '
@@ -168,10 +175,6 @@ class ConversationPage extends Component
             )
             ->when($this->statusFilter === 'open', fn ($q) => $q->where('is_closed', false))
             ->when($this->statusFilter === 'closed', fn ($q) => $q->where('is_closed', true))
-            // Sort by the date of the most recent message (newest dialogs on top),
-            // tie-broken by the newest message id — this matches the lastMessage
-            // relation exactly, so the order never disagrees with the preview/time
-            // shown for each dialog and stays stable across polls on same-second ties.
             ->orderByRaw(
                 'COALESCE((SELECT MAX(m.created_at) FROM messages m WHERE m.bot_user_id = bot_users.id), \'1970-01-01\') DESC'
             )
@@ -288,6 +291,10 @@ class ConversationPage extends Component
     /**
      * Select a dialog and load its messages.
      *
+     * Opening a dialog marks ALL of its current messages read — the indicator
+     * stays cleared across page reloads (persisted, not just session state) —
+     * and always scrolls the thread to the bottom.
+     *
      * @param int $botUserId
      *
      * @return void
@@ -305,17 +312,15 @@ class ConversationPage extends Component
         $this->activeBotUserId = $botUserId;
         $this->activeBotUser = BotUser::with(['externalUser'])->find($botUserId);
 
-        // Opening a dialog marks ALL of its current messages read — the indicator
-        // stays cleared across page reloads (persisted, not just session state).
         if ($this->activeBotUser) {
             $this->markConversationRead($this->activeBotUser);
+            $this->pendingReadMark = false;
         }
 
         $this->loadMessages();
         $this->loadPendingAiDrafts();
         $this->loadDialogList();
 
-        // Always scroll to the bottom when opening a dialog.
         $this->dispatch('messages-updated');
     }
 
@@ -356,32 +361,47 @@ class ConversationPage extends Component
      * Combined 5 s poll entry point (wire:poll): refresh the dialog list and,
      * when a dialog is open, the message thread too.
      *
-     * Only scrolls to the bottom and bumps the read marker when new messages
-     * actually arrived — so a manager scrolled up reading history is not yanked
-     * down on every tick.
+     * Only scrolls to the bottom when new messages actually arrived — so a
+     * manager scrolled up reading history is not yanked down on every tick.
+     * The read marker only bumps while `$hasFocus` is true: `wire:poll.5s.keep-alive`
+     * keeps this firing while the tab/PWA is backgrounded (so desktop/push
+     * notifications still work), and `activeBotUser` stays set from before the
+     * operator backgrounded the tab — without this guard, every incoming
+     * message in the still-"active" dialog would get silently marked read
+     * while nobody was looking at it. New messages loaded while unfocused set
+     * `$pendingReadMark`, so the read marker still catches up on the first
+     * focused tick afterwards, even if that particular tick has no new
+     * messages of its own.
+     *
+     * @param bool $hasFocus Whether the client tab/window currently has focus
+     *                       (`document.hasFocus()`, passed from `wire:poll`).
      *
      * @return void
      */
-    public function pollUpdates(): void
+    public function pollUpdates(bool $hasFocus = true): void
     {
         $this->loadDialogList();
-
-        // Raise a desktop notification for messages that landed in other dialogs
-        // since the last tick (runs regardless of whether a dialog is open).
         $this->notifyNewIncomingMessages();
 
         if (! $this->activeBotUser) {
             return;
         }
 
-        // Append only messages newer than the last loaded one — this preserves
-        // any older history the manager scrolled up to load.
         $added = $this->loadNewerMessages();
         $this->loadPendingAiDrafts();
 
         if ($added > 0) {
-            $this->markConversationRead($this->activeBotUser);
             $this->dispatch('messages-updated');
+
+            if ($hasFocus) {
+                $this->markConversationRead($this->activeBotUser);
+                $this->pendingReadMark = false;
+            } else {
+                $this->pendingReadMark = true;
+            }
+        } elseif ($hasFocus && $this->pendingReadMark) {
+            $this->markConversationRead($this->activeBotUser);
+            $this->pendingReadMark = false;
         }
     }
 
@@ -411,7 +431,6 @@ class ConversationPage extends Component
         $fresh = $query->orderBy('messages.id')
             ->get(['messages.id', 'messages.text', 'messages.bot_user_id']);
 
-        // Advance the watermark past ALL messages so nothing re-notifies.
         $this->lastSeenMessageId = max($this->lastSeenMessageId, (int) Message::max('id'));
 
         if ($fresh->isEmpty()) {
@@ -438,13 +457,14 @@ class ConversationPage extends Component
         );
     }
 
-    // ── Chat area ──────────────────────────────────────────────────────────────
-
     /**
      * Load messages for the active conversation.
      *
      * Pure loader — callers decide when to scroll the thread (via the
      * `messages-updated` browser event) so polling does not force-scroll.
+     * Loads the most recent page only (older messages are pulled in on
+     * scroll-up), fetching one extra row to detect whether more history
+     * exists.
      *
      * @return void
      */
@@ -457,8 +477,6 @@ class ConversationPage extends Component
             return;
         }
 
-        // Most recent page only — older messages are pulled in on scroll-up.
-        // Fetch one extra row to detect whether more history exists.
         $batch = Message::where('bot_user_id', $this->activeBotUserId)
             ->with(['externalMessage', 'attachments', 'sender'])
             ->orderByDesc('created_at')
@@ -557,7 +575,10 @@ class ConversationPage extends Component
      *
      * Text is required only when no file is attached, so a file-only message is
      * allowed. The attachment is ignored for platforms that cannot deliver files
-     * (see supportsAttachments()).
+     * (see supportsAttachments()). When there is nothing to send (no text and
+     * no attachment), the submission is silently ignored instead of surfacing
+     * a "required" validation error; the validation below only checks
+     * size/length, since emptiness is already handled.
      *
      * @return void
      */
@@ -569,13 +590,10 @@ class ConversationPage extends Component
 
         $file = $this->supportsAttachments() ? $this->attachment : null;
 
-        // Nothing to send (no text and no attachment) — silently ignore instead
-        // of surfacing a "required" validation error.
         if (trim($this->replyText) === '' && $file === null) {
             return;
         }
 
-        // Emptiness is handled above; only validate size/length here.
         $this->validate([
             'replyText' => ['nullable', 'string', 'max:4096'],
             'attachment' => ['nullable', 'file', 'max:20480'],
@@ -815,8 +833,6 @@ class ConversationPage extends Component
         return true;
     }
 
-    // ── Quick replies ──────────────────────────────────────────────────────────
-
     /**
      * Insert a quick-reply template into the reply text field.
      *
@@ -828,8 +844,6 @@ class ConversationPage extends Component
     {
         $this->replyText = $text;
     }
-
-    // ── Media gallery ──────────────────────────────────────────────────────────
 
     /**
      * Return all media attachments (photos, documents, video, audio, …) for the active dialog.
