@@ -171,4 +171,10 @@ RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && node --version \
     && npm --version
 
+# Step-debugging (docker-compose.yml wires XDEBUG_MODE/XDEBUG_PORT and exposes
+# 9003) — dev-only, kept out of the prod `app` stage.
+RUN install-php-extensions xdebug
+
+COPY docker/php/php-dev.ini /usr/local/etc/php/conf.d/zz-xdebug.ini
+
 USER 33:33

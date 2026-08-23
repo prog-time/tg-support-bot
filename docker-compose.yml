@@ -33,6 +33,11 @@ services:
         dns:
             - 8.8.8.8
             - 1.1.1.1
+        # host.docker.internal is resolved automatically by Docker Desktop
+        # (Mac/Windows) but needs this explicit mapping on native Linux —
+        # used by Xdebug (docker/php/php-dev.ini) to reach the IDE on the host.
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         ports:
             - "${XDEBUG_PORT:-9003}:9003"
 
