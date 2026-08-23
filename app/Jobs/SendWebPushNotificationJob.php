@@ -8,7 +8,6 @@ use App\Services\WebPush\WebPushSenderInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * Fans a new incoming message out to every subscribed admin device via Web
@@ -39,8 +38,8 @@ class SendWebPushNotificationJob implements ShouldQueue
             return;
         }
 
-        $title = 'Новое сообщение';
-        $body = Str::limit((string) $this->message->text, 120);
+        $title = $this->notificationTitle();
+        $body = (string) $this->message->text;
 
         foreach ($subscriptions as $subscription) {
             $result = $sender->send($subscription, $title, $body);
@@ -58,5 +57,32 @@ class SendWebPushNotificationJob implements ShouldQueue
                 ]);
             }
         }
+    }
+
+    /**
+     * "{Platform} · {sender name}" — mirrors the platform label / display name
+     * shown in the chat workspace header (`conversation-page.blade.php`), so
+     * the push banner identifies the conversation the same way the UI does.
+     *
+     * @return string
+     */
+    private function notificationTitle(): string
+    {
+        $botUser = $this->message->botUser;
+
+        if ($botUser === null) {
+            return 'Новое сообщение';
+        }
+
+        $platformLabel = match ($botUser->platform) {
+            'telegram' => 'Telegram',
+            'vk' => 'VK',
+            'max' => 'Max',
+            default => ucfirst($botUser->platform),
+        };
+
+        $senderName = $botUser->display_name ?? $botUser->username ?? (string) $botUser->chat_id;
+
+        return "{$platformLabel} · {$senderName}";
     }
 }

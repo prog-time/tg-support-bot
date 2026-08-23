@@ -16,9 +16,9 @@ class SendWebPushNotificationJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeMessage(string $text = 'Hello there'): Message
+    private function makeMessage(string $text = 'Hello there', ?BotUser $botUser = null): Message
     {
-        $botUser = BotUser::create(['chat_id' => 1001, 'platform' => 'telegram']);
+        $botUser ??= BotUser::create(['chat_id' => 1001, 'platform' => 'telegram']);
 
         return Message::create([
             'bot_user_id' => $botUser->id,
@@ -85,6 +85,90 @@ class SendWebPushNotificationJobTest extends TestCase
 
         $this->assertCount(2, $received);
         $this->assertSame('New message from the customer', $received[0][1]);
+    }
+
+    public function test_title_is_platform_and_sender_display_name(): void
+    {
+        $this->makeSubscription();
+        $botUser = BotUser::create(['chat_id' => 2001, 'platform' => 'vk', 'display_name' => 'Иван Иванов']);
+        $message = $this->makeMessage('hi', $botUser);
+
+        $received = [];
+        $sender = new class ($received) implements WebPushSenderInterface {
+            public array $received = [];
+
+            public function __construct(&$received)
+            {
+                $this->received = &$received;
+            }
+
+            public function send(PushSubscription $subscription, string $title, string $body): WebPushSendResult
+            {
+                $this->received[] = $title;
+
+                return new WebPushSendResult(success: true, expired: false);
+            }
+        };
+
+        (new SendWebPushNotificationJob($message))->handle($sender);
+
+        $this->assertSame('VK · Иван Иванов', $received[0]);
+    }
+
+    public function test_title_falls_back_to_chat_id_without_a_display_name(): void
+    {
+        $this->makeSubscription();
+        $botUser = BotUser::create(['chat_id' => 3001, 'platform' => 'telegram']);
+        $message = $this->makeMessage('hi', $botUser);
+
+        $received = [];
+        $sender = new class ($received) implements WebPushSenderInterface {
+            public array $received = [];
+
+            public function __construct(&$received)
+            {
+                $this->received = &$received;
+            }
+
+            public function send(PushSubscription $subscription, string $title, string $body): WebPushSendResult
+            {
+                $this->received[] = $title;
+
+                return new WebPushSendResult(success: true, expired: false);
+            }
+        };
+
+        (new SendWebPushNotificationJob($message))->handle($sender);
+
+        $this->assertSame('Telegram · 3001', $received[0]);
+    }
+
+    public function test_body_is_not_truncated(): void
+    {
+        $this->makeSubscription();
+        $longText = str_repeat('a', 500);
+        $message = $this->makeMessage($longText);
+
+        $received = [];
+        $sender = new class ($received) implements WebPushSenderInterface {
+            public array $received = [];
+
+            public function __construct(&$received)
+            {
+                $this->received = &$received;
+            }
+
+            public function send(PushSubscription $subscription, string $title, string $body): WebPushSendResult
+            {
+                $this->received[] = $body;
+
+                return new WebPushSendResult(success: true, expired: false);
+            }
+        };
+
+        (new SendWebPushNotificationJob($message))->handle($sender);
+
+        $this->assertSame($longText, $received[0]);
     }
 
     public function test_deletes_the_subscription_when_the_service_reports_it_expired(): void
