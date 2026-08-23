@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Settings;
 
+use App\Models\PushSubscription;
 use App\Modules\Admin\Services\WebhookRegistrationService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,9 @@ class GeneralSettingsPage extends Component
     /** @var array<string, string> */
     public array $formErrors = [];
 
+    /** @var string VAPID public key for Web Push subscription (empty when not yet generated) */
+    public string $vapidPublicKey = '';
+
     /**
      * Load current values from SettingsService on mount.
      */
@@ -45,6 +49,7 @@ class GeneralSettingsPage extends Component
     {
         $this->template_topic_name = (string) ($settings->get('telegram.template_topic_name') ?? '');
         $this->group_id = (string) ($settings->get('telegram.group_id') ?? '');
+        $this->vapidPublicKey = (string) ($settings->get('webpush.vapid_public_key') ?? '');
     }
 
     /**
@@ -52,8 +57,10 @@ class GeneralSettingsPage extends Component
      */
     public function save(SettingsService $settings): void
     {
-        // The «Обращения» config form is admin-only; managers only see the
-        // notifications card. Refuse a crafted save from a non-admin.
+        /**
+         * The «Обращения» config form is admin-only; managers only see the
+         * notifications card. Refuse a crafted save from a non-admin.
+         */
         if (! Auth::user()?->isAdmin()) {
             return;
         }
@@ -61,17 +68,20 @@ class GeneralSettingsPage extends Component
         $this->formErrors = [];
         $this->saved = false;
 
-        // Normalize: a pasted group ID often carries leading/trailing whitespace,
-        // which would make getChat fail even for a correct ID.
+        /**
+         * Normalize: a pasted group ID often carries leading/trailing whitespace,
+         * which would make getChat fail even for a correct ID.
+         */
         $this->group_id = trim((string) ($this->group_id ?? ''));
 
-        // ── Validation ────────────────────────────────────────────────────────
         if (strlen((string) $this->template_topic_name) > 255) {
             $this->formErrors['template_topic_name'] = 'Максимальная длина — 255 символов.';
         }
 
-        // Optional: the Telegram supergroup is an addition. Empty group_id means
-        // admin-panel-only (no group mirroring). Validate length only when filled.
+        /**
+         * Optional: the Telegram supergroup is an addition. Empty group_id means
+         * admin-panel-only (no group mirroring). Validate length only when filled.
+         */
         if (strlen((string) $this->group_id) > 50) {
             $this->formErrors['group_id'] = 'Максимальная длина — 50 символов.';
         }
@@ -80,10 +90,12 @@ class GeneralSettingsPage extends Component
             return;
         }
 
-        // ── Verify-before-save for the group ──────────────────────────────────
-        // When a group ID is provided, check (1) the Telegram integration works
-        // (valid bot token), (2) the bot is a member of that group, and (3) the
-        // bot has administrator rights there. Nothing is persisted on failure.
+        /**
+         * Verify-before-save for the group. When a group ID is provided, check
+         * (1) the Telegram integration works (valid bot token), (2) the bot is
+         * a member of that group, and (3) the bot has administrator rights
+         * there. Nothing is persisted on failure.
+         */
         if (trim((string) $this->group_id) !== '') {
             $token = (string) ($settings->get('telegram.token') ?? '');
 
@@ -102,11 +114,40 @@ class GeneralSettingsPage extends Component
             }
         }
 
-        // ── Persist ───────────────────────────────────────────────────────────
         $settings->set('telegram.template_topic_name', $this->template_topic_name ?? '');
         $settings->set('telegram.group_id', $this->group_id ?? '');
 
         $this->saved = true;
+    }
+
+    /**
+     * Persist a browser's Web Push subscription (from `PushManager.subscribe()`,
+     * called client-side after `Notification.requestPermission()` resolves to
+     * "granted"). Upserted by `endpoint` so re-subscribing the same browser
+     * updates its keys instead of creating a duplicate row.
+     *
+     * @param array{endpoint?: string, keys?: array{p256dh?: string, auth?: string}} $subscription
+     *
+     * @return void
+     */
+    public function savePushSubscription(array $subscription): void
+    {
+        $endpoint = (string) ($subscription['endpoint'] ?? '');
+        $publicKey = (string) ($subscription['keys']['p256dh'] ?? '');
+        $authToken = (string) ($subscription['keys']['auth'] ?? '');
+
+        if ($endpoint === '' || $publicKey === '' || $authToken === '' || Auth::id() === null) {
+            return;
+        }
+
+        PushSubscription::updateOrCreate(
+            ['endpoint' => $endpoint],
+            [
+                'user_id' => Auth::id(),
+                'public_key' => $publicKey,
+                'auth_token' => $authToken,
+            ]
+        );
     }
 
     /**

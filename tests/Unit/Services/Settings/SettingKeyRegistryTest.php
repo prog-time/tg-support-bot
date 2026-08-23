@@ -24,6 +24,7 @@ class SettingKeyRegistryTest extends TestCase
         $this->assertTrue(SettingKeyRegistry::meta('vk.token')['is_secret']);
         $this->assertTrue(SettingKeyRegistry::meta('ai.openai_api_key')['is_secret']);
         $this->assertTrue(SettingKeyRegistry::meta('ai.gigachat_client_secret')['is_secret']);
+        $this->assertTrue(SettingKeyRegistry::meta('webpush.vapid_private_key')['is_secret']);
     }
 
     public function test_meta_does_not_mark_non_secret_keys_as_secret(): void
@@ -31,6 +32,8 @@ class SettingKeyRegistryTest extends TestCase
         $this->assertFalse(SettingKeyRegistry::meta('telegram.group_id')['is_secret']);
         $this->assertFalse(SettingKeyRegistry::meta('ai.enabled')['is_secret']);
         $this->assertFalse(SettingKeyRegistry::meta('ai.default_provider')['is_secret']);
+        $this->assertFalse(SettingKeyRegistry::meta('webpush.vapid_public_key')['is_secret']);
+        $this->assertFalse(SettingKeyRegistry::meta('webpush.vapid_subject')['is_secret']);
     }
 
     public function test_meta_carries_the_typed_keys(): void

@@ -44,6 +44,7 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn('Обращение');
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn('');
+        $mock->shouldReceive('get')->with('webpush.vapid_public_key')->andReturn('');
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 
@@ -56,6 +57,7 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn('');
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn('-100999888');
+        $mock->shouldReceive('get')->with('webpush.vapid_public_key')->andReturn('');
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 
@@ -68,11 +70,13 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn(null);
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn(null);
+        $mock->shouldReceive('get')->with('webpush.vapid_public_key')->andReturn(null);
         $component = new GeneralSettingsPage();
         $component->mount($mock);
 
         $this->assertSame('', $component->template_topic_name);
         $this->assertSame('', $component->group_id);
+        $this->assertSame('', $component->vapidPublicKey);
     }
 
     public function test_save_persists_template_topic_name_and_group_id(): void
@@ -88,6 +92,7 @@ class GeneralSettingsPageTest extends TestCase
         $mock = Mockery::mock(SettingsService::class);
         $mock->shouldReceive('get')->with('telegram.template_topic_name')->andReturn('');
         $mock->shouldReceive('get')->with('telegram.group_id')->andReturn('');
+        $mock->shouldReceive('get')->with('webpush.vapid_public_key')->andReturn('');
         $mock->shouldReceive('get')->with('telegram.token')->andReturn('bot123:valid');
         $mock->shouldReceive('set')->with('telegram.template_topic_name', 'Новое обращение')->once();
         $mock->shouldReceive('set')->with('telegram.group_id', '-100123')->once();
@@ -155,5 +160,46 @@ class GeneralSettingsPageTest extends TestCase
 
         $this->assertFalse($component->saved);
         $this->assertArrayHasKey('template_topic_name', $component->formErrors);
+    }
+
+    public function test_save_push_subscription_stores_a_row_for_the_current_user(): void
+    {
+        $component = new GeneralSettingsPage();
+
+        $component->savePushSubscription([
+            'endpoint' => 'https://push.example.com/abc',
+            'keys' => ['p256dh' => 'pub-key', 'auth' => 'auth-token'],
+        ]);
+
+        $this->assertDatabaseHas('push_subscriptions', [
+            'endpoint' => 'https://push.example.com/abc',
+            'user_id' => auth()->id(),
+        ]);
+    }
+
+    public function test_save_push_subscription_updates_the_existing_row_for_the_same_endpoint(): void
+    {
+        $component = new GeneralSettingsPage();
+        $component->savePushSubscription([
+            'endpoint' => 'https://push.example.com/abc',
+            'keys' => ['p256dh' => 'old-key', 'auth' => 'old-token'],
+        ]);
+
+        $component->savePushSubscription([
+            'endpoint' => 'https://push.example.com/abc',
+            'keys' => ['p256dh' => 'new-key', 'auth' => 'new-token'],
+        ]);
+
+        $this->assertDatabaseCount('push_subscriptions', 1);
+        $this->assertDatabaseHas('push_subscriptions', ['public_key' => 'new-key']);
+    }
+
+    public function test_save_push_subscription_ignores_incomplete_payloads(): void
+    {
+        $component = new GeneralSettingsPage();
+
+        $component->savePushSubscription(['endpoint' => 'https://push.example.com/abc']);
+
+        $this->assertDatabaseCount('push_subscriptions', 0);
     }
 }
