@@ -79,6 +79,10 @@ run_step "docker compose exec app bash -c 'php artisan migrate'" "Примене
 # Генерация ключа Laravel
 run_step "docker compose exec app bash -c 'php artisan key:generate'" "Генерация ключа приложения Laravel"
 
+# Генерация VAPID-ключей для Web Push (PWA-уведомления) — как и APP_KEY, поля
+# для них в админке нет, ключи хранятся в settings и создаются только этой командой
+run_step "docker compose exec app bash -c 'php artisan webpush:generate-vapid-keys'" "Генерация VAPID-ключей для Web Push"
+
 # Очистка кэша приложения (в т.ч. закэшированных настроек/интеграций из settings)
 run_step "docker compose exec app bash -c 'php artisan cache:clear'" "Очистка кэша приложения"
 
