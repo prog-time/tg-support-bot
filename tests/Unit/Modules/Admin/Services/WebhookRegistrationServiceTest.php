@@ -7,6 +7,7 @@ namespace Tests\Unit\Modules\Admin\Services;
 use App\Modules\Admin\Services\WebhookRegistrationService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Mockery;
 use Tests\TestCase;
 
@@ -243,6 +244,30 @@ class WebhookRegistrationServiceTest extends TestCase
         $this->assertStringContainsString('Неверный токен Telegram', $result['message']);
     }
 
+    public function test_verify_telegram_logs_error_when_get_me_fails(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => false,
+                'description' => 'Unauthorized',
+                'error_code' => 401,
+            ], 401),
+        ]);
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(function (string $message, array $context) {
+                return str_contains($message, 'getMe')
+                    && ($context['description'] ?? null) === 'Unauthorized';
+            });
+
+        $settings = $this->makeSettings([]);
+        $service = new WebhookRegistrationService($settings);
+
+        $service->verifyTelegram('bad_token');
+    }
+
     public function test_verify_telegram_returns_error_when_group_inaccessible(): void
     {
         Http::fake([
@@ -257,6 +282,49 @@ class WebhookRegistrationServiceTest extends TestCase
 
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('группы', $result['message']);
+    }
+
+    public function test_verify_telegram_logs_error_when_group_inaccessible(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/*/getMe' => Http::response(['ok' => true, 'result' => ['id' => 1, 'is_bot' => true]], 200),
+            'https://api.telegram.org/*/getChat' => Http::response(['ok' => false, 'description' => 'chat not found', 'error_code' => 400], 400),
+        ]);
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(function (string $message, array $context) {
+                return str_contains($message, 'getChat')
+                    && ($context['group_id'] ?? null) === '-100999999';
+            });
+
+        $settings = $this->makeSettings([]);
+        $service = new WebhookRegistrationService($settings);
+
+        $service->verifyTelegram('bot123:validtoken', '-100999999');
+    }
+
+    public function test_verify_telegram_logs_warning_when_bot_not_admin_in_group(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/*/getMe' => Http::response(['ok' => true, 'result' => ['id' => 1, 'is_bot' => true]], 200),
+            'https://api.telegram.org/*/getChat' => Http::response(['ok' => true, 'result' => ['id' => -1001234567890, 'type' => 'supergroup']], 200),
+            'https://api.telegram.org/*/getChatMember' => Http::response(['ok' => true, 'result' => ['status' => 'member']], 200),
+        ]);
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function (string $message, array $context) {
+                return str_contains($message, 'not admin')
+                    && ($context['status'] ?? null) === 'member';
+            });
+
+        $settings = $this->makeSettings([]);
+        $service = new WebhookRegistrationService($settings);
+
+        $service->verifyTelegram('bot123:validtoken', '-1001234567890');
     }
 
     public function test_verify_telegram_returns_success_with_valid_group(): void
