@@ -52,27 +52,33 @@ class WebhookRegistrationService
             $result = TelegramMethods::sendQueryTelegram('getMe', [], $token);
 
             if ($result->ok !== true) {
+                Log::channel('app')->error('WebhookRegistrationService: Telegram token verification failed (getMe)', [
+                    'response_code' => $result->response_code,
+                    'type_error' => $result->type_error,
+                    'description' => $result->rawData['description'] ?? null,
+                ]);
+
                 return ['success' => false, 'message' => 'Неверный токен Telegram.', 'botId' => null, 'botUsername' => null];
             }
 
-            // Identity captured from getMe (used for the admin check below and to
-            // auto-store the AI bot id/username).
             $me = $result->rawData['result'] ?? [];
             $botId = isset($me['id']) ? (int) $me['id'] : null;
 
-            // When a group is provided, verify (1) the bot can access the chat and
-            // (2) the bot is an administrator in it.
             if ($groupId !== null && $groupId !== '') {
                 $chat = TelegramMethods::sendQueryTelegram('getChat', ['chat_id' => $groupId], $token);
 
                 if ($chat->ok !== true) {
-                    // Surface Telegram's own reason so a correct-looking ID that still
-                    // fails (bot not added, wrong -100 prefix, chat_id empty, …) is diagnosable.
                     $desc = (string) ($chat->rawData['description'] ?? '');
                     $message = 'Неверный ID группы или бот не добавлен в группу.';
                     if ($desc !== '') {
                         $message .= ' Ответ Telegram: ' . $desc;
                     }
+
+                    Log::channel('app')->error('WebhookRegistrationService: Telegram token verification failed (getChat)', [
+                        'group_id' => $groupId,
+                        'response_code' => $chat->response_code,
+                        'description' => $desc !== '' ? $desc : null,
+                    ]);
 
                     return ['success' => false, 'message' => $message, 'botId' => null, 'botUsername' => null];
                 }
@@ -86,6 +92,12 @@ class WebhookRegistrationService
                     $status = $member->rawData['result']['status'] ?? null;
 
                     if (! in_array($status, ['administrator', 'creator'], true)) {
+                        Log::channel('app')->warning('WebhookRegistrationService: Telegram token verification failed (bot not admin)', [
+                            'group_id' => $groupId,
+                            'bot_id' => $botId,
+                            'status' => $status,
+                        ]);
+
                         return ['success' => false, 'message' => 'Бот добавлен в группу, но без прав администратора.', 'botId' => null, 'botUsername' => null];
                     }
                 }
@@ -97,7 +109,12 @@ class WebhookRegistrationService
                 'botId' => $botId,
                 'botUsername' => isset($me['username']) ? (string) $me['username'] : null,
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::channel('app')->error('WebhookRegistrationService: Telegram token verification threw an exception', [
+                'exception_class' => get_class($e),
+                'exception_message' => $e->getMessage(),
+            ]);
+
             return ['success' => false, 'message' => 'Не удалось связаться с API платформы.', 'botId' => null, 'botUsername' => null];
         }
     }
@@ -235,7 +252,6 @@ class WebhookRegistrationService
             return ['success' => false, 'message' => 'Токен VK не задан.'];
         }
 
-        // Verify connectivity: call groups.getById — returns group info on success.
         $result = VkMethods::sendQueryVk('groups.getById', []);
 
         if ($result->response_code !== 500 && empty($result->error_message)) {
@@ -257,7 +273,9 @@ class WebhookRegistrationService
      * Register the MAX bot webhook via the Max platform API.
      *
      * Max uses a REST endpoint: POST /subscriptions with {"url": "..."}
-     * authenticated via the bot token in Authorization header.
+     * authenticated via the bot token in Authorization header. The secret is
+     * sent so MAX echoes it back in the `X-Max-Bot-Api-Secret` header on every
+     * webhook — without it, MaxQuery middleware rejects incoming webhooks with 403.
      *
      * @return array{success: bool, message: string}
      */
@@ -269,9 +287,6 @@ class WebhookRegistrationService
             return ['success' => false, 'message' => 'Токен MAX не задан.'];
         }
 
-        // The secret is echoed back by MAX in the `X-Max-Bot-Api-Secret` header on
-        // every webhook; MaxQuery middleware checks it against `max.secret_key`.
-        // Without sending it here, incoming webhooks are rejected with 403.
         $secret = (string) $this->settings->get('max.secret_key');
 
         $appUrl = config('app.url');
