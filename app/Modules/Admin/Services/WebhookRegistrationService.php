@@ -7,6 +7,7 @@ namespace App\Modules\Admin\Services;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Vk\Api\VkMethods;
 use App\Services\Settings\SettingsService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,9 +24,31 @@ use Illuminate\Support\Facades\Log;
  */
 class WebhookRegistrationService
 {
+    private const TIMEOUT_MESSAGE = 'Не удалось подключиться к Telegram API: превышено время ожидания соединения. Проверьте доступность api.telegram.org с сервера (см. настройку TELEGRAM_FORCE_IPV4).';
+
     public function __construct(
         private readonly SettingsService $settings,
     ) {
+    }
+
+    /**
+     * Detect whether a raw failure payload from TelegramMethods::sendQueryTelegram()
+     * represents a connection timeout rather than a Telegram API error response.
+     *
+     * ParserMethods::postQuery() catches transport-level exceptions (including
+     * Illuminate\Http\Client\ConnectionException on timeout) and puts the
+     * exception message into the `result` field, so a string there — instead
+     * of the usual array — signals a transport failure.
+     *
+     * @param mixed $rawResult The `result` field from TelegramAnswerDto::$rawData.
+     */
+    private function isConnectionTimeout(mixed $rawResult): bool
+    {
+        if (! is_string($rawResult) || $rawResult === '') {
+            return false;
+        }
+
+        return str_contains($rawResult, 'cURL error 28') || stripos($rawResult, 'timed out') !== false;
     }
 
     /**
@@ -52,13 +75,18 @@ class WebhookRegistrationService
             $result = TelegramMethods::sendQueryTelegram('getMe', [], $token);
 
             if ($result->ok !== true) {
+                $isTimeout = $this->isConnectionTimeout($result->rawData['result'] ?? null);
+
                 Log::channel('app')->error('WebhookRegistrationService: Telegram token verification failed (getMe)', [
                     'response_code' => $result->response_code,
                     'type_error' => $result->type_error,
                     'description' => $result->rawData['description'] ?? null,
+                    'is_timeout' => $isTimeout,
                 ]);
 
-                return ['success' => false, 'message' => 'Неверный токен Telegram.', 'botId' => null, 'botUsername' => null];
+                $message = $isTimeout ? self::TIMEOUT_MESSAGE : 'Неверный токен Telegram.';
+
+                return ['success' => false, 'message' => $message, 'botId' => null, 'botUsername' => null];
             }
 
             $me = $result->rawData['result'] ?? [];
@@ -69,15 +97,22 @@ class WebhookRegistrationService
 
                 if ($chat->ok !== true) {
                     $desc = (string) ($chat->rawData['description'] ?? '');
-                    $message = 'Неверный ID группы или бот не добавлен в группу.';
-                    if ($desc !== '') {
-                        $message .= ' Ответ Telegram: ' . $desc;
+                    $isTimeout = $this->isConnectionTimeout($chat->rawData['result'] ?? null);
+
+                    if ($isTimeout) {
+                        $message = self::TIMEOUT_MESSAGE;
+                    } else {
+                        $message = 'Неверный ID группы или бот не добавлен в группу.';
+                        if ($desc !== '') {
+                            $message .= ' Ответ Telegram: ' . $desc;
+                        }
                     }
 
                     Log::channel('app')->error('WebhookRegistrationService: Telegram token verification failed (getChat)', [
                         'group_id' => $groupId,
                         'response_code' => $chat->response_code,
                         'description' => $desc !== '' ? $desc : null,
+                        'is_timeout' => $isTimeout,
                     ]);
 
                     return ['success' => false, 'message' => $message, 'botId' => null, 'botUsername' => null];
@@ -110,12 +145,17 @@ class WebhookRegistrationService
                 'botUsername' => isset($me['username']) ? (string) $me['username'] : null,
             ];
         } catch (\Throwable $e) {
+            $isTimeout = $e instanceof ConnectionException || $this->isConnectionTimeout($e->getMessage());
+
             Log::channel('app')->error('WebhookRegistrationService: Telegram token verification threw an exception', [
                 'exception_class' => get_class($e),
                 'exception_message' => $e->getMessage(),
+                'is_timeout' => $isTimeout,
             ]);
 
-            return ['success' => false, 'message' => 'Не удалось связаться с API платформы.', 'botId' => null, 'botUsername' => null];
+            $message = $isTimeout ? self::TIMEOUT_MESSAGE : 'Не удалось связаться с API платформы.';
+
+            return ['success' => false, 'message' => $message, 'botId' => null, 'botUsername' => null];
         }
     }
 

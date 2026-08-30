@@ -6,6 +6,7 @@ namespace Tests\Unit\Modules\Admin\Services;
 
 use App\Modules\Admin\Services\WebhookRegistrationService;
 use App\Services\Settings\SettingsService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Mockery;
@@ -266,6 +267,44 @@ class WebhookRegistrationServiceTest extends TestCase
         $service = new WebhookRegistrationService($settings);
 
         $service->verifyTelegram('bad_token');
+    }
+
+    public function test_verify_telegram_returns_timeout_message_on_connection_timeout(): void
+    {
+        Http::fake(fn () => throw new ConnectionException(
+            'cURL error 28: Connection timed out after 10002 milliseconds (see https://curl.se/libcurl/c/libcurl-errors.html) for https://api.telegram.org/bot123:validtoken/getMe'
+        ));
+
+        $settings = $this->makeSettings([]);
+        $service = new WebhookRegistrationService($settings);
+
+        $result = $service->verifyTelegram('bot123:validtoken');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('превышено время ожидания', $result['message']);
+    }
+
+    public function test_verify_telegram_logs_is_timeout_true_on_connection_timeout(): void
+    {
+        Http::fake(fn () => throw new ConnectionException(
+            'cURL error 28: Connection timed out after 10002 milliseconds (see https://curl.se/libcurl/c/libcurl-errors.html) for https://api.telegram.org/bot123:validtoken/getMe'
+        ));
+
+        Log::shouldReceive('channel')->with('app')->andReturnSelf();
+        // ParserMethods::postQuery logs the raw transport exception via Log::log()
+        // before WebhookRegistrationService gets a chance to inspect the result.
+        Log::shouldReceive('log')->andReturnNull();
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(function (string $message, array $context) {
+                return str_contains($message, 'getMe')
+                    && ($context['is_timeout'] ?? null) === true;
+            });
+
+        $settings = $this->makeSettings([]);
+        $service = new WebhookRegistrationService($settings);
+
+        $service->verifyTelegram('bot123:validtoken');
     }
 
     public function test_verify_telegram_returns_error_when_group_inaccessible(): void
