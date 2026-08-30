@@ -47,23 +47,20 @@ class IntegrationChannelPage extends Component
     /** @var string The current channel slug (telegram|telegram_ai|vk|max) */
     public string $channel = 'telegram';
 
-    // ── Telegram (main bot) fields ────────────────────────────────────────────
-
     /** @var string|null */
     public ?string $telegram_token = null;
 
     /** @var string|null */
     public ?string $telegram_secret_key = null;
 
-    // ── Telegram AI bot fields ────────────────────────────────────────────────
+    /** @var string|null Optional fixed IP passed as `ip_address` to Telegram's setWebhook */
+    public ?string $telegram_webhook_ip_address = null;
 
     /** @var string|null AI-bot token (pre-filled from settings, like the main bot) */
     public ?string $telegram_ai_token = null;
 
     /** @var string|null AI-bot webhook secret (pre-filled from settings, like the main bot) */
     public ?string $telegram_ai_secret = null;
-
-    // ── VK fields ─────────────────────────────────────────────────────────────
 
     /** @var string|null */
     public ?string $vk_token = null;
@@ -74,15 +71,11 @@ class IntegrationChannelPage extends Component
     /** @var string|null */
     public ?string $vk_confirm_code = null;
 
-    // ── MAX fields ────────────────────────────────────────────────────────────
-
     /** @var string|null */
     public ?string $max_token = null;
 
     /** @var string|null */
     public ?string $max_secret_key = null;
-
-    // ── State ─────────────────────────────────────────────────────────────────
 
     /** @var bool Config was persisted successfully in this request */
     public bool $saved = false;
@@ -128,14 +121,11 @@ class IntegrationChannelPage extends Component
         $this->webhookMessage = null;
         $this->webhookSuccess = false;
 
-        // Step 1: validate fields (uses saveTelegram/Ai/Vk/Max internally via a dry-run
-        // approach — we call a validation-only guard before committing anything).
         $validationError = $this->validateFields();
         if ($validationError !== null) {
             return;
         }
 
-        // Step 2: resolve the token for the platform check.
         [$tokenToVerify, $tokenError] = $this->resolveVerificationToken($settings);
         if ($tokenError !== null) {
             $this->webhookMessage = $tokenError;
@@ -144,9 +134,6 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // Step 3: verify the token against the platform API.
-        // For telegram/telegram_ai the group ID is no longer verified here —
-        // it is configured on the «Основные» general settings screen.
         $verifyResult = match ($this->channel) {
             'telegram' => $webhook->verifyTelegram($tokenToVerify, null),
             'telegram_ai' => $webhook->verifyTelegram($tokenToVerify, null),
@@ -162,7 +149,6 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // Step 4: persist settings.
         match ($this->channel) {
             'telegram' => $this->saveTelegram($settings),
             'telegram_ai' => $this->saveTelegramAi($settings),
@@ -175,9 +161,7 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // telegram_ai: no webhook registration via UI — artisan command only.
         if ($this->channel === 'telegram_ai') {
-            // Persist the bot identity captured from getMe (no manual entry).
             $botId = $verifyResult['botId'] ?? null;
             if ($botId !== null) {
                 $settings->set('telegram_ai.id', $botId);
@@ -194,7 +178,6 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // Register the webhook after a successful save.
         $result = match ($this->channel) {
             'telegram' => $webhook->registerTelegram(),
             'vk' => $webhook->registerVk(),
@@ -256,8 +239,6 @@ class IntegrationChannelPage extends Component
         return view('livewire.settings.integration-channel-page');
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     /**
      * Run field-level validation for the current channel without persisting anything.
      *
@@ -269,15 +250,16 @@ class IntegrationChannelPage extends Component
     private function validateFields(): ?string
     {
         if ($this->channel === 'telegram') {
-            // Token and secret key are required. The group ID is no longer
-            // managed here — it was moved to the «Основные» general settings screen.
-            // Secret fields are pre-filled from settings, so an existing config
-            // already satisfies these checks.
             if (trim((string) $this->telegram_token) === '') {
                 $this->formErrors['telegram_token'] = 'Укажите токен бота.';
             }
             if (trim((string) $this->telegram_secret_key) === '') {
                 $this->formErrors['telegram_secret_key'] = 'Укажите секретный ключ Webhook.';
+            }
+
+            $webhookIp = trim((string) $this->telegram_webhook_ip_address);
+            if ($webhookIp !== '' && filter_var($webhookIp, FILTER_VALIDATE_IP) === false) {
+                $this->formErrors['telegram_webhook_ip_address'] = 'Некорректный IP-адрес.';
             }
 
             if (! empty($this->formErrors)) {
@@ -286,9 +268,6 @@ class IntegrationChannelPage extends Component
         }
 
         if ($this->channel === 'telegram_ai') {
-            // Token + secret are required. The bot id/@username are derived from
-            // getMe on save, so they are not entered manually. Secret fields are
-            // pre-filled from settings, so an existing config already passes.
             if (trim((string) $this->telegram_ai_token) === '') {
                 $this->formErrors['telegram_ai_token'] = 'Укажите токен AI-бота.';
             }
@@ -302,8 +281,6 @@ class IntegrationChannelPage extends Component
         }
 
         if ($this->channel === 'vk') {
-            // All VK fields are required. Secret fields are pre-filled from
-            // settings, so an existing config already satisfies these checks.
             if (trim((string) $this->vk_token) === '') {
                 $this->formErrors['vk_token'] = 'Укажите токен VK.';
             }
@@ -320,8 +297,6 @@ class IntegrationChannelPage extends Component
         }
 
         if ($this->channel === 'max') {
-            // All MAX fields are required. Secret fields are pre-filled from
-            // settings, so an existing config already satisfies these checks.
             if (trim((string) $this->max_token) === '') {
                 $this->formErrors['max_token'] = 'Укажите токен MAX.';
             }
@@ -365,12 +340,10 @@ class IntegrationChannelPage extends Component
             default => null,
         };
 
-        // Use the entered value when non-empty.
         if ($tokenField !== null && $tokenField !== '') {
             return [$tokenField, null];
         }
 
-        // Fall back to the stored token.
         if ($settingsKey !== null) {
             $stored = (string) ($settings->get($settingsKey) ?? '');
             if ($stored !== '') {
@@ -378,7 +351,6 @@ class IntegrationChannelPage extends Component
             }
         }
 
-        // No token available at all.
         $label = match ($this->channel) {
             'telegram' => 'Telegram',
             'telegram_ai' => 'AI-бота',
@@ -395,13 +367,10 @@ class IntegrationChannelPage extends Component
      */
     private function loadFields(SettingsService $settings): void
     {
-        // telegram.group_id is no longer loaded here — it was moved to GeneralSettingsPage.
         $this->telegram_token = (string) ($settings->get('telegram.token') ?? '');
         $this->telegram_secret_key = (string) ($settings->get('telegram.secret_key') ?? '');
+        $this->telegram_webhook_ip_address = (string) ($settings->get('telegram.webhook_ip_address') ?? '');
 
-        // AI-bot secrets — pre-filled from settings, same as the main bot fields.
-        // The bot id/@username are captured automatically from getMe on save,
-        // so there is no manual username field to load.
         $this->telegram_ai_token = (string) ($settings->get('telegram_ai.token') ?? '');
         $this->telegram_ai_secret = (string) ($settings->get('telegram_ai.secret') ?? '');
 
@@ -417,6 +386,8 @@ class IntegrationChannelPage extends Component
      * Validate and save Telegram main bot channel settings.
      *
      * telegram.group_id is no longer persisted here — it was moved to GeneralSettingsPage.
+     * Unlike the token/secret fields, telegram.webhook_ip_address is not a secret and is
+     * always persisted as entered — including blank, so clearing the field removes it.
      */
     private function saveTelegram(SettingsService $settings): void
     {
@@ -424,13 +395,14 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // Save each secret only when non-empty (do not overwrite existing secrets with blank).
         if ($this->telegram_token !== '' && $this->telegram_token !== null) {
             $settings->set('telegram.token', $this->telegram_token);
         }
         if ($this->telegram_secret_key !== '' && $this->telegram_secret_key !== null) {
             $settings->set('telegram.secret_key', $this->telegram_secret_key);
         }
+
+        $settings->set('telegram.webhook_ip_address', trim((string) $this->telegram_webhook_ip_address));
 
         $this->saved = true;
     }
@@ -444,8 +416,6 @@ class IntegrationChannelPage extends Component
             return;
         }
 
-        // Save secrets only when non-empty (do not overwrite existing secrets with blank).
-        // The bot id/@username are persisted separately in connect() from getMe.
         if ($this->telegram_ai_token !== '' && $this->telegram_ai_token !== null) {
             $settings->set('telegram_ai.token', $this->telegram_ai_token);
         }

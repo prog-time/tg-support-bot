@@ -67,6 +67,7 @@ class IntegrationChannelPageTest extends TestCase
         // telegram.group_id is no longer loaded on this page — it moved to GeneralSettingsPage.
         $settings->shouldReceive('get')->with('telegram.token')->andReturn('tok');
         $settings->shouldReceive('get')->with('telegram.secret_key')->andReturn('sec');
+        $settings->shouldReceive('get')->with('telegram.webhook_ip_address')->andReturn('');
         $settings->shouldReceive('get')->with('telegram_ai.token')->andReturn('');
         $settings->shouldReceive('get')->with('telegram_ai.secret')->andReturn('');
         $settings->shouldReceive('get')->with('vk.token')->andReturn('');
@@ -89,6 +90,7 @@ class IntegrationChannelPageTest extends TestCase
         $settings->shouldNotReceive('set')->with('telegram.group_id', Mockery::any());
         $settings->shouldReceive('set')->with('telegram.token', 'newtok')->once();
         $settings->shouldReceive('set')->with('telegram.secret_key', 'newsec')->once();
+        $settings->shouldReceive('set')->with('telegram.webhook_ip_address', '')->once();
 
         $component = new IntegrationChannelPage();
         $component->mount('telegram', $settings, $this->statusMock());
@@ -100,11 +102,50 @@ class IntegrationChannelPageTest extends TestCase
         $this->assertEmpty($component->formErrors);
     }
 
+    public function test_save_telegram_persists_webhook_ip_address(): void
+    {
+        $settings = $this->settingsMock();
+        $settings->shouldReceive('set')->with('telegram.token', 'newtok')->once();
+        $settings->shouldReceive('set')->with('telegram.secret_key', 'newsec')->once();
+        $settings->shouldReceive('set')->with('telegram.webhook_ip_address', '149.154.166.110')->once();
+
+        $component = new IntegrationChannelPage();
+        $component->mount('telegram', $settings, $this->statusMock());
+        $component->telegram_token = 'newtok';
+        $component->telegram_secret_key = 'newsec';
+        $component->telegram_webhook_ip_address = '149.154.166.110';
+        $component->save($settings);
+
+        $this->assertTrue($component->saved);
+        $this->assertEmpty($component->formErrors);
+    }
+
+    public function test_connect_telegram_rejects_invalid_webhook_ip_address(): void
+    {
+        $settings = $this->settingsMock();
+        $settings->shouldNotReceive('set')->with('telegram.token', Mockery::any());
+
+        /** @var \Mockery\MockInterface&WebhookRegistrationService $webhook */
+        $webhook = Mockery::mock(WebhookRegistrationService::class);
+        $webhook->shouldNotReceive('verifyTelegram');
+
+        $component = new IntegrationChannelPage();
+        $component->mount('telegram', $settings, $this->statusMock());
+        $component->telegram_token = 'tok';
+        $component->telegram_secret_key = 'sec';
+        $component->telegram_webhook_ip_address = 'not-an-ip';
+        $component->connect($settings, $webhook);
+
+        $this->assertFalse($component->saved);
+        $this->assertArrayHasKey('telegram_webhook_ip_address', $component->formErrors);
+    }
+
     public function test_save_telegram_skips_blank_secrets(): void
     {
         $settings = $this->settingsMock();
         $settings->shouldReceive('set')->with('telegram.token', Mockery::any())->never();
         $settings->shouldReceive('set')->with('telegram.secret_key', Mockery::any())->never();
+        $settings->shouldReceive('set')->with('telegram.webhook_ip_address', '')->once();
 
         $component = new IntegrationChannelPage();
         $component->mount('telegram', $settings, $this->statusMock());
@@ -286,6 +327,7 @@ class IntegrationChannelPageTest extends TestCase
         $settings->shouldNotReceive('set')->with('telegram.group_id', Mockery::any());
         $settings->shouldReceive('set')->with('telegram.token', 'tok123')->once();
         $settings->shouldReceive('set')->with('telegram.secret_key', 'sec123')->once();
+        $settings->shouldReceive('set')->with('telegram.webhook_ip_address', '')->once();
 
         /** @var \Mockery\MockInterface&WebhookRegistrationService $webhook */
         $webhook = Mockery::mock(WebhookRegistrationService::class);
