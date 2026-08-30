@@ -67,11 +67,14 @@ run_step "sudo certbot certonly --standalone -d $MAIN_DOMAIN" "Выпуск се
 # Конфигурация Nginx
 run_step "sed 's|__MAIN_DOMAIN__|$MAIN_DOMAIN|g' docker/nginx/default.conf.template > docker/nginx/default.conf" "Создание конфигурации Nginx"
 
-# Запуск Docker Compose
+# Запуск Docker Compose — entrypoint.sh сам поставит зависимости через composer install
 run_step "docker compose up -d --build" "Запуск Docker Compose"
 
-# Обновление зависимостей Composer
-run_step "docker compose exec app bash -c 'composer update'" "Обновление зависимостей PHP через Composer"
+# Ждём, пока entrypoint.sh контейнера app закончит установку зависимостей
+echo "⏳ Ожидание установки зависимостей в контейнере app..."
+until docker compose exec app bash -c '[ -f vendor/autoload.php ] && [ -f public/build/manifest.json ]' >/dev/null 2>&1; do
+    sleep 2
+done
 
 # Миграции базы данных
 run_step "docker compose exec app bash -c 'php artisan migrate'" "Применение миграций базы данных"
