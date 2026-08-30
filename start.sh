@@ -68,7 +68,7 @@ run_step "sudo certbot certonly --standalone -d $MAIN_DOMAIN" "Выпуск се
 run_step "sed 's|__MAIN_DOMAIN__|$MAIN_DOMAIN|g' docker/nginx/default.conf.template > docker/nginx/default.conf" "Создание конфигурации Nginx"
 
 # Запуск Docker Compose
-run_step "docker-compose up -d --build" "Запуск Docker Compose"
+run_step "docker compose up -d --build" "Запуск Docker Compose"
 
 # Обновление зависимостей Composer
 run_step "docker compose exec app bash -c 'composer update'" "Обновление зависимостей PHP через Composer"
