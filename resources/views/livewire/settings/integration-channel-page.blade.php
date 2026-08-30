@@ -119,6 +119,24 @@
                             />
                         </x-admin.form-field>
 
+                        {{-- IP-адрес для вебхука --}}
+                        <x-admin.form-field
+                            label="IP-адрес сервера"
+                            for="telegram_webhook_ip_address"
+                            hint="Необязательно. Telegram будет стучаться сразу на этот IP вместо резолва домена по DNS при каждом апдейте"
+                            :error="$formErrors['telegram_webhook_ip_address'] ?? null"
+                        >
+                            <input
+                                id="telegram_webhook_ip_address"
+                                type="text"
+                                wire:model="telegram_webhook_ip_address"
+                                autocomplete="off"
+                                placeholder="149.154.166.110"
+                                class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
+                                    @if (!empty($formErrors['telegram_webhook_ip_address'])) border-red-400 @endif"
+                            />
+                        </x-admin.form-field>
+
                     </div>
 
                 @elseif ($channel === 'telegram_ai')

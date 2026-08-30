@@ -54,6 +54,16 @@ class SettingKeyRegistry
             'config' => null,
             'is_secret' => false,
         ],
+        /**
+         * Optional fixed IP passed as `ip_address` to Telegram's setWebhook,
+         * so Telegram connects directly instead of re-resolving APP_URL's
+         * domain via DNS on every update. Empty by default (DNS resolution).
+         */
+        'telegram.webhook_ip_address' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => false,
+        ],
 
         /** Telegram AI bot */
         'telegram_ai.token' => [

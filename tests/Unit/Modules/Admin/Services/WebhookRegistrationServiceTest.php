@@ -60,6 +60,47 @@ class WebhookRegistrationServiceTest extends TestCase
         $this->assertStringContainsString('зарегистрирован', $result['message']);
     }
 
+    public function test_register_telegram_sends_ip_address_when_configured(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $settings = $this->makeSettings([
+            'telegram.token' => 'bot123:token',
+            'telegram.secret_key' => 'secret',
+            'telegram.webhook_ip_address' => '149.154.166.110',
+        ]);
+        $service = new WebhookRegistrationService($settings);
+
+        $result = $service->registerTelegram();
+
+        $this->assertTrue($result['success']);
+        Http::assertSent(function ($request) {
+            return ($request['ip_address'] ?? null) === '149.154.166.110';
+        });
+    }
+
+    public function test_register_telegram_omits_ip_address_when_not_configured(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $settings = $this->makeSettings([
+            'telegram.token' => 'bot123:token',
+            'telegram.secret_key' => 'secret',
+        ]);
+        $service = new WebhookRegistrationService($settings);
+
+        $result = $service->registerTelegram();
+
+        $this->assertTrue($result['success']);
+        Http::assertSent(function ($request) {
+            return ! array_key_exists('ip_address', $request->data());
+        });
+    }
+
     public function test_register_telegram_returns_error_on_api_failure(): void
     {
         Http::fake([

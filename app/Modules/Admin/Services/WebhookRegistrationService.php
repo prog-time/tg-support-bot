@@ -227,12 +227,17 @@ class WebhookRegistrationService
     /**
      * Register the Telegram main-bot webhook.
      *
+     * When `telegram.webhook_ip_address` is set, it is passed as `ip_address`
+     * so Telegram connects to that fixed IP instead of re-resolving APP_URL's
+     * domain via DNS on every update.
+     *
      * @return array{success: bool, message: string}
      */
     public function registerTelegram(): array
     {
         $token = (string) $this->settings->get('telegram.token');
         $secret = (string) $this->settings->get('telegram.secret_key');
+        $ipAddress = (string) $this->settings->get('telegram.webhook_ip_address');
 
         if ($token === '') {
             return ['success' => false, 'message' => 'Токен Telegram не задан.'];
@@ -248,11 +253,16 @@ class WebhookRegistrationService
             'secret_token' => $secret,
         ];
 
+        if ($ipAddress !== '') {
+            $queryParams['ip_address'] = $ipAddress;
+        }
+
         $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams, $token);
 
         if ($result->ok === true) {
             Log::channel('app')->info('WebhookRegistrationService: Telegram webhook registered', [
                 'url' => $url,
+                'ip_address' => $ipAddress !== '' ? $ipAddress : null,
             ]);
 
             return ['success' => true, 'message' => 'Вебхук Telegram зарегистрирован.'];
