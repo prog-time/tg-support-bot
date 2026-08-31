@@ -1,30 +1,49 @@
+# Shared PHP image for app / queue / scheduler — built once, reused by workers.
+# DOCKERFILE_TARGET=app (prod, no Node) | app-dev (local, with Node/npm).
+x-app: &app-image
+    image: tg-support-bot:${IMAGE_TAG:-local}
+    build:
+        context: .
+        dockerfile: Dockerfile
+        target: ${DOCKERFILE_TARGET:-app}
+        args:
+            BUILD_ENV: ${APP_ENV:-production}
+
 services:
     app:
-        build: .
+        <<: *app-image
         container_name: pet
-        # Пользователь НЕ переопределяется: из Dockerfile наследуется www-data
-        # (uid 33) — тот же, под которым работают php-fpm воркеры, queue и
-        # scheduler. Раньше здесь стоял `user: root`, из-за чего
-        # `docker exec pet composer install` создавал vendor/ и
-        # bootstrap/cache/*.php от root, и www-data потом не мог их перезаписать.
-        # Каталоги на хосте должны принадлежать uid 33 — см. README, «Установка».
         restart: always
         depends_on:
-            - pgdb
+            pgdb:
+                condition: service_healthy
         env_file:
             - .env
+        environment:
+            - CONTAINER_ROLE=app
+            - XDEBUG_MODE=${XDEBUG_MODE:-off}
         working_dir: /var/www/
         volumes:
             - .:/var/www
+            - /var/www/vendor
+            - /var/www/node_modules
+            - /var/www/public/build
         networks:
             - pet
         dns:
             - 8.8.8.8
             - 1.1.1.1
+        # host.docker.internal is resolved automatically by Docker Desktop
+        # (Mac/Windows) but needs this explicit mapping on native Linux —
+        # used by Xdebug (docker/php/php-dev.ini) to reach the IDE on the host.
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        ports:
+            - "${XDEBUG_PORT:-9003}:9003"
 
     pgdb:
         container_name: pgdb
-        image: postgres
+        image: postgres:16-alpine
         tty: true
         restart: always
         environment:
@@ -34,17 +53,25 @@ services:
         ports:
             - ${PGDB_PORT}
         volumes:
-            - pgdata:/var/lib/postgresql
+            - pgdata:/var/lib/postgresql/data
         networks:
             - pet
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+            start_period: 5s
 
     nginx:
-        image: nginx:latest
+        image: nginx:alpine
         container_name: nginx
         restart: unless-stopped
         ports:
-            - ${NGINX_PORT}
-            - "443:443"
+            - "${NGINX_PORT:-80:80}"
+            # When TLS is off / terminated externally, set NGINX_HTTPS_PORT=127.0.0.1:8443:443
+            # so public :443 stays free. With container TLS use 443:443.
+            - "${NGINX_HTTPS_PORT:-443:443}"
         volumes:
             - .:/var/www
             - ./docker/nginx:/etc/nginx/conf.d
@@ -59,20 +86,23 @@ services:
             - pet
 
     queue:
-        build: .
+        <<: *app-image
         container_name: laravel_queue
         restart: always
         depends_on:
-            - app
+            app:
+                condition: service_started
+            pgdb:
+                condition: service_healthy
         env_file:
             - .env
         environment:
-            # Tells docker/scripts/entrypoint.sh to wait for the `app`
-            # container's composer/npm install instead of racing it.
             - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www
+            - /var/www/vendor
+            - /var/www/node_modules
         command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
         networks:
             - pet
@@ -81,20 +111,23 @@ services:
             - 1.1.1.1
 
     scheduler:
-        build: .
+        <<: *app-image
         container_name: laravel_scheduler
         restart: always
         depends_on:
-            - app
+            app:
+                condition: service_started
+            pgdb:
+                condition: service_healthy
         env_file:
             - .env
         environment:
-            # Tells docker/scripts/entrypoint.sh to wait for the `app`
-            # container's composer/npm install instead of racing it.
             - CONTAINER_ROLE=worker
         working_dir: /var/www
         volumes:
             - .:/var/www
+            - /var/www/vendor
+            - /var/www/node_modules
         command: php artisan schedule:work
         networks:
             - pet

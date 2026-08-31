@@ -208,19 +208,24 @@ resources/
 
 ### Start the project
 ```bash
-docker compose up -d --build
+make init   # interactive bootstrap: .env, Nginx config (first time only)
+make up     # docker compose up -d --build
 ```
 
-The bind mount `.:/var/www` shadows `vendor/`, `node_modules/` and
-`public/build/` from the image. `docker/scripts/entrypoint.sh` (wired in via
-the Dockerfile's `ENTRYPOINT`) installs them automatically on
-the `app` container's first boot when missing — `composer install`, then
-`npm ci`/`npm run build` — before starting `php-fpm`; `queue`/`scheduler`
-wait for it instead of racing the same install. Containers run as `www-data`
-(uid 33); `vendor/`, `node_modules/`, `public/build/`, `storage/` and
-`bootstrap/cache/` must still be pre-created and owned by uid 33 on the
-host — the entrypoint runs as `www-data` too and cannot chown them itself.
-Full first-time setup: see `README.md` → «Установка через Docker Compose: с нуля».
+`make init` (`docker/scripts/init-project.sh`) generates `.env` (secrets like
+`APP_KEY`/`DB_PASSWORD` are auto-generated when empty) and renders
+`docker/nginx/default.conf` from the tracked `.template` files — neither file
+is committed, so skipping `make init` and running `docker compose up -d --build`
+directly leaves Nginx with no config and DB credentials empty. `make up`
+selects the Dockerfile target via `DOCKERFILE_TARGET` (`app-dev` with Node/Vite
+for local dev, `app` — no Node — for `APP_ENV=production`) and builds/starts
+the stack; `vendor/`, `node_modules/` and `public/build/` are baked into the
+image at build time (multi-stage `Dockerfile`), not installed at runtime.
+`docker/scripts/entrypoint.sh` (wired in via the Dockerfile's `ENTRYPOINT`)
+waits for Postgres, then — only in the `app` container (`CONTAINER_ROLE=app`)
+— runs migrations/seeds/cache-optimize; `queue`/`scheduler`
+(`CONTAINER_ROLE=worker`) wait for `app` to become ready instead of racing
+the same steps. See `make help` for the full command list.
 
 ### Code formatting (run before every commit)
 ```bash

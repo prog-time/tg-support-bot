@@ -1,0 +1,45 @@
+server {
+    listen 80;
+    server_name __MAIN_DOMAIN__;
+
+    client_max_body_size 60M;
+
+    root /var/www/public;
+    index index.php index.html;
+
+    location / {
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Widget-Key' always;
+
+        # Preflight: answer OPTIONS with the CORS headers. nginx does NOT inherit
+        # the outer add_header directives inside this `if`, so they are repeated
+        # here — and must include X-Widget-Key, which the chat widget sends.
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Widget-Key' always;
+            add_header 'Access-Control-Max-Age' 86400 always;
+            return 204;
+        }
+
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass app:9000;
+        fastcgi_index index.php;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_param SCRIPT_FILENAME /var/www/public$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        # Forward the HTTP Basic-auth header to PHP-FPM. Without this nginx drops
+        # the Authorization header and Telescope's TelescopeBasicAuth always 401s,
+        # even with correct TELESCOPE_AUTH_USER / TELESCOPE_AUTH_PASSWORD.
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}

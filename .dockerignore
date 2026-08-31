@@ -1,18 +1,47 @@
+# VCS / IDE
 .git
 .github
 .idea
 .vscode
+.cursor
+
+# Host dependency trees (image builds its own)
+.composer
+.npm
 node_modules
+vendor
+public/build
+
+# Runtime / local state
 bootstrap/cache/*.php
-storage/logs/*.log
+storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
+storage/.migrated
+storage/.seeded
 .env
 .env.*
 !.env.example
-docker/*
-!docker/php
-!docker/scripts
+
+# Not needed inside the PHP image
+docker/nginx
+docker/scripts/init-project.sh
+checks
+tests
 *.md
-tests/
+LICENSE
+Makefile
+docker-compose*.yml
+compose*.yml
+.phpunit.result.cache
+.phpunit.cache
+*.phpunit.result.cache
+.editorconfig
+.php-cs-fixer.php
+pint.json
+phpstan.neon
+phpstan.neon.dist
+phpunit.xml
+phpunit.xml.dist
+vite.config.js
