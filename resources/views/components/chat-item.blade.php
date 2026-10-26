@@ -16,7 +16,7 @@
     ];
     $avatarIndex  = abs(crc32((string) $botUser->chat_id)) % 8;
     $avatarColor  = $avatarHex[$avatarIndex];
-    $displayLabel = $botUser->display_name ?? (string) $botUser->chat_id;
+    $displayLabel = $botUser->custom_name ?: ($botUser->display_name ?? (string) $botUser->chat_id);
     $initials     = strtoupper(substr($displayLabel, 0, 2));
 
     /*
@@ -149,6 +149,14 @@
                 <span class="shrink-0 text-text-sidebar-secondary" style="font-size:12px;">{{ $timestamp }}</span>
             @endif
         </div>
+
+        @if(!empty($botUser->support_tags))
+            <div class="flex flex-wrap gap-1">
+                @foreach($botUser->support_tags as $tag)
+                    <span class="rounded px-1.5 py-0.5 text-[10px] font-medium" style="background:#343D62;color:#C7D4FF;">{{ $tag }}</span>
+                @endforeach
+            </div>
+        @endif
 
         {{-- Bottom row: preview | unread badge --}}
         {{-- Design: node U5Lqf — space-between, gap 8 --}}
