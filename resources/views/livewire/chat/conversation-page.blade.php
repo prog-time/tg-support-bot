@@ -923,6 +923,26 @@
                 style="gap:20px; padding:24px 20px; width:440px; max-width:92vw; max-height:85vh;"
             >
 
+            {{-- Support profile controls: visible only to authenticated chat operators --}}
+            <form wire:submit.prevent="saveSupportProfile" class="mb-4 rounded-xl border border-border-light bg-bg-secondary p-3 flex flex-col gap-3">
+                <div class="text-sm font-semibold text-text-primary">Карточка сотрудника</div>
+                <label class="text-xs text-text-secondary">Имя для операторов
+                    <input type="text" wire:model="supportCustomName" maxlength="150" placeholder="Например: Анна — регистратура" class="mt-1 w-full rounded-lg border border-border-light bg-bg-primary p-2 text-sm text-text-primary" />
+                    @error('supportCustomName') <span class="text-red-400">{{ $message }}</span> @enderror
+                </label>
+                <div class="text-xs text-text-secondary">Имя в мессенджере: {{ $activeBotUser->display_name ?? 'не указано' }}</div>
+                <label class="text-xs text-text-secondary">Теги через запятую
+                    <input type="text" wire:model="supportTagsInput" maxlength="500" placeholder="Регистратура, Принтер, Срочно" class="mt-1 w-full rounded-lg border border-border-light bg-bg-primary p-2 text-sm text-text-primary" />
+                    @error('supportTagsInput') <span class="text-red-400">{{ $message }}</span> @enderror
+                </label>
+                <label class="text-xs text-text-secondary">Внутренняя заметка
+                    <textarea wire:model="supportInternalNote" maxlength="3000" rows="3" placeholder="Кабинет, оборудование, особенности обращения" class="mt-1 w-full rounded-lg border border-border-light bg-bg-primary p-2 text-sm text-text-primary"></textarea>
+                    @error('supportInternalNote') <span class="text-red-400">{{ $message }}</span> @enderror
+                </label>
+                <button type="submit" class="rounded-lg px-3 py-2 text-sm font-semibold text-white" style="background:#4F6EF7;">Сохранить карточку</button>
+                <span x-data="{saved:false}" x-on:support-profile-saved.window="saved=true;setTimeout(()=>saved=false,2500)" x-show="saved" x-cloak class="text-xs text-green-500">Сохранено</span>
+            </form>
+
             {{-- Header with close button (panel is always an overlay now) --}}
 
             <div class="flex items-center justify-between">
