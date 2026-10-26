@@ -340,7 +340,7 @@
                         $hdrColors = ['#6366F1','#E85D75','#34C759','#F5A623','#06B6D4','#10B981','#8B5CF6','#EF4444'];
                         $hdrIdx = abs(crc32((string) $activeBotUser->chat_id)) % 8;
                         $hdrColor = $hdrColors[$hdrIdx];
-                        $hdrDisplayName = $activeBotUser->display_name ?? (string) $activeBotUser->chat_id;
+                        $hdrDisplayName = $activeBotUser->custom_name ?: ($activeBotUser->display_name ?? (string) $activeBotUser->chat_id);
                         $hdrInitials = strtoupper(substr($hdrDisplayName, 0, 2));
                         $hdrHandle = $activeBotUser->username;
                         $platformLabel = match ($activeBotUser->platform) {
@@ -924,6 +924,7 @@
             >
 
             {{-- Header with close button (panel is always an overlay now) --}}
+
             <div class="flex items-center justify-between">
                 <span class="text-text-secondary font-semibold tracking-wider" style="font-size:12px; letter-spacing:0.05em;">СВЕДЕНИЯ</span>
                 <button
@@ -948,7 +949,7 @@
                     $rpColors = ['#6366F1','#E85D75','#34C759','#F5A623','#06B6D4','#10B981','#8B5CF6','#EF4444'];
                     $rpIdx = abs(crc32((string) $activeBotUser->chat_id)) % 8;
                     $rpColor = $rpColors[$rpIdx];
-                    $rpDisplayName = $activeBotUser->display_name ?? (string) $activeBotUser->chat_id;
+                    $rpDisplayName = $activeBotUser->custom_name ?: ($activeBotUser->display_name ?? (string) $activeBotUser->chat_id);
                     $rpInitials = strtoupper(substr($rpDisplayName, 0, 2));
                     $rpHandle = $activeBotUser->username;
                 @endphp
