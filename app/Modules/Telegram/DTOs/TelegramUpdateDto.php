@@ -3,7 +3,6 @@
 namespace App\Modules\Telegram\DTOs;
 
 use App\Helpers\TelegramHelper;
-use App\Services\Settings\SettingsService;
 use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
@@ -77,18 +76,10 @@ class TelegramUpdateDto extends Data
                 throw new \Exception('This request type is not supported!');
             }
 
-            $textMessage = $data[$type]['text'] ?? '';
-            $aiUsername = (string) app(SettingsService::class)->get('telegram_ai.username');
-            if (!empty($textMessage) && !empty($aiUsername)) {
-                $aiTechMessage = str_contains($data[$type]['text'], $aiUsername);
-            } else {
-                $aiTechMessage = false;
-            }
-
             return new self(
                 updateId: $data['update_id'] ?? 0,
                 typeQuery: $type,
-                aiTechMessage: $aiTechMessage,
+                aiTechMessage: self::isAiEditCommand($data, $type),
                 typeSource: self::extractTypeSource($data, $type),
                 isBot: $data[$type]['from']['is_bot'],
                 editedTopicStatus: !empty($data['message']['forum_topic_edited']),
@@ -113,6 +104,23 @@ class TelegramUpdateDto extends Data
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Whether the update is a manager's AI edit command in the supergroup:
+     * the text starts with ai_message_edit_{id}, optionally after the @username
+     * that Telegram inserts for the «Редактировать ответ» button.
+     *
+     * @param array  $data
+     * @param string $type
+     *
+     * @return bool
+     */
+    private static function isAiEditCommand(array $data, string $type): bool
+    {
+        return $type === 'message'
+            && self::extractTypeSource($data, $type) === 'supergroup'
+            && preg_match('/^\s*(?:@\w+\s+)?ai_message_edit_[0-9]+/u', (string) ($data[$type]['text'] ?? '')) === 1;
     }
 
     /**
