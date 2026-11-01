@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\WebPush\WebPushSenderInterface;
 use App\Services\WebPush\WebPushSendResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 class SendWebPushNotificationJobTest extends TestCase
@@ -113,6 +114,21 @@ class SendWebPushNotificationJobTest extends TestCase
         (new SendWebPushNotificationJob($message))->handle($sender);
 
         $this->assertSame('VK · Иван Иванов', $received[0]);
+    }
+
+    public function test_title_names_odnoklassniki(): void
+    {
+        $this->makeSubscription();
+        $botUser = BotUser::create(['chat_id' => 'chat:C1', 'platform' => 'ok', 'display_name' => 'Иван Иванов']);
+        $message = $this->makeMessage('hi', $botUser);
+
+        $sender = Mockery::mock(WebPushSenderInterface::class);
+        $sender->shouldReceive('send')
+            ->once()
+            ->withArgs(fn ($subscription, string $title) => $title === 'Одноклассники · Иван Иванов')
+            ->andReturn(new WebPushSendResult(success: true, expired: false));
+
+        (new SendWebPushNotificationJob($message))->handle($sender);
     }
 
     public function test_title_falls_back_to_chat_id_without_a_display_name(): void
