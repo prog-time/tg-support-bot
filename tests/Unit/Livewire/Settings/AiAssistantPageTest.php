@@ -245,7 +245,6 @@ class AiAssistantPageTest extends TestCase
         $this->app->instance(SettingsService::class, $mock);
 
         $component = new AiAssistantPage();
-        $component->aiBotConnected = true; // AI bot integration is configured
         $component->ai_enabled = true;     // simulate wire:model having set the value
         $component->updatedAiEnabled(true);
 
@@ -269,17 +268,16 @@ class AiAssistantPageTest extends TestCase
     {
         /** @var \Mockery\MockInterface&SettingsService $mock */
         $mock = Mockery::mock(SettingsService::class);
-        // AI can always be enabled regardless of AI bot integration status.
+        // AI can always be enabled regardless of the Telegram group status.
         $mock->shouldReceive('set')->with('ai.enabled', true)->once();
 
         $this->app->instance(SettingsService::class, $mock);
 
         $component = new AiAssistantPage();
-        $component->aiBotConnected = false; // AI bot integration not configured
         $component->ai_enabled = true;
         $component->updatedAiEnabled(true);
 
-        // Should NOT revert — AI works without the AI bot (drafts appear in admin panel only).
+        // Should NOT revert — AI works without the Telegram group (drafts appear in admin panel only).
         $this->assertTrue($component->ai_enabled);
     }
 

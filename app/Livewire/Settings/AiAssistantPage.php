@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Livewire\Settings;
 
 use App\Models\AiFaqEntry;
-use App\Modules\Admin\Services\ChannelStatusService;
 use App\Modules\Ai\Services\AiSystemPromptLoader;
 use App\Services\Settings\SettingsService;
 use Livewire\Attributes\Layout;
@@ -52,9 +51,6 @@ class AiAssistantPage extends Component
     /** @var array<string, string> Configured model name per provider */
     public array $providerModels = [];
 
-    /** @var bool Whether the «Бот AI помощника» integration (telegram_ai.token) is configured */
-    public bool $aiBotConnected = false;
-
     /** @var bool Show auto-reply warning/confirm */
     public bool $showAutoReplyWarning = false;
 
@@ -81,9 +77,8 @@ class AiAssistantPage extends Component
      * The «Включить AI помощника» switch persists immediately — it does not
      * wait for the «Сохранить» button. All other fields still require save.
      *
-     * AI can be enabled even without the AI bot configured. Without it, drafts
-     * are only shown in the admin panel and not duplicated to the supergroup.
-     * Disabling is always allowed.
+     * Without a configured Telegram group, drafts are only shown in the admin
+     * panel. Disabling is always allowed.
      *
      * @param bool $value New toggle state
      */
@@ -205,8 +200,6 @@ class AiAssistantPage extends Component
             'deepseek' => (string) ($settings->get('ai.deepseek_model') ?? ''),
             'gigachat' => (string) ($settings->get('ai.gigachat_model') ?? ''),
         ];
-
-        $this->aiBotConnected = app(ChannelStatusService::class)->telegramAi()['connected'];
     }
 
     /**

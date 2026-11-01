@@ -21,31 +21,8 @@
                     <p class="mt-0.5 text-[13px] text-text-secondary">ИИ будет помогать операторам составлять ответы · применяется сразу</p>
                 </div>
             </div>
-            {{-- AI works without the AI bot — drafts are shown in the admin workspace. Disabling stays allowed. --}}
             <x-admin.toggle name="ai_enabled" id="ai_enabled" wire:model.live="ai_enabled" />
         </div>
-
-        {{-- Soft informer: without the AI bot, drafts appear in the admin panel only (not duplicated to the group) --}}
-        @unless ($aiBotConnected)
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <div class="flex items-start gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-5 w-5 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <p class="text-sm font-semibold text-blue-800">ИИ работает в админке без «Бота AI помощника»</p>
-                        <p class="mt-1 text-xs text-blue-700">Черновики ответов ИИ показываются в разделе «Чаты» с кнопками «Принять / Изменить / Отмена». «Бот AI помощника» нужен только чтобы дополнительно дублировать черновик в Telegram-супергруппу.</p>
-                        <a href="{{ route('admin.settings.integrations.channel', 'telegram_ai') }}" wire:navigate
-                           class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline">
-                            Настроить «Бот AI помощника» (необязательно)
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        @endunless
 
         {{-- All detail settings are hidden while the assistant is disabled --}}
         @if ($ai_enabled)
