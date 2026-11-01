@@ -11,6 +11,8 @@ use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
+use App\Modules\Ok\DTOs\OkTextMessageDto;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Vk\DTOs\VkTextMessageDto;
@@ -80,6 +82,10 @@ class SendFeedbackForm
                 $this->sendAvito($botUser, $feedback->id);
                 break;
 
+            case 'ok':
+                $this->sendOk($botUser);
+                break;
+
             case 'email':
                 $this->sendEmail($botUser, $feedback->id);
                 break;
@@ -118,7 +124,6 @@ class SendFeedbackForm
      */
     private function sendTelegram(BotUser $botUser, int $feedbackId): void
     {
-        // TODO: move text to lang/ru/messages.php when i18n infrastructure is added
         $text = 'Пожалуйста, оцените качество нашей поддержки:';
 
         $keyboard = $this->buildTelegramKeyboard($botUser->id, $feedbackId);
@@ -146,7 +151,6 @@ class SendFeedbackForm
      */
     private function sendVk(BotUser $botUser, int $feedbackId): void
     {
-        // TODO: move text to lang/ru/messages.php when i18n infrastructure is added
         $text = 'Пожалуйста, оцените качество нашей поддержки:';
 
         $keyboard = $this->buildVkKeyboard($botUser->id, $feedbackId);
@@ -171,6 +175,26 @@ class SendFeedbackForm
      *
      * @return void
      */
+    /**
+     * Send a free-text review prompt to an OK user. OK has callback buttons, but
+     * the documentation does not describe the callback event, so a 1-5 rating
+     * waits for a check on a real group.
+     *
+     * @param BotUser $botUser
+     *
+     * @return void
+     */
+    private function sendOk(BotUser $botUser): void
+    {
+        SendOkSimpleMessageJob::dispatch(
+            OkTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => 'Пожалуйста, оставьте отзыв о качестве нашей поддержки.',
+            ]),
+        );
+    }
+
     /**
      * Send a free-text review prompt to an Avito user.
      *
@@ -235,7 +259,6 @@ class SendFeedbackForm
 
     private function sendMax(BotUser $botUser, int $feedbackId): void
     {
-        // TODO: move text to lang/ru/messages.php when i18n infrastructure is added
         $text = 'Пожалуйста, оцените качество нашей поддержки:';
 
         $keyboard = $this->buildMaxKeyboard($botUser->id, $feedbackId);
