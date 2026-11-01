@@ -13,6 +13,8 @@ use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
+use App\Modules\Ok\Jobs\SendOkFileMessageJob;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -607,5 +609,38 @@ class SendReplyActionTest extends TestCase
             // The «Ответ из админки:» label + newline is added by the job's prefix.
             return $job->text === '[вложение]' && $job->prefix === "👤 Ответ из админки:\n";
         });
+    }
+
+    public function test_ok_reply_goes_through_ok_job_and_not_external_sources(): void
+    {
+        Queue::fake();
+        $botUser = BotUser::create(['chat_id' => 'chat:C701', 'platform' => 'ok']);
+
+        SendReplyAction::execute($botUser, 'Hello OK');
+
+        $this->assertDatabaseHas('messages', ['bot_user_id' => $botUser->id, 'platform' => 'ok', 'message_type' => 'outgoing', 'text' => 'Hello OK']);
+        Queue::assertPushed(SendOkSimpleMessageJob::class, fn ($job) => $job->queryParams->chat_id === 'chat:C701'
+            && $job->queryParams->text === 'Hello OK');
+        Queue::assertNotPushed(SendWebhookMessage::class);
+    }
+
+    public function test_ok_file_is_queued_with_text_and_recorded_for_admin_panel(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+        $botUser = BotUser::create(['chat_id' => 'chat:C702', 'platform' => 'ok']);
+
+        SendReplyAction::execute($botUser, 'Text', UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf'));
+
+        Queue::assertPushed(SendOkFileMessageJob::class, function ($job) {
+            @unlink((string) $job->file->path);
+
+            return $job->file->chat_id === 'chat:C702'
+                && $job->file->text === 'Text'
+                && $job->file->name === 'doc.pdf'
+                && $job->file->mime === 'application/pdf';
+        });
+        Queue::assertNotPushed(SendOkSimpleMessageJob::class);
+        $this->assertDatabaseHas('message_attachments', ['file_type' => 'document', 'file_name' => 'doc.pdf']);
     }
 }
