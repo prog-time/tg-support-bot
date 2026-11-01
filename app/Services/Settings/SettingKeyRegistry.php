@@ -307,6 +307,13 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
+        /** «Clarifying questions» (grill me) mode — appends instructions to the prompt, see AiSystemPromptLoader. */
+        'ai.clarify_mode' => [
+            'type' => 'bool',
+            'config' => null,
+            'is_secret' => false,
+        ],
+
         /** OpenAI extended fields */
         'ai.openai_base_url' => [
             'type' => 'string',
