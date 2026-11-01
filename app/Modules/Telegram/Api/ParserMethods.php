@@ -33,11 +33,11 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', self::withoutBotToken($e->getMessage()), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => $e->getMessage(),
+                'result' => self::withoutBotToken($e->getMessage()),
             ];
         }
     }
@@ -70,15 +70,25 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', self::withoutBotToken($e->getMessage()), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => $e->getMessage(),
+                'result' => self::withoutBotToken($e->getMessage()),
             ];
         }
     }
 
+    /**
+     * Send a file: `uploaded_file_path` is the path-based upload used when
+     * UploadedFile cannot be serialized in a job.
+     *
+     * @param string       $urlQuery
+     * @param array|string $queryParams
+     * @param string       $attachType
+     *
+     * @return array
+     */
     public static function attachQuery(string $urlQuery, array|string $queryParams = [], string $attachType = 'document'): array
     {
         try {
@@ -87,7 +97,6 @@ class ParserMethods
             }
 
             if (!empty($queryParams['uploaded_file_path'])) {
-                // Path-based upload (used when UploadedFile cannot be serialized in a job)
                 $tempPath = $queryParams['uploaded_file_path'];
                 unset($queryParams['uploaded_file_path']);
 
@@ -154,12 +163,24 @@ class ParserMethods
 
             return $resultQuery;
         } catch (\Throwable $e) {
-            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::channel('app')->log($e->getCode() === 1 ? 'warning' : 'error', self::withoutBotToken($e->getMessage()), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return [
                 'ok' => false,
                 'response_code' => 500,
-                'result' => $e->getMessage(),
+                'result' => self::withoutBotToken($e->getMessage()),
             ];
         }
+    }
+
+    /**
+     * Mask the bot token in a URL: HTTP client errors quote the full request URL.
+     *
+     * @param string $message
+     *
+     * @return string
+     */
+    private static function withoutBotToken(string $message): string
+    {
+        return (string) preg_replace('#/bot[^/\s]+#', '/bot***', $message);
     }
 }

@@ -3,8 +3,10 @@
 namespace Tests\Unit\Modules\Telegram\Api;
 
 use App\Modules\Telegram\Api\ParserMethods;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ParserMethodsTest extends TestCase
@@ -93,5 +95,25 @@ class ParserMethodsTest extends TestCase
         $this->assertFalse($response['ok']);
         $this->assertEquals(500, $response['response_code']);
         $this->assertStringContainsString('File is empty and cannot be sent', $response['result']);
+    }
+
+    public function test_post_query_failure_does_not_expose_bot_token(): void
+    {
+        Http::fake(function ($request) {
+            throw new ConnectionException('cURL error 28 for ' . $request->url());
+        });
+
+        $logged = [];
+        Log::shouldReceive('channel')->andReturnSelf();
+        Log::shouldReceive('log')->andReturnUsing(function ($level, $message) use (&$logged) {
+            $logged[] = $message;
+        });
+
+        $response = ParserMethods::postQuery('https://api.telegram.org/bot123:secret-token/sendMessage', ['a' => 1]);
+
+        $this->assertFalse($response['ok']);
+        $this->assertStringNotContainsString('secret-token', $response['result']);
+        $this->assertStringContainsString('/bot***/sendMessage', $response['result']);
+        $this->assertStringNotContainsString('secret-token', implode(' ', $logged));
     }
 }
