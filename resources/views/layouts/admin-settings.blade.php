@@ -37,7 +37,8 @@
         [$mobileBackUrl, $mobileBackLabel] = match (true) {
             request()->routeIs('admin.settings.integrations.channel') => [route('admin.settings.integrations'), 'Интеграции'],
             request()->routeIs('admin.settings.avito') => [route('admin.settings.integrations'), 'Интеграции'],
-            request()->routeIs('admin.settings.ai.provider') => [route('admin.settings.ai'), 'ИИ-ассистент'],
+            request()->routeIs('admin.settings.ai.provider', 'admin.settings.ai.faq') => [route('admin.settings.ai'), 'ИИ-ассистент'],
+            request()->routeIs('admin.settings.ai.faq.create', 'admin.settings.ai.faq.edit') => [route('admin.settings.ai.faq'), 'Частые вопросы'],
             request()->routeIs('admin.settings.api-webhooks.source') => [route('admin.settings.api-webhooks'), 'API и вебхуки'],
             request()->routeIs('admin.settings.auto-replies.create', 'admin.settings.auto-replies.edit') => [route('admin.settings.auto-replies'), 'Автоответы'],
             request()->routeIs('admin.settings.team.create', 'admin.settings.team.edit') => [route('admin.settings.team'), 'Команда'],
@@ -115,7 +116,7 @@
 
                 <x-admin.nav-item
                     href="{{ route('admin.settings.ai') }}"
-                    :active="request()->routeIs('admin.settings.ai') || request()->routeIs('admin.settings.ai.provider')"
+                    :active="request()->routeIs('admin.settings.ai', 'admin.settings.ai.*')"
                 >
                     <x-slot name="icon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
