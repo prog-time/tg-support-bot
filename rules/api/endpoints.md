@@ -43,9 +43,7 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | Method | Path | Middleware | Description |
 |---|---|---|---|
 | `POST` | `/api/telegram/bot` | `TelegramQuery` | Receive Telegram webhook events (main bot) |
-| `POST` | `/api/telegram/ai/bot` | `TelegramQuery` | Receive Telegram AI bot callback queries (Accept/Cancel/Edit) |
 | `GET` | `/api/telegram/set_webhook` | — | Register main bot webhook URL with Telegram |
-| `POST` | `/api/ai-bot/webhook` | `AiBotQuery` | Receive AI bot webhook events from Telegram |
 
 ### VK Webhook (POST)
 
@@ -139,7 +137,7 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | `GET` | `/admin/chats` | session | Chat workspace (`App\Livewire\Chat\ConversationPage`, custom Livewire full-page) — name `admin.chats` |
 | `GET` | `/admin/settings/general` | session | General settings page (`GeneralSettingsPage`, custom Livewire) — name `admin.settings.general` |
 | `GET` | `/admin/settings/integrations` | session | Integration channels list (`IntegrationsListPage`, custom Livewire) — name `admin.settings.integrations` |
-| `GET` | `/admin/settings/integrations/{channel}` | session | Per-channel config form (`IntegrationChannelPage`; channel ∈ telegram\|telegram_ai\|vk\|max) — name `admin.settings.integrations.channel` |
+| `GET` | `/admin/settings/integrations/{channel}` | session | Per-channel config form (`IntegrationChannelPage`; channel ∈ telegram\|vk\|max) — name `admin.settings.integrations.channel` |
 | `GET` | `/admin/settings/avito` | session (admin only) | Avito module credentials (`AvitoIntegrationPage`) — name `admin.settings.avito`. Always registered (Avito is built-in core, not a conditional package) |
 | `GET` | `/admin/settings/ai` | session | AI assistant settings (`AiAssistantPage`, custom Livewire) — name `admin.settings.ai` |
 | `GET` | `/admin/settings/ai/faq` | session | AI FAQ knowledge-base list (`AiFaqPage`) — name `admin.settings.ai.faq` |
