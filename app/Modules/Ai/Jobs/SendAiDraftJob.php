@@ -8,7 +8,8 @@ use App\Models\BotUser;
 use App\Modules\Admin\Services\ChannelStatusService;
 use App\Modules\Ai\DTOs\AiRequestDto;
 use App\Modules\Ai\Services\AiAssistantService;
-use App\Modules\Ai\Services\AiBotApi;
+use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Services\Settings\SettingsService;
 use Illuminate\Bus\Queueable;
@@ -44,15 +45,14 @@ class SendAiDraftJob implements ShouldQueue
 
     /**
      * Generate an AI draft and persist it for the admin panel workspace.
-     * Additionally posts the draft to the supergroup forum topic when the
-     * Telegram AI bot is configured (telegram_ai.token is set).
+     * The draft is saved before the Telegram call, so a failed publication
+     * leaves it available in /admin/chats with message_id=null.
      *
-     * @param AiBotApi           $aiBotApi
      * @param AiAssistantService $aiService
      *
      * @return void
      */
-    public function handle(AiBotApi $aiBotApi, AiAssistantService $aiService): void
+    public function handle(AiAssistantService $aiService): void
     {
         try {
             $botUser = BotUser::find($this->botUserId);
@@ -60,14 +60,10 @@ class SendAiDraftJob implements ShouldQueue
                 throw new \RuntimeException('BotUser not found: ' . $this->botUserId, 1);
             }
 
-            $aiBotToken = (string) app(SettingsService::class)->get('telegram_ai.token');
             $groupId = (string) app(SettingsService::class)->get('telegram.group_id');
-            $telegramConnected = app(ChannelStatusService::class)->telegram()['connected']
-                && $groupId !== '';
-            $aiBotConfigured = $aiBotToken !== '' && $telegramConnected;
+            $groupConfigured = $groupId !== '' && app(ChannelStatusService::class)->telegram()['connected'];
 
-            // When the supergroup will be used, the topic must exist first.
-            if ($aiBotConfigured && empty($botUser->topic_id)) {
+            if ($groupConfigured && empty($botUser->topic_id) && $this->canWaitForTopic()) {
                 Log::channel('app')->info('SendAiDraftJob: topic_id not ready, releasing', [
                     'source' => 'send_ai_draft_topic_pending',
                     'bot_user_id' => $botUser->id,
@@ -78,7 +74,6 @@ class SendAiDraftJob implements ShouldQueue
                 return;
             }
 
-            // Generate AI draft text using the existing service.
             $aiRequest = new AiRequestDto(
                 message: $this->userMessage,
                 userId: $this->botUserId,
@@ -92,23 +87,16 @@ class SendAiDraftJob implements ShouldQueue
                 throw new \RuntimeException('AI provider returned null', 1);
             }
 
-            if ($aiBotConfigured) {
-                $this->postDraftToSupergroup($aiBotApi, $botUser, $aiResponse->response, $aiBotToken, $groupId);
-            } else {
-                // Supergroup not configured: persist draft for admin panel only.
-                AiMessage::create([
-                    'bot_user_id' => $botUser->id,
-                    'message_id' => null,
-                    'text_ai' => $aiResponse->response,
-                    'text_manager' => '',
-                    'status' => AiMessage::STATUS_PENDING,
-                ]);
+            $aiMessage = AiMessage::create([
+                'bot_user_id' => $botUser->id,
+                'message_id' => null,
+                'text_ai' => $aiResponse->response,
+                'text_manager' => '',
+                'status' => AiMessage::STATUS_PENDING,
+            ]);
 
-                Log::channel('app')->info('SendAiDraftJob: draft created (no AI bot configured)', [
-                    'source' => 'send_ai_draft_no_ai_bot',
-                    'bot_user_id' => $botUser->id,
-                    'platform' => $botUser->platform,
-                ]);
+            if ($groupConfigured && !empty($botUser->topic_id)) {
+                $this->postDraftToSupergroup($aiMessage, $botUser, $groupId);
             }
         } catch (\Throwable $e) {
             Log::channel('app')->log(
@@ -120,50 +108,71 @@ class SendAiDraftJob implements ShouldQueue
     }
 
     /**
-     * Post draft to the Telegram supergroup and persist the AiMessage with Telegram message_id.
-     * The AiMessage is also visible in the admin panel workspace via the pending drafts list.
+     * Whether a missing topic is worth another attempt: a sync queue never
+     * re-runs a released job, and the last attempt must keep the draft.
      *
-     * @param AiBotApi $aiBotApi
-     * @param BotUser  $botUser
-     * @param string   $aiResponseText
-     * @param string   $aiBotToken
-     * @param string   $groupId
+     * @return bool
+     */
+    private function canWaitForTopic(): bool
+    {
+        return $this->attempts() < $this->tries && $this->job?->getConnectionName() !== 'sync';
+    }
+
+    /**
+     * Publish a saved draft to the topic and attach its action buttons.
+     *
+     * @param AiMessage $aiMessage
+     * @param BotUser   $botUser
+     * @param string    $groupId
      *
      * @return void
      */
-    private function postDraftToSupergroup(
-        AiBotApi $aiBotApi,
-        BotUser $botUser,
-        string $aiResponseText,
-        string $aiBotToken,
-        string $groupId,
-    ): void {
-        $draftText = AiHelper::preparedAiAnswer('', $aiResponseText);
-
-        $response = $aiBotApi->send('sendMessage', [
+    private function postDraftToSupergroup(AiMessage $aiMessage, BotUser $botUser, string $groupId): void
+    {
+        $response = TelegramMethods::sendQueryTelegram('sendMessage', [
             'chat_id' => $groupId,
             'message_thread_id' => $botUser->topic_id,
-            'text' => $draftText,
-            'parse_mode' => 'html',
+            'text' => AiHelper::preparedAiAnswer('', (string) $aiMessage->text_ai),
         ]);
 
         if ($response->ok !== true) {
-            throw new \RuntimeException('Telegram API error sending draft: ' . json_encode((array) $response), 1);
+            $this->logTelegramFailure('sendMessage', $aiMessage, $response);
+
+            return;
         }
 
-        $aiMessage = AiMessage::create([
-            'bot_user_id' => $botUser->id,
-            'message_id' => $response->message_id,
-            'text_ai' => $aiResponseText,
-            'text_manager' => '',
-            'status' => AiMessage::STATUS_PENDING,
-        ]);
+        $aiMessage->update(['message_id' => $response->message_id]);
 
-        $aiBotApi->send('editMessageReplyMarkup', [
+        $markupResponse = TelegramMethods::sendQueryTelegram('editMessageReplyMarkup', [
             'chat_id' => $groupId,
             'message_thread_id' => $botUser->topic_id,
             'message_id' => $response->message_id,
-            'reply_markup' => AiHelper::preparedAiReplyMarkup((int) $aiMessage->message_id, $aiResponseText),
+            'reply_markup' => AiHelper::preparedAiReplyMarkup((int) $response->message_id, (string) $aiMessage->text_ai),
+        ]);
+
+        if ($markupResponse->ok !== true) {
+            $this->logTelegramFailure('editMessageReplyMarkup', $aiMessage, $markupResponse);
+        }
+    }
+
+    /**
+     * Log a failed Telegram call. Only the code and error type are logged:
+     * the raw answer of a network failure contains the URL with the bot token.
+     *
+     * @param string            $method
+     * @param AiMessage         $aiMessage
+     * @param TelegramAnswerDto $response
+     *
+     * @return void
+     */
+    private function logTelegramFailure(string $method, AiMessage $aiMessage, TelegramAnswerDto $response): void
+    {
+        Log::channel('app')->error('SendAiDraftJob: Telegram call failed, draft stays in admin panel', [
+            'source' => 'send_ai_draft_publish_error',
+            'method' => $method,
+            'ai_message_id' => $aiMessage->id,
+            'response_code' => $response->response_code,
+            'type_error' => $response->type_error,
         ]);
     }
 }
