@@ -4,6 +4,7 @@ namespace Tests\Unit\Modules\Admin;
 
 use App\Livewire\Settings\AiFaqFormPage;
 use App\Livewire\Settings\AiFaqPage;
+use App\Livewire\Settings\OkIntegrationPage;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -35,5 +36,14 @@ class AdminServiceProviderTest extends TestCase
         $this->assertSame('admin/settings/ai/faq/{entry}/edit', $route->uri());
         $this->assertSame(AiFaqFormPage::class, $route->getAction('controller'));
         $this->assertSame('[0-9]+', $route->wheres['entry']);
+    }
+
+    public function test_registers_ok_settings_route(): void
+    {
+        $route = Route::getRoutes()->getByName('admin.settings.ok');
+
+        $this->assertNotNull($route);
+        $this->assertSame('admin/settings/ok', $route->uri());
+        $this->assertSame(OkIntegrationPage::class, $route->getAction('controller'));
     }
 }

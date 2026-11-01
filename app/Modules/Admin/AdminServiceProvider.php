@@ -18,6 +18,7 @@ use App\Livewire\Settings\EmailIntegrationPage;
 use App\Livewire\Settings\GeneralSettingsPage;
 use App\Livewire\Settings\IntegrationChannelPage;
 use App\Livewire\Settings\IntegrationsListPage;
+use App\Livewire\Settings\OkIntegrationPage;
 use App\Livewire\Settings\TeamMemberCreatePage;
 use App\Livewire\Settings\TeamMemberEditPage;
 use App\Livewire\Settings\TeamPage;
@@ -159,6 +160,9 @@ class AdminServiceProvider extends ServiceProvider
 
                 Route::get('/email', EmailIntegrationPage::class)
                     ->name('email');
+
+                Route::get('/ok', OkIntegrationPage::class)
+                    ->name('ok');
             });
     }
 }
