@@ -9,6 +9,7 @@ return [
     App\Modules\External\ExternalServiceProvider::class,
     App\Modules\Feedback\FeedbackServiceProvider::class,
     App\Modules\Max\MaxServiceProvider::class,
+    App\Modules\Ok\OkServiceProvider::class,
     App\Modules\Telegram\TelegramServiceProvider::class,
     App\Modules\Vk\VkServiceProvider::class,
     App\Providers\AppServiceProvider::class,
