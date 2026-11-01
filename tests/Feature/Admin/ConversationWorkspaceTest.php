@@ -459,6 +459,10 @@ class ConversationWorkspaceTest extends TestCase
         $component->call('selectChat', $max->id);
         $this->assertTrue($component->instance()->supportsAttachments());
 
+        $ok = BotUser::create(['chat_id' => 'chat:C1009', 'platform' => 'ok']);
+        $component->call('selectChat', $ok->id);
+        $this->assertTrue($component->instance()->supportsAttachments());
+
         // External-source dialogs remain text-only.
         $external = BotUser::create(['chat_id' => '1010', 'platform' => 'widget']);
         $component->call('selectChat', $external->id);
