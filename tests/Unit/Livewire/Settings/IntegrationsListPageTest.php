@@ -29,7 +29,6 @@ class IntegrationsListPageTest extends TestCase
     {
         $statuses = [
             'telegram' => ['connected' => true, 'label' => 'Подключено'],
-            'telegram_ai' => ['connected' => false, 'label' => 'Не подключён'],
             'vk' => ['connected' => false, 'label' => 'Не подключён'],
             'max' => ['connected' => false, 'label' => 'Не подключён'],
         ];
@@ -42,26 +41,6 @@ class IntegrationsListPageTest extends TestCase
         $component->mount($mock, app(SettingsService::class));
 
         $this->assertSame($statuses, $component->channelStatuses);
-    }
-
-    public function test_channel_statuses_includes_telegram_ai_key(): void
-    {
-        $statuses = [
-            'telegram' => ['connected' => false, 'label' => 'Не подключён'],
-            'telegram_ai' => ['connected' => true, 'label' => 'Подключено'],
-            'vk' => ['connected' => false, 'label' => 'Не подключён'],
-            'max' => ['connected' => false, 'label' => 'Не подключён'],
-        ];
-
-        /** @var \Mockery\MockInterface&ChannelStatusService $mock */
-        $mock = Mockery::mock(ChannelStatusService::class);
-        $mock->shouldReceive('all')->with()->once()->andReturn($statuses);
-
-        $component = new IntegrationsListPage();
-        $component->mount($mock, app(SettingsService::class));
-
-        $this->assertArrayHasKey('telegram_ai', $component->channelStatuses);
-        $this->assertTrue($component->channelStatuses['telegram_ai']['connected']);
     }
 
     public function test_mount_handles_empty_statuses(): void

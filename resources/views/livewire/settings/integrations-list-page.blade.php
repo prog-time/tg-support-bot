@@ -204,56 +204,6 @@
             </div>
         </div>
 
-        {{-- ══ Группа 2: ИИ-ассистент ════════════════════════════════════════ --}}
-        <div>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">ИИ-ассистент</h2>
-            <div class="space-y-3">
-
-                {{-- Telegram AI bot --}}
-                <a href="{{ route('admin.settings.integrations.channel', ['channel' => 'telegram_ai']) }}"
-                   class="block rounded-xl border border-border-light bg-bg-primary p-4 transition hover:border-accent hover:shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            {{-- Icon: full-bleed Telegram-blue tile with white AI spark --}}
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl" style="background:#229ED9">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
-                                     fill="none" viewBox="0 0 24 24" stroke="#ffffff" stroke-width="2">
-                                    <g stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 8V4H8" />
-                                        <rect width="16" height="12" x="4" y="8" rx="2" />
-                                        <path d="M2 14h2" />
-                                        <path d="M20 14h2" />
-                                        <path d="M15 13v2" />
-                                        <path d="M9 13v2" />
-                                    </g>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-text-primary">Бот AI помощника</p>
-                                @if ($channelStatuses['telegram_ai']['connected'])
-                                    <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#34C759">
-                                        <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:#34C759"></span>
-                                        Подключено
-                                    </span>
-                                @else
-                                    <span class="text-xs text-text-secondary">Не подключён</span>
-                                @endif
-                            </div>
-                        </div>
-                        @if (! $channelStatuses['telegram_ai']['connected'])
-                            <span class="inline-flex items-center justify-center rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white">
-                                Подключить
-                            </span>
-                        @endif
-                    </div>
-                    <p class="mt-3 text-[13px] leading-relaxed text-text-secondary">
-                        Интеграция с ботом AI-помощника — отдельный бот публикует черновики и ответы ИИ в супергруппе.
-                    </p>
-                </a>
-
-            </div>
-        </div>
-
     </div>
 
 </div>
