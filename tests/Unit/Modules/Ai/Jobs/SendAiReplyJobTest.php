@@ -8,8 +8,9 @@ use App\Models\Message;
 use App\Modules\Ai\DTOs\AiResponseDto;
 use App\Modules\Ai\Jobs\SendAiReplyJob;
 use App\Modules\Ai\Services\AiAssistantService;
-use App\Modules\Ai\Services\AiBotApi;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Services\Settings\SettingsService;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -26,8 +27,11 @@ class SendAiReplyJobTest extends TestCase
     {
         parent::setUp();
 
-        $settings = app(\App\Services\Settings\SettingsService::class);
+        $settings = app(SettingsService::class);
         $settings->set('ai.default_provider', 'openai');
+        $settings->set('telegram.token', 'main_bot_token');
+        $settings->set('telegram.secret_key', 'secret');
+        $settings->set('telegram.group_id', '-100111222333');
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 77;
@@ -36,147 +40,96 @@ class SendAiReplyJobTest extends TestCase
         Queue::fake();
     }
 
-    public function test_delivers_without_supergroup_post_when_ai_bot_not_configured(): void
+    private function aiService(string $text = 'Auto reply'): AiAssistantService
     {
-        // No AI bot token → supergroup posting skipped.
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', null);
-        Http::fake();
-
-        $replyText = 'Auto reply without AI bot';
-
-        $aiResponse = new AiResponseDto(
-            response: $replyText,
+        $service = $this->createMock(AiAssistantService::class);
+        $service->method('processMessage')->willReturn(new AiResponseDto(
+            response: $text,
             confidenceScore: 0.9,
             shouldEscalate: false,
             provider: 'openai',
             modelUsed: 'gpt-4',
             tokensUsed: 10,
             responseTime: 0.5,
-        );
+        ));
 
-        $aiService = $this->createMock(AiAssistantService::class);
-        $aiService->method('processMessage')->willReturn($aiResponse);
-
-        $updateDto = TelegramUpdateDtoMock::getDto();
-        $job = new SendAiReplyJob($this->botUser->id, $updateDto, 'user question');
-
-        $job->handle(new AiBotApi(), $aiService);
-
-        // AiMessage persisted with accepted status, no Telegram message_id.
-        $this->assertDatabaseHas('ai_messages', [
-            'bot_user_id' => $this->botUser->id,
-            'message_id' => null,
-            'status' => AiMessage::STATUS_ACCEPTED,
-        ]);
-
-        // No HTTP calls to Telegram (AI bot not configured).
-        Http::assertNothingSent();
-
-        // Outgoing message row persisted regardless of platform send outcome.
-        $this->assertDatabaseHas('messages', [
-            'bot_user_id' => $this->botUser->id,
-            'platform' => 'telegram',
-            'message_type' => 'outgoing',
-            'text' => $replyText,
-        ]);
-
-        // Simple job dispatched for user delivery (not the saving full job).
-        Queue::assertPushed(SendTelegramSimpleQueryJob::class);
+        return $service;
     }
 
-    public function test_posts_to_supergroup_when_ai_bot_configured(): void
+    private function job(): SendAiReplyJob
     {
-        $aiToken = 'ai_reply_token_999';
-        $groupId = -100111222333;
+        return new SendAiReplyJob($this->botUser->id, TelegramUpdateDtoMock::getDto(), 'user question');
+    }
 
-        $settings = app(\App\Services\Settings\SettingsService::class);
-        $settings->set('telegram_ai.token', $aiToken);
-        $settings->set('telegram.token', 'main_bot_token');
-        $settings->set('telegram.secret_key', 'secret');
-        $settings->set('telegram.group_id', (string) $groupId);
+    public function test_main_bot_posts_labelled_reply_and_user_gets_it_without_label(): void
+    {
+        Http::fake(['*/sendMessage' => Http::response(['ok' => true, 'result' => ['message_id' => 555]])]);
 
-        $replyText = 'Supergroup auto reply';
+        $this->job()->handle($this->aiService());
 
-        Http::fake([
-            'https://api.telegram.org/bot' . $aiToken . '/sendMessage' => Http::response([
-                'ok' => true,
-                'result' => [
-                    'message_id' => 555,
-                    'chat' => ['id' => $groupId, 'type' => 'supergroup'],
-                    'date' => time(),
-                    'text' => $replyText,
-                ],
-            ], 200),
-            // Fallback for any other calls.
-            '*' => Http::response(['ok' => true, 'result' => ['message_id' => 556]], 200),
-        ]);
-
-        $aiResponse = new AiResponseDto(
-            response: $replyText,
-            confidenceScore: 0.9,
-            shouldEscalate: false,
-            provider: 'openai',
-            modelUsed: 'gpt-4',
-            tokensUsed: 10,
-            responseTime: 0.5,
-        );
-
-        $aiService = $this->createMock(AiAssistantService::class);
-        $aiService->method('processMessage')->willReturn($aiResponse);
-
-        $updateDto = TelegramUpdateDtoMock::getDto();
-        $job = new SendAiReplyJob($this->botUser->id, $updateDto, 'user question');
-
-        $job->handle(new AiBotApi(), $aiService);
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'botmain_bot_token/sendMessage')
+            && $request['text'] === "🤖 AI:\nAuto reply"
+            && !isset($request['parse_mode']));
 
         $this->assertDatabaseHas('ai_messages', [
             'bot_user_id' => $this->botUser->id,
             'message_id' => 555,
             'status' => AiMessage::STATUS_ACCEPTED,
         ]);
-
-        // Outgoing message persisted for admin thread visibility.
         $this->assertDatabaseHas('messages', [
             'bot_user_id' => $this->botUser->id,
-            'platform' => 'telegram',
             'message_type' => 'outgoing',
-            'text' => $replyText,
+            'text' => 'Auto reply',
         ]);
-
-        // Exactly one outgoing row (no duplicates from save+simple).
-        $this->assertEquals(
-            1,
-            Message::where('bot_user_id', $this->botUser->id)->where('message_type', 'outgoing')->count()
-        );
-
-        // Simple job dispatched for user delivery.
+        $this->assertSame(1, Message::where('bot_user_id', $this->botUser->id)->where('message_type', 'outgoing')->count());
         Queue::assertPushed(SendTelegramSimpleQueryJob::class);
     }
 
-    public function test_auto_reply_persists_message_even_when_no_supergroup(): void
+    public function test_delivers_without_group_post_when_group_is_not_configured(): void
     {
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', null);
+        app(SettingsService::class)->forget('telegram.group_id');
+        Http::fake();
 
-        $replyText = 'Auto reply text';
+        $this->job()->handle($this->aiService());
 
-        $aiResponse = new AiResponseDto(
-            response: $replyText,
-            confidenceScore: 0.9,
-            shouldEscalate: false,
-            provider: 'openai',
-            modelUsed: 'gpt-4',
-            tokensUsed: 10,
-            responseTime: 0.5,
-        );
+        Http::assertNothingSent();
+        $this->assertDatabaseHas('ai_messages', ['message_id' => null, 'status' => AiMessage::STATUS_ACCEPTED]);
+        Queue::assertPushed(SendTelegramSimpleQueryJob::class);
+    }
 
-        $aiService = $this->createMock(AiAssistantService::class);
-        $aiService->method('processMessage')->willReturn($aiResponse);
+    public function test_failed_topic_post_still_delivers_to_user(): void
+    {
+        Http::fake(['*' => Http::response(['ok' => false, 'error_code' => 429, 'description' => 'Too Many Requests'], 429)]);
 
-        $job = new SendAiReplyJob($this->botUser->id, null, 'user question');
-        $job->handle(new AiBotApi(), $aiService);
+        $this->job()->handle($this->aiService());
 
-        // Outgoing row must exist before any send job runs (Queue is faked → job
-        // never executes, simulating a platform failure scenario).
+        $this->assertDatabaseHas('ai_messages', ['message_id' => null, 'status' => AiMessage::STATUS_ACCEPTED]);
+        Queue::assertPushed(SendTelegramSimpleQueryJob::class);
+    }
+
+    public function test_last_attempt_without_topic_still_delivers_to_user(): void
+    {
+        $this->botUser->update(['topic_id' => null]);
+        Http::fake();
+
+        $queueJob = $this->createMock(Job::class);
+        $queueJob->method('attempts')->willReturn(3);
+        $queueJob->method('getConnectionName')->willReturn('database');
+
+        $job = $this->job();
+        $job->setJob($queueJob);
+        $job->handle($this->aiService());
+
+        Http::assertNothingSent();
+        Queue::assertPushed(SendTelegramSimpleQueryJob::class);
+    }
+
+    public function test_auto_reply_persists_message_without_update_dto(): void
+    {
+        app(SettingsService::class)->forget('telegram.group_id');
+
+        (new SendAiReplyJob($this->botUser->id, null, 'user question'))->handle($this->aiService());
+
         $this->assertDatabaseHas('messages', [
             'bot_user_id' => $this->botUser->id,
             'message_type' => 'outgoing',
