@@ -17,6 +17,7 @@ use App\Services\Settings\SettingsService;
  *   Telegram AI — telegram_ai.token (secret)
  *   VK          — vk.token (secret), vk.secret_key (secret), vk.confirm_code (secret)
  *   MAX         — max.token (secret), max.secret_key (secret)
+ *   OK          — ok.token (secret), ok.webhook_secret (secret)
  *
  * Note: telegram.group_id moved to the «Основные» general settings screen —
  *       it is no longer part of the Telegram channel connection check.
@@ -40,6 +41,7 @@ class ChannelStatusService
             'vk' => $this->vk(),
             'max' => $this->max(),
             'email' => $this->email(),
+            'ok' => $this->ok(),
         ];
     }
 
@@ -124,6 +126,23 @@ class ChannelStatusService
             && $this->isNonEmpty('email.smtp_host')
             && $this->isNonEmpty('email.username')
             && $this->isNonEmpty('email.password');
+
+        return [
+            'connected' => $connected,
+            'label' => $connected ? 'Подключён' : 'Не настроен',
+        ];
+    }
+
+    /**
+     * Odnoklassniki channel status. The webhook is rejected without its secret,
+     * so both keys are required.
+     *
+     * @return array{connected: bool, label: string}
+     */
+    public function ok(): array
+    {
+        $connected = $this->isNonEmpty('ok.token')
+            && $this->isNonEmpty('ok.webhook_secret');
 
         return [
             'connected' => $connected,

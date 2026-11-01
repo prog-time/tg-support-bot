@@ -389,6 +389,18 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
+        /** Odnoklassniki */
+        'ok.token' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+        'ok.webhook_secret' => [
+            'type' => 'string',
+            'config' => null,
+            'is_secret' => true,
+        ],
+
         /** Web Push (admin PWA) */
         /**
          * VAPID keypair, generated once via `php artisan webpush:generate-vapid-keys`
