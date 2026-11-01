@@ -53,6 +53,14 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 |---|---|---|---|
 | `POST` | `/api/vk/bot` | `VkQuery` | Receive VK webhook events |
 
+### Odnoklassniki Webhook (POST)
+
+| Method | Path | Middleware | Description |
+|---|---|---|---|
+| `POST` | `/api/ok/bot/{secret}` | `OkQuery` | Receive OK Bot API webhook events (built-in core module) |
+
+> Always answers 200 after authentication: OK repeats anything else. Repeats are dropped by `message.mid`.
+
 ### Avito Webhook (POST)
 
 | Method | Path | Middleware | Description |
@@ -141,6 +149,7 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | `GET` | `/admin/settings/integrations` | session | Integration channels list (`IntegrationsListPage`, custom Livewire) — name `admin.settings.integrations` |
 | `GET` | `/admin/settings/integrations/{channel}` | session | Per-channel config form (`IntegrationChannelPage`; channel ∈ telegram\|telegram_ai\|vk\|max) — name `admin.settings.integrations.channel` |
 | `GET` | `/admin/settings/avito` | session (admin only) | Avito module credentials (`AvitoIntegrationPage`) — name `admin.settings.avito`. Always registered (Avito is built-in core, not a conditional package) |
+| `GET` | `/admin/settings/ok` | session (admin only) | Odnoklassniki credentials (`OkIntegrationPage`) — name `admin.settings.ok` |
 | `GET` | `/admin/settings/ai` | session | AI assistant settings (`AiAssistantPage`, custom Livewire) — name `admin.settings.ai` |
 | `GET` | `/admin/settings/ai/faq` | session | AI FAQ knowledge-base list (`AiFaqPage`) — name `admin.settings.ai.faq` |
 | `GET` | `/admin/settings/ai/faq/create` | session | New FAQ entry form (`AiFaqFormPage`) — name `admin.settings.ai.faq.create` |
@@ -199,6 +208,10 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 - Validates `Authorization: Bearer {token}` against `external_source_access_tokens` table
 - Only `active = true` tokens are accepted
 - Rejects with `401` if token is missing or invalid
+
+### OkQuery
+- Validates the `{secret}` URL path segment against the `ok.webhook_secret` setting using `hash_equals()`
+- Rejects a wrong secret and an empty configured secret with `403`; a settings failure answers `502` so OK redelivers
 
 ### AvitoQuery
 - Validates the `{secret}` URL path segment against the `avito.webhook_secret` setting (read via `SettingsService`) using `hash_equals()`
