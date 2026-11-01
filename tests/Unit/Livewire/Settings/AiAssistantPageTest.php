@@ -34,6 +34,7 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('get')->with('ai.enabled')->andReturn(true);
         $mock->shouldReceive('get')->with('ai.default_provider')->andReturn('deepseek');
         $mock->shouldReceive('get')->with('ai.auto_reply')->andReturn(true);
+        $mock->shouldReceive('get')->with('ai.clarify_mode')->andReturn(true);
         $mock->shouldReceive('get')->with('ai.system_prompt')->andReturn('Be helpful');
         $mock->shouldReceive('get')->with('ai.openai_api_key')->andReturn(null);
         // deepseek has access configured → it stays the active stored provider.
@@ -49,6 +50,7 @@ class AiAssistantPageTest extends TestCase
         $this->assertTrue($component->ai_enabled);
         $this->assertSame('deepseek', $component->default_provider);
         $this->assertTrue($component->auto_reply);
+        $this->assertTrue($component->clarify_mode);
         $this->assertSame('Be helpful', $component->system_prompt);
     }
 
@@ -59,6 +61,7 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('get')->with('ai.enabled')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.default_provider')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.auto_reply')->andReturn(null);
+        $mock->shouldReceive('get')->with('ai.clarify_mode')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.system_prompt')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.openai_api_key')->andReturn(null);
         $mock->shouldReceive('get')->with('ai.deepseek_client_secret')->andReturn(null);
@@ -74,6 +77,7 @@ class AiAssistantPageTest extends TestCase
         // No provider has access configured → none is pre-selected.
         $this->assertSame('', $component->default_provider);
         $this->assertFalse($component->auto_reply);
+        $this->assertFalse($component->clarify_mode);
         // No DB value → empty field (there is no default).
         $this->assertSame('', $component->system_prompt);
     }
@@ -89,11 +93,13 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('set')->with('ai.enabled', false)->once();
         $mock->shouldReceive('set')->with('ai.default_provider', 'gigachat')->once();
         $mock->shouldReceive('set')->with('ai.auto_reply', true)->once();
+        $mock->shouldReceive('set')->with('ai.clarify_mode', true)->once();
 
         $component = new AiAssistantPage();
         $component->mount($mock);
         $component->default_provider = 'gigachat';
         $component->auto_reply = true;
+        $component->clarify_mode = true;
         $component->system_prompt = 'Be concise';
         $component->save($mock);
 
@@ -111,6 +117,7 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('set')->with('ai.enabled', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.default_provider', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.auto_reply', Mockery::any())->never();
+        $mock->shouldReceive('set')->with('ai.clarify_mode', Mockery::any())->never();
 
         $component = new AiAssistantPage();
         $component->mount($mock);
@@ -133,6 +140,7 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('set')->with('ai.enabled', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.default_provider', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.auto_reply', Mockery::any())->never();
+        $mock->shouldReceive('set')->with('ai.clarify_mode', Mockery::any())->never();
 
         $component = new AiAssistantPage();
         $component->mount($mock);
@@ -156,6 +164,7 @@ class AiAssistantPageTest extends TestCase
         $mock->shouldReceive('set')->with('ai.enabled', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.default_provider', Mockery::any())->never();
         $mock->shouldReceive('set')->with('ai.auto_reply', Mockery::any())->never();
+        $mock->shouldReceive('set')->with('ai.clarify_mode', Mockery::any())->never();
 
         $component = new AiAssistantPage();
         $component->mount($mock);

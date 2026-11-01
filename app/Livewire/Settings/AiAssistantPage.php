@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Settings;
 
+use App\Models\AiFaqEntry;
 use App\Modules\Admin\Services\ChannelStatusService;
 use App\Modules\Ai\Services\AiSystemPromptLoader;
 use App\Services\Settings\SettingsService;
@@ -13,10 +14,11 @@ use Livewire\Component;
 /**
  * AI assistant settings page.
  *
- * Manages the master AI toggle, provider selection, auto-reply mode and the
- * system prompt. All values are persisted via SettingsService (DB-backed). The
- * system prompt is stored only in the DB under `ai.system_prompt` (empty until
- * an admin saves one).
+ * Manages the master AI toggle, provider selection, auto-reply mode, the
+ * clarifying-questions (grill me) mode and the system prompt. All values are
+ * persisted via SettingsService (DB-backed). The system prompt is stored only
+ * in the DB under `ai.system_prompt` (empty until an admin saves one); FAQ
+ * entries are edited on {@see AiFaqPage} and appended to it at request time.
  *
  * Access: authenticated admin only (enforced in route middleware).
  * Layout: custom dark-sidebar admin layout (layouts.admin-settings).
@@ -34,6 +36,12 @@ class AiAssistantPage extends Component
 
     /** @var bool Auto-reply mode (true = auto, false = draft) */
     public bool $auto_reply = false;
+
+    /** @var bool «Clarifying questions» (grill me) mode — AI asks one question at a time before answering */
+    public bool $clarify_mode = false;
+
+    /** @var int Number of FAQ entries currently fed to the AI */
+    public int $faqEnabledCount = 0;
 
     /** @var string System prompt text — stored in the DB (`ai.system_prompt`) */
     public string $system_prompt = '';
@@ -93,7 +101,6 @@ class AiAssistantPage extends Component
     public function updatedAutoReply(bool $value): void
     {
         if ($value) {
-            // Revert the toggle — wait for user confirmation
             $this->auto_reply = false;
             $this->pendingAutoReply = true;
             $this->showAutoReplyWarning = true;
@@ -125,18 +132,18 @@ class AiAssistantPage extends Component
 
     /**
      * Save all AI settings via SettingsService.
+     *
+     * The system prompt is persisted first and unconditionally, so a
+     * provider-validation failure never blocks saving it; the toggles persist
+     * only after validation passes.
      */
     public function save(SettingsService $settings): void
     {
         $this->formErrors = [];
         $this->saved = false;
 
-        // The system prompt is independent of provider configuration — persist
-        // it first and unconditionally (DB write, no file/permissions involved),
-        // so a provider-validation failure never silently blocks saving it.
         $settings->set(AiSystemPromptLoader::SETTING_KEY, $this->system_prompt);
 
-        // Validation — only the (visible) detail settings matter when AI is enabled.
         if ($this->ai_enabled) {
             if (! in_array($this->default_provider, ['openai', 'deepseek', 'gigachat'], true)) {
                 $this->formErrors['default_provider'] = 'Выберите допустимый провайдер.';
@@ -145,8 +152,6 @@ class AiAssistantPage extends Component
             }
         }
 
-        // The prompt is already saved above; the toggle settings only persist
-        // once provider validation passes.
         if (! empty($this->formErrors)) {
             return;
         }
@@ -154,6 +159,7 @@ class AiAssistantPage extends Component
         $settings->set('ai.enabled', $this->ai_enabled);
         $settings->set('ai.default_provider', $this->default_provider);
         $settings->set('ai.auto_reply', $this->auto_reply);
+        $settings->set(AiSystemPromptLoader::CLARIFY_MODE_KEY, $this->clarify_mode);
 
         $this->saved = true;
     }
@@ -168,16 +174,18 @@ class AiAssistantPage extends Component
         return view('livewire.settings.ai-assistant-page');
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     /**
      * Populate component properties from SettingsService.
+     *
+     * A provider without configured access is never pre-selected: the stored
+     * choice is kept only when configured, otherwise the first configured one.
      */
     private function loadFields(SettingsService $settings): void
     {
         $this->ai_enabled = (bool) ($settings->get('ai.enabled') ?? false);
         $this->auto_reply = (bool) ($settings->get('ai.auto_reply') ?? false);
-        // Stored only in the DB; empty until an admin saves one.
+        $this->clarify_mode = (bool) ($settings->get(AiSystemPromptLoader::CLARIFY_MODE_KEY) ?? false);
+        $this->faqEnabledCount = AiFaqEntry::query()->where('enabled', true)->count();
         $stored = $settings->get(AiSystemPromptLoader::SETTING_KEY);
         $this->system_prompt = is_string($stored) ? $stored : '';
 
@@ -187,10 +195,6 @@ class AiAssistantPage extends Component
             'gigachat' => $this->providerHasAccess($settings, 'gigachat'),
         ];
 
-        // Resolve the active provider. A provider with no configured access must
-        // never appear pre-selected: keep the stored choice only when it is
-        // configured, otherwise fall back to the first configured provider (or
-        // none at all when nothing is set up yet).
         $stored = (string) ($settings->get('ai.default_provider') ?? '');
         $this->default_provider = ($stored !== '' && ($this->providerConfigured[$stored] ?? false))
             ? $stored
@@ -202,8 +206,6 @@ class AiAssistantPage extends Component
             'gigachat' => (string) ($settings->get('ai.gigachat_model') ?? ''),
         ];
 
-        // Informational — when the AI bot is not configured, drafts only appear
-        // in the admin panel workspace and are not posted to the supergroup.
         $this->aiBotConnected = app(ChannelStatusService::class)->telegramAi()['connected'];
     }
 

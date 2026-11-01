@@ -88,7 +88,7 @@ _Enforced in:_ `app/Modules/Ai/Services/ShouldAiReply.php::shouldGenerateForUser
 **BR-014** — `generateReply()` and `processMessage()` share the same DB-backed history pipeline through `AiChatHistoryService::buildForBotUser($userId, $userMessage)`. The current incoming user message is passed as `$excludeLastUserText` so it is dropped from the assembled history when `SendTelegramMessageJob` has already inserted it (race-safe in both directions: when the row exists the duplicate is dropped, when it does not nothing happens).
 _Enforced in:_ `app/Modules/Ai/Services/AiAssistantService.php`, `app/Modules/Ai/Services/AiChatHistoryService.php`
 
-**BR-015** — The AI system prompt is stored **only in the DB** (`ai.system_prompt` via `SettingsService`), used **verbatim** — no templating or variable substitution. There is no prompt file and no default: when unset the prompt is empty (an empty value sends no system message). The loader (`AiSystemPromptLoader`, singleton) exposes `render()` — it reads the DB value (memoized for the request) and providers send it as the `system` message.
+**BR-015** — The AI system prompt is stored **only in the DB** (`ai.system_prompt` via `SettingsService`), used **verbatim** — no templating or variable substitution. There is no prompt file and no default: when unset the prompt is empty (an empty value sends no system message). The loader (`AiSystemPromptLoader`, singleton) exposes `render()` — it composes the final prompt (memoized for the request, see BR-020) and providers send it as the `system` message.
 _Enforced in:_ `app/Modules/Ai/Services/AiSystemPromptLoader.php`; `app/Modules/Ai/AiServiceProvider.php` (singleton binding)
 
 **BR-016** — Only messages that were actually delivered to the user may appear in the AI's assistant-history. The invariant: AI drafts (`SendAiDraftJob`, `SendAiReplyJob`) write **only** to `ai_messages`, never to `messages`. A row in `messages` (regardless of `message_type=outgoing` reason — Accept, manual manager reply, etc.) appears only when `AbstractSendMessageJob::handle()` actually sends the message. Cancel never creates a `messages` row. Any future AI-flow change that violates this is a regression.
@@ -102,6 +102,17 @@ _Enforced in:_ `app/Modules/Ai/Actions/DeliverAiAnswerToUser.php`, `app/Modules/
 
 **BR-018a** — `DeliverAiAnswerToUser::execute()` ALWAYS persists an outgoing `messages` row directly (before the platform send job is dispatched) for built-in platforms (telegram/vk/max/avito/email). This guarantees the AI answer is visible in the admin chat thread at `/admin/chats` regardless of whether the platform send ultimately succeeds (wrong/placeholder token, user blocked bot, etc.). The "simple" (non-saving) send jobs are used so there is exactly ONE `messages` row — no duplicate. For Telegram the AI answer is sent as PLAIN text with `parse_mode` explicitly disabled (`null`, omitted from the request) and `messages.text` stores the same HTML-stripped plain text: AI output is untrusted and frequently not valid Telegram HTML (stray `<`, `&`, code), which Telegram would reject with 400 "can't parse entities" so the answer would never reach the user. Cancel (`AiCancelMessage`) never creates a `messages` row. Pluggable platform channels (the `default` branch / `PlatformChannelRegistry`) own their own persistence.
 _Enforced in:_ `app/Modules/Ai/Actions/DeliverAiAnswerToUser.php`
+
+**BR-020** — The final system prompt is composed by `AiSystemPromptLoader::render()` from up to three sections, in this order, joined by a blank line; empty sections are skipped and an all-empty result sends no system message:
+1. the admin's base prompt (`ai.system_prompt`, verbatim);
+2. the FAQ knowledge base — every `ai_faq_entries` row with `enabled = true`, ordered by `id`, rendered under `AiSystemPromptLoader::FAQ_HEADING` as `Вопрос: …` / `Ответ: …` pairs. The heading tells the model to treat the answers as verified facts, match questions by meaning (not verbatim) and never contradict them;
+3. the clarifying-questions («grill me») instructions (`AiSystemPromptLoader::CLARIFY_INSTRUCTIONS`) — only when `ai.clarify_mode = true`.
+
+FAQ entries are injected into the prompt as a whole (no retrieval / relevance search in v1), so the prompt grows with the knowledge base and is NOT counted against `ai.max_context_tokens` (that budget covers the conversation history only).
+_Enforced in:_ `app/Modules/Ai/Services/AiSystemPromptLoader.php`; `app/Models/AiFaqEntry.php`
+
+**BR-021** — Clarifying-questions mode («grill me», `ai.clarify_mode`, default off) makes the AI, when a customer's question is ambiguous or lacks data, ask **exactly one** clarifying question per reply instead of guessing, building each next question on the previous answers, and answer in full once it has enough information. It must not re-ask what the customer already said, must answer immediately when the FAQ or the conversation already covers the question, and asks at most three clarifying questions in a row. It is a pure prompt instruction — there is no separate state machine: the clarifying question is an ordinary AI answer, so it goes through the same draft/auto-reply path (BR-002, BR-016) and the customer's reply re-enters via the regular history (BR-009). In draft mode the manager sees and approves each clarifying question like any other draft.
+_Enforced in:_ `app/Modules/Ai/Services/AiSystemPromptLoader.php @ CLARIFY_INSTRUCTIONS`; `app/Livewire/Settings/AiAssistantPage.php` (toggle); `app/Services/Settings/SettingKeyRegistry.php @ ai.clarify_mode`
 
 **BR-019** — `SendAiDraftJob` and `SendAiReplyJob` post the AI marker into the supergroup forum topic of the `BotUser`. The `BotUser.topic_id` may still be in flight when the AI job runs (VK/Max users hit `TopicCreateJob` asynchronously on their first message). In that case the AI job releases itself back to the queue with a short delay instead of posting into `message_thread_id=null`. The job retries (`$tries = 3`) until the topic exists, then proceeds.
 _Enforced in:_ `app/Modules/Ai/Jobs/SendAiDraftJob.php`, `app/Modules/Ai/Jobs/SendAiReplyJob.php`
@@ -123,7 +134,9 @@ The AI assistant settings are managed via custom Livewire/Blade pages at `/admin
 | ИИ-ассистент (master toggle) | `ai.enabled` (SettingsService) | bool | — (persists instantly, no save) |
 | Провайдер по умолчанию | `ai.default_provider` (SettingsService) | string | in:openai,deepseek,gigachat |
 | Автоответ (toggle) | `ai.auto_reply` (SettingsService) | bool | confirm dialog required |
-| Системный промпт | `ai.system_prompt` (SettingsService / DB) | string | stored as-is; blank → no system prompt |
+| Уточняющие вопросы (grill me) | `ai.clarify_mode` (SettingsService) | bool | — (see BR-021) |
+| Частые вопросы | link to `/admin/settings/ai/faq` + count of enabled entries | — | — |
+| Системный промпт | `ai.system_prompt` (SettingsService / DB) | string | stored as-is; blank → no base prompt (FAQ/clarify sections may still be sent, BR-020) |
 
 The «Запросов в минуту» (`ai.rate_limit.requests_per_minute`), «Запросов в час» (`ai.rate_limit.requests_per_hour`), and «Таймаут отключения» (`ai.disable_timeout`) fields have been **removed** — from the UI, from `SettingKeyRegistry`, and from the internal rate-limit logic in `BaseAiProvider` (`checkRateLimit`/`getRateLimitStatus`). Provider throttling is now left entirely to the external provider's own 429 responses.
 
@@ -139,6 +152,10 @@ _Enforced in:_ `app/Livewire/Settings/AiAssistantPage.php` (`updatedAiEnabled()`
 **Provider cards**: provider selection rendered as 3 clickable cards (OpenAI / DeepSeek / GigaChat). Each card has a «Настроить доступ» link to the corresponding provider access page. A provider with no configured credentials shows a yellow «Доступы не указаны» flag instead of the «Выбрать» button and cannot be selected (see BR-004a).
 
 **Runtime application**: `ShouldAiReply`, `AiAssistantService`, `AiChatHistoryService`, `BaseAiProvider` and the AI jobs/actions read all AI settings and provider credentials **live from `SettingsService`** (DB `settings` table) — there is no `config('ai.*')` fallback (`config => null` in `SettingKeyRegistry`). Saved values take effect on the next request; no container restart needed.
+
+### Pages: AiFaqPage / AiFaqFormPage (`GET /admin/settings/ai/faq`)
+
+`app/Livewire/Settings/AiFaqPage.php` — FAQ knowledge-base list (question, answer preview, «Активен/Выключен» status pill that toggles `enabled` via `toggleEntry()`, edit, delete with `wire:confirm`). `app/Livewire/Settings/AiFaqFormPage.php` — create (`/ai/faq/create`, name `admin.settings.ai.faq.create`) / edit (`/ai/faq/{entry}/edit`, name `admin.settings.ai.faq.edit`) form: `question` (required, ≤500), `answer` (required, ≤5000), `enabled` toggle; saves and redirects back to the list. Records live in `ai_faq_entries` (see `database/schema.md`); enabled ones are appended to the system prompt per BR-020. Same access as the rest of `/admin/settings/ai` (admin-only via `EnsureSettingsAccess`).
 
 ### Pages: AiProviderAccessPage (`GET /admin/settings/ai/{provider}`)
 

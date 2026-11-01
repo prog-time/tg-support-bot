@@ -6,6 +6,7 @@ namespace Tests\Feature\Settings;
 
 use App\Enums\UserRole;
 use App\Livewire\Settings\AiAssistantPage;
+use App\Models\AiFaqEntry;
 use App\Models\User;
 use App\Services\Settings\SettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -272,5 +273,36 @@ class AiAssistantPageTest extends TestCase
             ->call('cancelAutoReply')
             ->assertSet('auto_reply', false)
             ->assertSet('showAutoReplyWarning', false);
+    }
+
+    // ── Clarify mode / FAQ ───────────────────────────────────────────────────
+
+    public function test_save_persists_clarify_mode(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        Livewire::test(AiAssistantPage::class)
+            ->assertSet('clarify_mode', false)
+            ->set('clarify_mode', true)
+            ->call('save')
+            ->assertSet('saved', true);
+
+        $this->assertTrue((bool) app(SettingsService::class)->get('ai.clarify_mode'));
+    }
+
+    public function test_page_shows_clarify_toggle_and_faq_link_with_enabled_count(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+        app(SettingsService::class)->set('ai.enabled', true);
+        AiFaqEntry::create(['question' => 'Q1', 'answer' => 'A1', 'enabled' => true]);
+        AiFaqEntry::create(['question' => 'Q2', 'answer' => 'A2', 'enabled' => false]);
+
+        Livewire::test(AiAssistantPage::class)
+            ->assertSet('faqEnabledCount', 1)
+            ->assertSee('Уточняющие вопросы (grill me)')
+            ->assertSee('Частые вопросы')
+            ->assertSee(route('admin.settings.ai.faq'));
     }
 }

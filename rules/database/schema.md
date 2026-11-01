@@ -461,6 +461,28 @@ Auto-reply rules: a trigger phrase and the response sent when it matches. Manage
 
 ---
 
+### `ai_faq_entries`
+
+AI knowledge base: frequently asked questions with reference answers. Managed from `/admin/settings/ai/faq` (`App\Livewire\Settings\AiFaqPage` + `AiFaqFormPage`). Enabled rows are appended to the AI system prompt by `AiSystemPromptLoader` (see `domain/ai-assistant.md` BR-020).
+
+| Column | Type | Nullable | Default | Description |
+|---|---|---|---|---|
+| `id` | `bigint` | No | auto | Primary key; also the order in which entries appear in the prompt |
+| `question` | `string(500)` | No | — | Customer question as it is usually asked |
+| `answer` | `text` | No | — | Reference answer the AI bases its reply on (UI limit 5000 chars) |
+| `enabled` | `boolean` | No | `true` | Whether the entry is fed to the AI |
+| `created_at` | `timestamp` | Yes | NULL | Creation time |
+| `updated_at` | `timestamp` | Yes | NULL | Last update time |
+
+**Indexes:**
+- PRIMARY on `id`
+
+**Model:** `App\Models\AiFaqEntry` (`enabled` cast to `boolean`).
+
+**Migration:** `database/migrations/2026_10_29_000001_create_ai_faq_entries_table.php`
+
+---
+
 ### `push_subscriptions`
 
 Web Push (VAPID) subscriptions for the admin PWA — one row per subscribed browser/device, used to deliver background notifications even while the PWA is closed or the screen is locked. See `domain/admin-panel.md` → «Web Push (background delivery)».
