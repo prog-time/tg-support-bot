@@ -169,6 +169,31 @@
 
                 <div class="h-px bg-border-light"></div>
 
+                {{-- Clarifying questions (grill me) --}}
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-text-primary">Уточняющие вопросы (grill me)</p>
+                        <p class="mt-0.5 text-xs text-text-secondary">Если вопрос клиента неоднозначен, ИИ сначала задаёт уточняющие вопросы по одному и только потом отвечает</p>
+                    </div>
+                    <x-admin.toggle name="clarify_mode" id="clarify_mode" wire:model="clarify_mode" />
+                </div>
+
+                <div class="h-px bg-border-light"></div>
+
+                {{-- FAQ knowledge base --}}
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-text-primary">Частые вопросы</p>
+                        <p class="mt-0.5 text-xs text-text-secondary">Готовые ответы, которые ИИ использует как источник фактов · активных: {{ $faqEnabledCount }}</p>
+                    </div>
+                    <a href="{{ route('admin.settings.ai.faq') }}" wire:navigate
+                       class="inline-flex shrink-0 items-center justify-center rounded-lg bg-bg-input px-3.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-border-light">
+                        Настроить
+                    </a>
+                </div>
+
+                <div class="h-px bg-border-light"></div>
+
                 {{-- System prompt --}}
                 <div x-data="{ count: $refs.prompt ? $refs.prompt.value.length : {{ mb_strlen($system_prompt) }} }">
                     <div class="mb-2 flex items-center justify-between">
@@ -186,7 +211,7 @@
                         placeholder="Ты — помощник службы поддержки. Отвечай вежливо и по существу..."
                     ></textarea>
                     <p class="mt-2 text-[11px] text-gray-400">
-                        Промпт хранится в базе данных и используется как есть, без подстановки переменных. Если поле пустое, системный промпт не отправляется.
+                        Промпт хранится в базе данных и используется как есть, без подстановки переменных. К нему автоматически добавляются активные частые вопросы и, если включено, инструкция уточняющих вопросов.
                     </p>
                 </div>
 
