@@ -142,6 +142,9 @@ The generated JSON is the authoritative OpenAPI file. Do not write a separate `o
 | `GET` | `/admin/settings/integrations/{channel}` | session | Per-channel config form (`IntegrationChannelPage`; channel ∈ telegram\|telegram_ai\|vk\|max) — name `admin.settings.integrations.channel` |
 | `GET` | `/admin/settings/avito` | session (admin only) | Avito module credentials (`AvitoIntegrationPage`) — name `admin.settings.avito`. Always registered (Avito is built-in core, not a conditional package) |
 | `GET` | `/admin/settings/ai` | session | AI assistant settings (`AiAssistantPage`, custom Livewire) — name `admin.settings.ai` |
+| `GET` | `/admin/settings/ai/faq` | session | AI FAQ knowledge-base list (`AiFaqPage`) — name `admin.settings.ai.faq` |
+| `GET` | `/admin/settings/ai/faq/create` | session | New FAQ entry form (`AiFaqFormPage`) — name `admin.settings.ai.faq.create` |
+| `GET` | `/admin/settings/ai/faq/{entry}/edit` | session | Edit FAQ entry form (`AiFaqFormPage`, `entry` = `[0-9]+`) — name `admin.settings.ai.faq.edit` |
 | `GET` | `/admin/settings/ai/{provider}` | session | Per-provider access settings (`AiProviderAccessPage`) — name `admin.settings.ai.provider` |
 | `GET` | `/admin/settings/api-webhooks` | session (admin only) | API and webhooks list (`ApiWebhooksPage`, custom Livewire) — name `admin.settings.api-webhooks` |
 | `GET` | `/admin/settings/api-webhooks/{source}` | session (admin only) | Per-source config (`ApiWebhookSourcePage`; source ∈ `[0-9]+`) — name `admin.settings.api-webhooks.source` |
