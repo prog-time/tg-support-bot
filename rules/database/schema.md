@@ -189,7 +189,7 @@ Core table. Stores every user that has interacted with the bot across all platfo
 | `id` | `bigint` | No | auto | Primary key |
 | `chat_id` | `string` | No | — | User's ID in Telegram, VK, Max, Avito, or External system. Widened from `unsignedBigInteger` to `string` (migration `2026_07_06_000001_change_bot_users_chat_id_to_string.php`) so platforms with non-numeric ids — e.g. Avito's `u2i-...` format — can be stored natively; numeric platforms still store their id as text |
 | `topic_id` | `bigint` | Yes | NULL | Telegram forum topic ID for this user's conversation |
-| `platform` | `string` | No | — | Platform: `telegram`, `vk`, `max`, `avito`, `external_source` |
+| `platform` | `string` | No | — | Platform: `telegram`, `vk`, `max`, `avito`, `ok`, `external_source` |
 | `display_name` | `string` | Yes | NULL | Human-readable display name (first + last name or username fallback) — populated by `EnrichBotUserProfileJob` and sync'd from webhook on Telegram |
 | `username` | `string` | Yes | NULL | Platform handle/username (e.g. Telegram @username) — populated from DTO or async job |
 | `avatar_path` | `string` | Yes | NULL | Local storage path on the `local` disk under `avatars/` (e.g. `avatars/bot-user-42.jpg`) — populated by `EnrichBotUserProfileJob` |
@@ -217,6 +217,7 @@ Core table. Stores every user that has interacted with the bot across all platfo
 - `vk` — user interacts via VK
 - `max` — user interacts via Max
 - `avito` — user interacts via Avito Messenger (built-in core module, text-only in v1)
+- `ok` — user interacts via Odnoklassniki group messages (built-in core module); `chat_id` stores `chat:...`
 - `external_source` — user interacts via External API
 
 ---

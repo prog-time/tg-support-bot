@@ -56,6 +56,10 @@ All VK requests must be validated by `VkQuery` middleware:
 - Returns confirmation code for VK verification requests
 - Rejects invalid requests with `403`
 
+### Odnoklassniki Webhooks
+
+`OkQuery` compares the `{secret}` path segment of `POST /api/ok/bot/{secret}` with the `ok.webhook_secret` setting via `hash_equals()`. The OK documentation describes no request signature, so this is the only proof of origin: an **empty secret rejects every request**, unlike Avito. The OK token travels in the `access_token` query parameter, so `OkMethods::withoutToken()` masks it in errors and `ok:set-webhook` never prints the token or the secret.
+
 ### Avito Webhooks
 
 Avito requests are validated by `AvitoQuery` middleware (`app/Modules/Avito/Middleware/AvitoQuery.php`) — **different scheme from Telegram/VK**: the secret travels in the URL **path**, not a header or body field.
@@ -154,6 +158,7 @@ $token = '1234567890:AABBcc_my_telegram_token_here';        // hardcoded secret
 - `vk.token`, `vk.secret_key`, `vk.confirm_code` — VK API token + webhook secret + confirm code
 - `max.token`, `max.secret_key` — MAX token + webhook secret
 - `avito.client_secret` — Avito OAuth client secret; `avito.webhook_secret` — self-chosen secret embedded in the webhook URL path (see AvitoQuery above). Built-in module, no `.env`/`config()` fallback (`config => null`), same as every other channel
+- `ok.token` — OK group token; `ok.webhook_secret` — self-chosen secret embedded in the webhook URL path (see OkQuery above)
 - `ai.openai_api_key`, `ai.deepseek_client_secret`, `ai.gigachat_client_secret` (+ client ids / base urls / models / cert) — AI providers
 - Non-secret access keys (`telegram.group_id`, `telegram_ai.username`, `avito.client_id`, `avito.user_id`, `avito.base_url`, etc.) also live in `settings` but are stored unencrypted
 
