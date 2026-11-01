@@ -59,7 +59,7 @@ class ConversationPageAiDraftTest extends TestCase
 
     public function test_pending_drafts_also_shown_when_message_id_set(): void
     {
-        // Drafts with a Telegram message_id (AI bot posted to supergroup) are
+        // Drafts with a Telegram message_id (main bot posted to supergroup) are
         // still shown in the admin panel workspace.
         AiMessage::create([
             'bot_user_id' => $this->botUser->id,
