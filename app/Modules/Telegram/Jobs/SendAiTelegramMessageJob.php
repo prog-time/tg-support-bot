@@ -70,8 +70,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                 'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
                 'message_thread_id' => $botUser->topic_id,
                 'text' => AiHelper::preparedAiAnswer($this->managerTextMessage, $this->aiTextMessage),
-                'parse_mode' => 'html',
-            ], (string) app(SettingsService::class)->get('telegram_ai.token'));
+            ]);
 
             if ($response->ok === true) {
                 $this->saveMessage($botUser, $response);
@@ -80,14 +79,12 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                     $botUser->id,
                     $this->updateDto,
                     TGTextMessageDto::from([
-                        'token' => (string) app(SettingsService::class)->get('telegram_ai.token'),
                         'methodQuery' => 'editMessageText',
                         'typeSource' => 'supergroup',
                         'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
                         'message_id' => $response->message_id,
                         'message_thread_id' => $response->message_thread_id,
                         'text' => $response->text,
-                        'parse_mode' => 'html',
                         'reply_markup' => AiHelper::preparedAiReplyMarkup($response->message_id, $this->aiTextMessage),
                     ]),
                     'incoming',
@@ -145,6 +142,5 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
      */
     protected function editMessage(BotUser $botUser, mixed $resultQuery): void
     {
-        //
     }
 }

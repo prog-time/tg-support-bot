@@ -25,8 +25,6 @@ class SendAiTelegramMessageJobTest extends TestCase
 
     private string $provider;
 
-    private string $telegramAiToken;
-
     private int $groupId;
 
     public function setUp(): void
@@ -44,9 +42,6 @@ class SendAiTelegramMessageJobTest extends TestCase
 
         $settings = app(\App\Services\Settings\SettingsService::class);
         $this->groupId = (int) $settings->get('telegram.group_id');
-
-        $this->telegramAiToken = 'test_ai_token';
-        $settings->set('telegram_ai.token', $this->telegramAiToken);
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
 
@@ -147,7 +142,7 @@ class SendAiTelegramMessageJobTest extends TestCase
         $jobData = $pushed[0]['job'];
         $this->assertEquals($this->botUser->id, $jobData->botUserId);
         $this->assertEquals('editMessageText', $jobData->queryParams->methodQuery);
-        $this->assertEquals($this->telegramAiToken, $jobData->queryParams->token);
+        $this->assertNull($jobData->queryParams->token);
         $this->assertEquals($this->groupId, $jobData->queryParams->chat_id);
 
         $jobData = $pushed[1]['job'];
