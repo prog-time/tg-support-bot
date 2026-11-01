@@ -30,7 +30,6 @@ class AiCancelMessageTest extends TestCase
 
         $this->groupId = time();
 
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', 'test_token');
         app(\App\Services\Settings\SettingsService::class)->set('telegram.group_id', (string) $this->groupId);
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
@@ -74,6 +73,7 @@ class AiCancelMessageTest extends TestCase
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
         $this->assertEquals($this->groupId, $firstJob->queryParams->chat_id);
         $this->assertEquals('deleteMessage', $firstJob->queryParams->methodQuery);
+        $this->assertNull($firstJob->queryParams->token);
 
         // Row must still exist but with status = cancelled (not deleted).
         $this->assertDatabaseHas('ai_messages', [
