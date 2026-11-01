@@ -11,6 +11,8 @@ use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Email\Services\EmailThreadStore;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
+use App\Modules\Ok\DTOs\OkTextMessageDto;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
@@ -80,11 +82,6 @@ class DeliverAiAnswerToUser
                     'text' => $plainText ?: null,
                 ]);
 
-                // Send PLAIN text with parse_mode explicitly disabled (null → omitted
-                // by toArray()). The DTO defaults parse_mode to 'html'; left at the
-                // default, Telegram rejects AI output that isn't valid Telegram HTML
-                // (stray '<', '&', code) with 400 "can't parse entities" and the
-                // answer never reaches the user. Plain delivery is robust for any text.
                 SendTelegramSimpleQueryJob::dispatch(
                     TGTextMessageDto::from([
                         'methodQuery' => 'sendMessage',
@@ -151,6 +148,27 @@ class DeliverAiAnswerToUser
 
                 SendAvitoSimpleMessageJob::dispatch(
                     AvitoTextMessageDto::from([
+                        'methodQuery' => 'sendMessage',
+                        'chat_id' => $botUser->chat_id,
+                        'text' => $plainText,
+                    ]),
+                );
+                return true;
+
+            case 'ok':
+                $plainText = $this->stripHtmlForPlainText($text);
+
+                Message::create([
+                    'bot_user_id' => $botUser->id,
+                    'platform' => $botUser->platform,
+                    'message_type' => 'outgoing',
+                    'from_id' => 0,
+                    'to_id' => 0,
+                    'text' => $plainText ?: null,
+                ]);
+
+                SendOkSimpleMessageJob::dispatch(
+                    OkTextMessageDto::from([
                         'methodQuery' => 'sendMessage',
                         'chat_id' => $botUser->chat_id,
                         'text' => $plainText,

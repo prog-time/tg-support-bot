@@ -10,6 +10,7 @@ use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Vk\Jobs\SendVkMessageJob;
@@ -276,5 +277,22 @@ class DeliverAiAnswerToUserTest extends TestCase
             'message_type' => 'outgoing',
             'text' => 'Hello!',
         ]);
+    }
+
+    public function test_dispatches_simple_ok_job_for_ok_user_and_persists_plain_text(): void
+    {
+        $botUser = BotUser::getUserByChatId('chat:C' . time(), 'ok');
+
+        $this->assertTrue((new DeliverAiAnswerToUser())->execute($botUser, '<b>Здравствуйте!</b>'));
+
+        Queue::assertPushed(SendOkSimpleMessageJob::class, fn ($job) => $job->queryParams->chat_id === $botUser->chat_id
+            && $job->queryParams->text === 'Здравствуйте!');
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $botUser->id,
+            'platform' => 'ok',
+            'message_type' => 'outgoing',
+            'text' => 'Здравствуйте!',
+        ]);
+        $this->assertEquals(1, Message::where('bot_user_id', $botUser->id)->count());
     }
 }
