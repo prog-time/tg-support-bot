@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Admin\Services;
 
+use App\Modules\Ok\Api\OkMethods;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Vk\Api\VkMethods;
 use App\Services\Settings\SettingsService;
@@ -370,5 +371,66 @@ class WebhookRegistrationService
             'success' => false,
             'message' => 'Ошибка регистрации вебхука MAX (HTTP ' . $response->status() . '): ' . $body,
         ];
+    }
+
+    /**
+     * Subscribe the OK webhook to the current token and secret, then remove this
+     * application's subscriptions with an outdated secret. OK keeps several URLs
+     * at once and a repeated subscribe is harmless, so this runs on every save.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function registerOk(): array
+    {
+        $secret = (string) $this->settings->get('ok.webhook_secret');
+
+        if ((string) $this->settings->get('ok.token') === '' || $secret === '') {
+            return ['success' => false, 'message' => 'Токен или секретный ключ Одноклассников не заданы.'];
+        }
+
+        $base = rtrim((string) config('app.url'), '/') . '/api/ok/bot/';
+        $url = $base . rawurlencode($secret);
+        $ok = app(OkMethods::class);
+
+        try {
+            $ok->subscribeWebhook($url);
+        } catch (\Throwable $e) {
+            $error = str_replace($secret, '***', OkMethods::withoutToken($e->getMessage()));
+
+            Log::channel('app')->error('WebhookRegistrationService: OK webhook registration failed', [
+                'error' => $error,
+            ]);
+
+            return ['success' => false, 'message' => 'Ошибка подписки вебхука Одноклассников: ' . $error];
+        }
+
+        $this->removeOutdatedOkSubscriptions($ok, $base, $url);
+
+        return ['success' => true, 'message' => 'Вебхук Одноклассников подписан.'];
+    }
+
+    /**
+     * An old subscription would only produce rejected requests, so a failure
+     * here is logged and does not fail the save.
+     *
+     * @param OkMethods $ok
+     * @param string    $base    This application's webhook prefix
+     * @param string    $current The URL that must stay
+     *
+     * @return void
+     */
+    private function removeOutdatedOkSubscriptions(OkMethods $ok, string $base, string $current): void
+    {
+        try {
+            foreach ($ok->subscribedUrls() as $subscribed) {
+                if ($subscribed !== $current && str_starts_with($subscribed, $base)) {
+                    $ok->unsubscribeWebhook($subscribed);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::channel('app')->warning('WebhookRegistrationService: cannot remove old OK subscriptions', [
+                'exception' => get_class($e),
+            ]);
+        }
     }
 }
