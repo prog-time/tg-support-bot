@@ -1,0 +1,8 @@
+{
+    "webhookType": "CHAT_SYSTEM",
+    "type": "CHAT_STARTED",
+    "payload": "start",
+    "sender": {"user_id": "user:123456789012"},
+    "recipient": {"chat_id": "chat:C3ecb9d02a600"},
+    "timestamp": 1793547168000
+}

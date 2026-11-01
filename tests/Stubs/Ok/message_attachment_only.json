@@ -1,0 +1,13 @@
+{
+    "webhookType": "MESSAGE_CREATED",
+    "sender": {"user_id": "user:123456789012"},
+    "recipient": {"chat_id": "chat:C3ecb9d02a600"},
+    "message": {
+        "seq": 2,
+        "mid": "mid.0002",
+        "attachments": [
+            {"type": "IMAGE", "payload": {"id": "1", "token": "image-token", "url": "https://i.okcdn.ru/i?id=1"}}
+        ]
+    },
+    "timestamp": 1793547167000
+}
