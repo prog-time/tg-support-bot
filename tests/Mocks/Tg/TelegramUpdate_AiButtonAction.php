@@ -67,7 +67,7 @@ class TelegramUpdate_AiButtonAction extends TelegramUpdateDto
                         ],
                         'is_topic_message' => true,
                     ],
-                    'text' => "📄 Инструкция: \nнапиши приветственное сообщение  \n\n🤖 Ответ от AI: \nДобро пожаловать в TG Support Bot!",
+                    'text' => "📄 Инструкция: \nнапиши приветственное сообщение  \n\n🤖 AI:\nДобро пожаловать в TG Support Bot!",
                     'reply_markup' => [
                         'inline_keyboard' => [
                             [

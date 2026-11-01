@@ -24,10 +24,6 @@ class EditAiMessage
     public function execute(TelegramUpdateDto $update): void
     {
         try {
-            if (empty((string) app(SettingsService::class)->get('telegram_ai.token'))) {
-                throw new Exception('AI bot token not specified!', 1);
-            }
-
             $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
                 throw new \Exception('Bot user not found');
@@ -66,14 +62,12 @@ class EditAiMessage
                 $botUser->id,
                 $update,
                 TGTextMessageDto::from([
-                    'token' => (string) app(SettingsService::class)->get('telegram_ai.token'),
                     'methodQuery' => 'editMessageText',
                     'typeSource' => 'supergroup',
                     'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
                     'message_id' => $messageData->message_id,
                     'message_thread_id' => $update->messageThreadId,
                     'text' => $textMessage,
-                    'parse_mode' => 'html',
                     'reply_markup' => AiHelper::preparedAiReplyMarkup((int)$messageData->message_id, $newTextMessage),
                 ]),
                 'incoming',

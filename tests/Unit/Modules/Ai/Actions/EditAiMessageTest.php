@@ -30,7 +30,6 @@ class EditAiMessageTest extends TestCase
 
         $this->groupId = time();
 
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', 'test_token');
         app(\App\Services\Settings\SettingsService::class)->set('telegram.group_id', (string) $this->groupId);
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
@@ -40,7 +39,6 @@ class EditAiMessageTest extends TestCase
 
     public function test_edit_ai_message(): void
     {
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', 'test_token');
         $aiTextMessage = 'Тестовое сообщение от AI';
         $managerTextMessage = 'Сообщение от менеджера';
 
@@ -61,8 +59,7 @@ class EditAiMessageTest extends TestCase
 
         // Создание сообщения с командой на редактирование
         $editMessage = 'Новый ответ от AI';
-        $usernameBot = app(\App\Services\Settings\SettingsService::class)->get('telegram_ai.username');
-        $newMessage = "@{$usernameBot} ai_message_edit_{$messageData->id} \n {$editMessage}";
+        $newMessage = "@main_test_bot ai_message_edit_{$messageData->id} \n {$editMessage}";
 
         $dataParams = TelegramUpdateDto_GroupMock::getDtoParams();
         $dataParams['message']['text'] = $newMessage;
@@ -81,6 +78,7 @@ class EditAiMessageTest extends TestCase
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
         $this->assertEquals($this->groupId, $firstJob->queryParams->chat_id);
         $this->assertEquals('editMessageText', $firstJob->queryParams->methodQuery);
+        $this->assertNull($firstJob->queryParams->token);
 
         $secondJob = $pushed[1]['job'];
         $this->assertEquals($this->botUser->id, $secondJob->botUserId);
