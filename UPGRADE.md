@@ -1,5 +1,38 @@
 # Upgrade Guide
 
+## Upgrading from 9.x: separate AI bot removed
+
+**Breaking change.** The separate Telegram AI bot no longer exists. AI drafts and
+replies are published to the topic by the main bot with the `🤖 AI:` label, and the
+main bot handles the draft buttons. Removed: `POST /api/ai-bot/webhook`,
+`/admin/settings/integrations/telegram_ai`, `php artisan ai-bot:set-webhook` and
+the `telegram_ai.*` settings. Installations without an AI bot now get AI messages
+in the group as soon as the main bot and `telegram.group_id` are configured.
+
+Only the author can edit a Telegram message, so drafts published by the old AI bot
+must be closed with its token. Upgrade in this order:
+
+```bash
+# 1. Disable AI at /admin/settings/ai so new drafts do not mix with old ones.
+
+# 2. Deploy the release and run migrations as usual.
+
+# 3. Retire the AI bot. Idempotent: if Telegram is unavailable it exits with an
+#    error and keeps the settings, run it again.
+php artisan ai-bot:retire
+
+# 4. Enable AI at /admin/settings/ai.
+
+# 5. Remove the AI bot from the group and, optionally, revoke its token.
+```
+
+`ai-bot:retire` deletes old pending drafts from the topics (or removes their buttons
+when Telegram no longer allows deletion). They stay pending in `/admin/chats`, they
+are not published again. Until the command runs, the old buttons do nothing.
+
+Rolling back to the previous version requires entering the AI bot token and secret
+again and running `php artisan ai-bot:set-webhook`.
+
 ## Upgrading to 8.0.0 from 7.x
 
 Release 8.0.0 is a **major release** with breaking changes to configuration and
