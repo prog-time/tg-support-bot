@@ -2,6 +2,7 @@
 
 namespace App\Modules\Ai\Actions;
 
+use App\Helpers\AiHelper;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Modules\Admin\Jobs\MirrorAdminReplyToGroupJob;
@@ -27,10 +28,6 @@ class AiAcceptMessage extends AiAction
     public function execute(TelegramUpdateDto $update): void
     {
         try {
-            if (empty((string) app(SettingsService::class)->get('telegram_ai.token'))) {
-                throw new Exception('AI bot token not specified!', 1);
-            }
-
             $botUser = BotUser::getOrCreateByTelegramUpdate($update);
             if (!$botUser) {
                 throw new Exception('User not found', 1);
@@ -41,13 +38,11 @@ class AiAcceptMessage extends AiAction
                 throw new Exception('Message not found in database!', 1);
             }
 
-            // Delete the supergroup draft message to clean up the thread.
             if ($messageData->message_id !== null) {
                 SendTelegramMessageJob::dispatch(
                     $botUser->id,
                     $update,
                     TGTextMessageDto::from([
-                        'token' => (string) app(SettingsService::class)->get('telegram_ai.token'),
                         'methodQuery' => 'deleteMessage',
                         'typeSource' => 'supergroup',
                         'chat_id' => (string) app(SettingsService::class)->get('telegram.group_id'),
@@ -79,7 +74,7 @@ class AiAcceptMessage extends AiAction
      * Accept an AI draft directly — used by the admin panel workspace.
      *
      * Sets status=accepted, delivers to the user. When a supergroup message_id
-     * exists (the AI bot is configured), deletes the draft message from the
+     * exists, deletes the draft message from the
      * supergroup so the thread stays clean.
      *
      * @param AiMessage $aiMessage The pending draft to accept
@@ -109,11 +104,9 @@ class AiAcceptMessage extends AiAction
             return;
         }
 
-        // Delete supergroup draft when it was posted there.
         if ($aiMessage->message_id !== null) {
-            $token = (string) app(SettingsService::class)->get('telegram_ai.token');
-            if ($token !== '') {
-                $groupId = (string) app(SettingsService::class)->get('telegram.group_id');
+            $groupId = (string) app(SettingsService::class)->get('telegram.group_id');
+            if ($groupId !== '') {
                 $emptyUpdate = new TelegramUpdateDto(
                     updateId: 0,
                     typeQuery: 'message',
@@ -124,7 +117,6 @@ class AiAcceptMessage extends AiAction
                     $botUser->id,
                     $emptyUpdate,
                     TGTextMessageDto::from([
-                        'token' => $token,
                         'methodQuery' => 'deleteMessage',
                         'typeSource' => 'supergroup',
                         'chat_id' => $groupId,
@@ -155,8 +147,7 @@ class AiAcceptMessage extends AiAction
      * topic (so the group shows the final answer once its draft is removed).
      *
      * Runs only when the Telegram group is configured (token + group_id). Posts
-     * plain text (HTML markup stripped) from the main bot with the "🤖 Ответ ИИ:\n"
-     * prefix. Never creates a messages row and never re-delivers to the user.
+     * plain text (HTML markup stripped) from the main bot with the AI label. Never creates a messages row and never re-delivers to the user.
      *
      * @param BotUser $botUser
      * @param string  $textAi  AI answer (may contain Telegram HTML markup)
@@ -171,12 +162,12 @@ class AiAcceptMessage extends AiAction
             return;
         }
 
-        $plain = trim(html_entity_decode(strip_tags($textAi), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $plain = AiHelper::toPlainText($textAi);
 
         if ($plain === '') {
             return;
         }
 
-        MirrorAdminReplyToGroupJob::dispatch($botUser->id, $plain, "🤖 Ответ ИИ:\n");
+        MirrorAdminReplyToGroupJob::dispatch($botUser->id, $plain, AiHelper::AI_LABEL . "\n");
     }
 }

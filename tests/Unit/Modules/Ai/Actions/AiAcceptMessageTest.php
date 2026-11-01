@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Modules\Ai\Actions;
 
+use App\Helpers\AiHelper;
 use App\Models\AiMessage;
 use App\Models\BotUser;
 use App\Models\Message;
@@ -28,7 +29,6 @@ class AiAcceptMessageTest extends TestCase
         Message::truncate();
         Queue::fake();
 
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', 'test_token');
 
         $this->botUser = BotUser::getUserByChatId(time(), 'telegram');
         $this->botUser->topic_id = 123;
@@ -37,7 +37,6 @@ class AiAcceptMessageTest extends TestCase
 
     public function test_accept_ai_message_deletes_supergroup_message_and_delivers(): void
     {
-        app(\App\Services\Settings\SettingsService::class)->set('telegram_ai.token', 'test_token');
         $aiTextMessage = 'Тестовое сообщение от AI';
         $managerTextMessage = 'Сообщение от менеджера';
 
@@ -68,6 +67,7 @@ class AiAcceptMessageTest extends TestCase
         $pushedFull = Queue::pushedJobs()[SendTelegramMessageJob::class] ?? [];
         $this->assertCount(1, $pushedFull);
         $this->assertEquals('deleteMessage', $pushedFull[0]['job']->queryParams->methodQuery);
+        $this->assertNull($pushedFull[0]['job']->queryParams->token);
 
         // User delivery now uses the simple (non-saving) job.
         /** @phpstan-ignore-next-line */
@@ -166,7 +166,7 @@ class AiAcceptMessageTest extends TestCase
     public function test_execute_for_draft_mirrors_answer_to_group_when_configured(): void
     {
         // Group fully configured → telegram()['connected'] is true → the accepted
-        // answer is posted into the group topic with the "🤖 Ответ ИИ:\n" prefix (plain).
+        // answer is posted into the group topic with the AI label prefix (plain).
         $settings = app(\App\Services\Settings\SettingsService::class);
         $settings->set('telegram.token', 'bot:token');
         $settings->set('telegram.secret_key', 'secret');
@@ -185,7 +185,7 @@ class AiAcceptMessageTest extends TestCase
         (new AiAcceptMessage())->executeForDraft($draft);
 
         Queue::assertPushed(MirrorAdminReplyToGroupJob::class, function ($job) {
-            return $job->prefix === "🤖 Ответ ИИ:\n"
+            return $job->prefix === AiHelper::AI_LABEL . "\n"
                 && $job->text === 'Ответ пользователю'; // HTML stripped
         });
     }
