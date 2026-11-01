@@ -201,8 +201,6 @@ class AiAssistantPageTest extends TestCase
 
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
-        // TestCase::setUp seeds telegram_ai.token, so the AI bot integration is
-        // connected and the master toggle can be enabled.
 
         // Toggling the master switch persists immediately — no save() call.
         Livewire::test(AiAssistantPage::class)
@@ -216,20 +214,17 @@ class AiAssistantPageTest extends TestCase
         $this->assertFalse((bool) $settings->get('ai.enabled'));
     }
 
-    public function test_master_toggle_can_be_enabled_without_ai_bot_configured(): void
+    public function test_master_toggle_can_be_enabled_without_telegram_group(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $this->actingAs($admin);
 
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
-        // Remove the seeded AI bot token → integration not connected.
-        $settings->forget('telegram_ai.token');
+        $settings->forget('telegram.group_id');
 
         Livewire::test(AiAssistantPage::class)
-            ->assertSet('aiBotConnected', false)
-            // No blocking notice is shown — AI can always be enabled.
-            ->assertDontSee('Сначала настройте')
+            ->assertDontSee('Бот AI помощника')
             ->set('ai_enabled', true)
             // Toggle stays enabled — no guard blocks it.
             ->assertSet('ai_enabled', true);
