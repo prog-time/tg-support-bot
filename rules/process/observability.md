@@ -165,7 +165,7 @@ The application must remain operable when checked by Docker/orchestration.
 Never expose private information in logs or error messages.
 
 Forbidden in logs:
-- Channel access secrets from the DB `settings` table (`telegram.token`, `telegram.secret_key`, `telegram_ai.token`, `telegram_ai.secret`, `vk.token`, `vk.secret_key`, `max.token`, `max.secret_key`) — i.e. any key with `is_secret = true` in `SettingKeyRegistry`
+- Channel access secrets from the DB `settings` table (`telegram.token`, `telegram.secret_key`, `vk.token`, `vk.secret_key`, `max.token`, `max.secret_key`) — i.e. any key with `is_secret = true` in `SettingKeyRegistry`
 - AI provider credentials from settings (`ai.openai_api_key`, `ai.gigachat_client_secret`, `ai.deepseek_client_secret`, etc.)
 - Bearer tokens from `external_source_access_tokens`
 - User passwords

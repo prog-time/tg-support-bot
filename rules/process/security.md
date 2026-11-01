@@ -27,25 +27,17 @@ All Telegram requests must be validated by the appropriate middleware before the
 **Main bot** — `TelegramQuery` middleware:
 - Validates `X-Telegram-Bot-Api-Secret-Token` header against the `telegram.secret_key` setting (read via `SettingsService`; stored in the `settings` DB table)
 - Rejects invalid requests with `403`
-- Applies to: `POST /api/telegram/bot` and `POST /api/telegram/ai/bot`
-
-**AI bot** — `AiBotQuery` middleware (`app/Modules/Ai/Middleware/AiBotQuery.php`):
-- Validates `X-Telegram-Bot-Api-Secret-Token` header against the `telegram_ai.secret` setting (read via `SettingsService`)
-- Rejects missing or invalid tokens with `403`
-- Applies to: `POST /api/ai-bot/webhook`
+- Applies to: `POST /api/telegram/bot`, including the AI draft buttons
 
 ```php
-// ✅ Correct — each bot has its own middleware and secret
+// ✅ Correct — the webhook has its middleware and secret
 Route::post('/api/telegram/bot', [TelegramBotController::class, 'bot_query'])
     ->middleware(TelegramQuery::class);
-
-Route::post('/api/ai-bot/webhook', [AiBotController::class, 'handle'])
-    ->middleware(AiBotQuery::class);
 ```
 
 ```php
 // ❌ Incorrect — unprotected webhook endpoint
-Route::post('/api/ai-bot/webhook', [AiBotController::class, 'handle']);
+Route::post('/api/telegram/bot', [TelegramBotController::class, 'bot_query']);
 ```
 
 ### VK Webhooks
@@ -150,12 +142,11 @@ $token = '1234567890:AABBcc_my_telegram_token_here';        // hardcoded secret
 
 **Application access secrets (DB `settings` table, via `SettingsService`):**
 - `telegram.token`, `telegram.secret_key` — main bot token + webhook validation secret
-- `telegram_ai.token`, `telegram_ai.secret` — AI bot token + webhook validation secret
 - `vk.token`, `vk.secret_key`, `vk.confirm_code` — VK API token + webhook secret + confirm code
 - `max.token`, `max.secret_key` — MAX token + webhook secret
 - `avito.client_secret` — Avito OAuth client secret; `avito.webhook_secret` — self-chosen secret embedded in the webhook URL path (see AvitoQuery above). Built-in module, no `.env`/`config()` fallback (`config => null`), same as every other channel
 - `ai.openai_api_key`, `ai.deepseek_client_secret`, `ai.gigachat_client_secret` (+ client ids / base urls / models / cert) — AI providers
-- Non-secret access keys (`telegram.group_id`, `telegram_ai.username`, `avito.client_id`, `avito.user_id`, `avito.base_url`, etc.) also live in `settings` but are stored unencrypted
+- Non-secret access keys (`telegram.group_id`, `avito.client_id`, `avito.user_id`, `avito.base_url`, etc.) also live in `settings` but are stored unencrypted
 
 **Infrastructure secrets (`.env` only):** `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Per-source bearer tokens live in the `external_source_access_tokens` table.
 
