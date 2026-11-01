@@ -42,15 +42,6 @@ class IntegrationChannelPageTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('admin.settings.integrations.channel'));
     }
 
-    public function test_authenticated_admin_can_render_telegram_ai_channel_page(): void
-    {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->assertSuccessful();
-    }
-
     // ── Mount / initial state ────────────────────────────────────────────────
 
     public function test_mount_loads_telegram_fields_from_settings_service(): void
@@ -111,20 +102,7 @@ class IntegrationChannelPageTest extends TestCase
             // ID группы was moved to the «Основные» general settings page.
             ->assertDontSee('ID группы')
             ->assertDontSee('ID бота')
-            ->assertDontSee('Telegram AI-бот')
-            ->assertSee('Сохранить');
-    }
-
-    public function test_renders_telegram_ai_form_fields(): void
-    {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->assertSee('Токен AI-бота')
-            ->assertSee('Секретный ключ Webhook')
-            // The manual username field was removed — id/@username come from getMe.
-            ->assertDontSee('Username AI-бота')
+            ->assertDontSee('Бот AI помощника')
             ->assertSee('Сохранить');
     }
 
@@ -159,17 +137,6 @@ class IntegrationChannelPageTest extends TestCase
             ->assertSee('Инструкция')
             ->assertSee('Создайте группу в Telegram')
             ->assertSee('Добавьте бота как администратора')
-            ->assertSee('Подробнее в документации');
-    }
-
-    public function test_renders_instruction_panel_for_telegram_ai(): void
-    {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->assertSee('Инструкция')
-            ->assertSee('ai-bot:set-webhook')
             ->assertSee('Подробнее в документации');
     }
 
@@ -240,61 +207,6 @@ class IntegrationChannelPageTest extends TestCase
 
         // The pre-existing token must still be in DB (as encrypted value)
         $this->assertDatabaseHas('settings', ['key' => 'telegram.token']);
-    }
-
-    public function test_save_telegram_ai_persists_secrets(): void
-    {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->set('telegram_ai_token', 'ai-tok-123')
-            ->set('telegram_ai_secret', 'ai-sec-123')
-            ->call('save')
-            ->assertSet('saved', true)
-            ->assertSet('formErrors', []);
-
-        $this->assertDatabaseHas('settings', ['key' => 'telegram_ai.token']);
-        $this->assertDatabaseHas('settings', ['key' => 'telegram_ai.secret']);
-    }
-
-    public function test_save_telegram_ai_does_not_overwrite_token_when_blank(): void
-    {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        /** @var SettingsService $settings */
-        $settings = app(SettingsService::class);
-        $settings->set('telegram_ai.token', 'existing_ai_tok');
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->set('telegram_ai_token', '')   // blank — should NOT overwrite
-            ->call('save')
-            ->assertSet('saved', true);
-
-        $this->assertDatabaseHas('settings', ['key' => 'telegram_ai.token']);
-    }
-
-    public function test_connect_telegram_ai_saves_and_captures_bot_identity(): void
-    {
-        Http::fake([
-            'https://api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['id' => 4242, 'is_bot' => true, 'first_name' => 'AI Bot', 'username' => 'my_ai_bot']], 200),
-        ]);
-
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $this->actingAs($admin);
-
-        Livewire::test(IntegrationChannelPage::class, ['channel' => 'telegram_ai'])
-            ->set('telegram_ai_token', 'ai-bot-token:valid')
-            ->set('telegram_ai_secret', 'ai-secret')
-            ->call('connect')
-            ->assertSet('saved', true)
-            ->assertSet('webhookSuccess', true);
-
-        // Bot id/@username captured automatically from getMe — no manual entry.
-        $settings = app(SettingsService::class);
-        $this->assertSame(4242, (int) $settings->get('telegram_ai.id'));
-        $this->assertSame('@my_ai_bot', (string) $settings->get('telegram_ai.username'));
     }
 
     public function test_save_vk_persists_credentials(): void
