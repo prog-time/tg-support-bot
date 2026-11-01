@@ -65,32 +65,6 @@ class SettingKeyRegistry
             'is_secret' => false,
         ],
 
-        /** Telegram AI bot */
-        'telegram_ai.token' => [
-            'type' => 'string',
-            'config' => null,
-            'is_secret' => true,
-        ],
-        'telegram_ai.secret' => [
-            'type' => 'string',
-            'config' => null,
-            'is_secret' => true,
-        ],
-        'telegram_ai.username' => [
-            'type' => 'string',
-            'config' => null,
-            'is_secret' => false,
-        ],
-        /**
-         * Numeric id + @username are captured automatically from getMe on save
-         * (no manual entry). Informational — not compared at runtime.
-         */
-        'telegram_ai.id' => [
-            'type' => 'int',
-            'config' => null,
-            'is_secret' => false,
-        ],
-
         /** VK */
         'vk.token' => [
             'type' => 'string',
@@ -393,7 +367,7 @@ class SettingKeyRegistry
         /**
          * VAPID keypair, generated once via `php artisan webpush:generate-vapid-keys`
          * (no settings screen — same "auto-captured, not manually entered"
-         * pattern as avito.user_id / telegram_ai.id).
+         * pattern as avito.user_id).
          */
         'webpush.vapid_public_key' => [
             'type' => 'string',

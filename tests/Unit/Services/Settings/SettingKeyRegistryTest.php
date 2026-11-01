@@ -49,8 +49,6 @@ class SettingKeyRegistryTest extends TestCase
         $this->assertNull(SettingKeyRegistry::meta('telegram.token')['config']);
         $this->assertNull(SettingKeyRegistry::meta('telegram.secret_key')['config']);
         $this->assertNull(SettingKeyRegistry::meta('telegram.group_id')['config']);
-        $this->assertNull(SettingKeyRegistry::meta('telegram_ai.token')['config']);
-        $this->assertNull(SettingKeyRegistry::meta('telegram_ai.secret')['config']);
         $this->assertNull(SettingKeyRegistry::meta('vk.token')['config']);
         $this->assertNull(SettingKeyRegistry::meta('vk.secret_key')['config']);
         $this->assertNull(SettingKeyRegistry::meta('max.token')['config']);

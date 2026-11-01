@@ -9,7 +9,7 @@ use Minishlink\WebPush\VAPID;
 /**
  * One-time setup command: generates the VAPID keypair used to sign Web Push
  * notifications for the admin PWA and stores it via SettingsService — no
- * settings screen, same "auto-captured" pattern as avito.user_id/telegram_ai.id.
+ * settings screen, same "auto-captured" pattern as avito.user_id.
  */
 class GenerateVapidKeys extends Command
 {
