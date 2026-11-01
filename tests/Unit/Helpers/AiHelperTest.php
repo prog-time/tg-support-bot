@@ -12,7 +12,7 @@ class AiHelperTest extends TestCase
         $managerText = 'Сделай это';
         $aiText = 'Готово';
 
-        $expected = "📄 Инструкция: \nСделай это  \n\n🤖 Ответ от AI: \nГотово \n\n";
+        $expected = "📄 Инструкция: \nСделай это  \n\n🤖 AI:\nГотово";
 
         $this->assertEquals($expected, AiHelper::preparedAiAnswer($managerText, $aiText));
     }
@@ -21,7 +21,7 @@ class AiHelperTest extends TestCase
     {
         $aiText = 'Готово';
 
-        $expected = "🤖 Ответ от AI: \nГотово \n\n";
+        $expected = "🤖 AI:\nГотово";
 
         $this->assertEquals($expected, AiHelper::preparedAiAnswer('', $aiText));
     }

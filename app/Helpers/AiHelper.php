@@ -4,7 +4,12 @@ namespace App\Helpers;
 
 class AiHelper
 {
+    public const AI_LABEL = '🤖 AI:';
+
     /**
+     * Build the plain-text group message for an AI answer. AI text is often
+     * not valid Telegram HTML, so markup is stripped and no parse_mode is used.
+     *
      * @param string $managerText
      * @param string $aiText
      *
@@ -18,9 +23,21 @@ class AiHelper
             $textMessage .= "📄 Инструкция: \n{$managerText}  \n\n";
         }
 
-        $textMessage .= "🤖 Ответ от AI: \n{$aiText} \n\n";
+        $textMessage .= self::AI_LABEL . "\n" . self::toPlainText($aiText);
 
         return $textMessage;
+    }
+
+    /**
+     * Strip Telegram HTML markup from an AI answer.
+     *
+     * @param string $text
+     *
+     * @return string
+     */
+    public static function toPlainText(string $text): string
+    {
+        return trim(html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
     /**
