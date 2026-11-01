@@ -8,6 +8,7 @@ use App\Modules\Avito\Jobs\SendAvitoSimpleMessageJob;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Feedback\Actions\SendFeedbackForm;
 use App\Modules\Max\Jobs\SendMaxMessageJob;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -233,5 +234,15 @@ class SendFeedbackFormTest extends TestCase
 
         $feedback = Feedback::where('bot_user_id', $botUser->id)->first();
         $this->assertNotNull($feedback->closed_at);
+    }
+
+    public function test_asks_ok_user_for_a_text_review(): void
+    {
+        $botUser = BotUser::create(['chat_id' => 'chat:C400', 'platform' => 'ok']);
+
+        (new SendFeedbackForm())->execute($botUser);
+
+        Queue::assertPushed(SendOkSimpleMessageJob::class, fn ($job) => $job->queryParams->chat_id === 'chat:C400'
+            && $job->queryParams->text === 'Пожалуйста, оставьте отзыв о качестве нашей поддержки.');
     }
 }

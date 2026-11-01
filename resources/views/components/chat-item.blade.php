@@ -27,12 +27,14 @@
         'telegram' => 'TG',
         'vk'       => 'VK',
         'max'      => 'Max',
+        'ok'       => 'OK',
         default    => 'Web',
     };
     $platformBgHex = match ($botUser->platform) {
         'telegram' => '#2AABEE',
         'vk'       => '#4C75A3',
         'max'      => '#F5A623',
+        'ok'       => '#EE8208',
         default    => '#6B7280',
     };
 

@@ -78,6 +78,7 @@ class SendWebPushNotificationJob implements ShouldQueue
             'telegram' => 'Telegram',
             'vk' => 'VK',
             'max' => 'Max',
+            'ok' => 'Одноклассники',
             default => ucfirst($botUser->platform),
         };
 

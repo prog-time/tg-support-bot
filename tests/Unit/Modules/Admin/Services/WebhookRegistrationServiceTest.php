@@ -549,4 +549,66 @@ class WebhookRegistrationServiceTest extends TestCase
 
         return $mock;
     }
+
+    private function okService(): WebhookRegistrationService
+    {
+        config(['app.url' => 'https://app.test']);
+
+        $settings = $this->makeSettings(['ok.token' => 'ok-token', 'ok.webhook_secret' => 'new-secret']);
+        $this->app->instance(SettingsService::class, $settings);
+
+        return new WebhookRegistrationService($settings);
+    }
+
+    public function test_register_ok_subscribes_and_removes_only_own_outdated_urls(): void
+    {
+        Http::fake([
+            '*/me/subscriptions*' => Http::response(['subscriptions' => [
+                ['url' => 'https://app.test/api/ok/bot/new-secret'],
+                ['url' => 'https://app.test/api/ok/bot/old-secret'],
+                ['url' => 'https://other.test/hook'],
+            ]]),
+            '*' => Http::response(['success' => true]),
+        ]);
+
+        $this->assertTrue($this->okService()->registerOk()['success']);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/me/subscribe?')
+            && $request['url'] === 'https://app.test/api/ok/bot/new-secret');
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/me/unsubscribe?')
+            && $request['url'] === 'https://app.test/api/ok/bot/old-secret');
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/me/unsubscribe?')
+            && in_array($request['url'], ['https://app.test/api/ok/bot/new-secret', 'https://other.test/hook'], true));
+    }
+
+    public function test_register_ok_failure_hides_credentials(): void
+    {
+        Http::fake(fn ($request) => throw new ConnectionException('error for ' . $request->url() . ' new-secret'));
+
+        $result = $this->okService()->registerOk();
+
+        $this->assertFalse($result['success']);
+        $this->assertStringNotContainsString('ok-token', $result['message']);
+        $this->assertStringNotContainsString('new-secret', $result['message']);
+    }
+
+    public function test_register_ok_succeeds_when_old_subscriptions_cannot_be_read(): void
+    {
+        Http::fake([
+            '*/me/subscriptions*' => Http::response(['error_code' => 1, 'error_msg' => 'x']),
+            '*' => Http::response(['success' => true]),
+        ]);
+
+        $this->assertTrue($this->okService()->registerOk()['success']);
+    }
+
+    public function test_register_ok_requires_token_and_secret(): void
+    {
+        Http::fake();
+        $settings = $this->makeSettings(['ok.token' => '', 'ok.webhook_secret' => '']);
+
+        $this->assertFalse((new WebhookRegistrationService($settings))->registerOk()['success']);
+
+        Http::assertNothingSent();
+    }
 }

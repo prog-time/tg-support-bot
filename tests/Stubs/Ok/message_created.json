@@ -1,0 +1,7 @@
+{
+    "webhookType": "MESSAGE_CREATED",
+    "sender": {"user_id": "user:123456789012", "name": "Тест Тестов"},
+    "recipient": {"chat_id": "chat:C3ecb9d02a600"},
+    "message": {"text": "Здравствуйте", "seq": 1, "mid": "mid.0001"},
+    "timestamp": 1793547166000
+}

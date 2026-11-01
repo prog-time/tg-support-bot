@@ -17,6 +17,10 @@ use App\Modules\External\Jobs\SendWebhookMessage;
 use App\Modules\Max\Actions\UploadFileMax;
 use App\Modules\Max\DTOs\MaxTextMessageDto;
 use App\Modules\Max\Jobs\SendMaxSimpleMessageJob;
+use App\Modules\Ok\DTOs\OkFileMessageDto;
+use App\Modules\Ok\DTOs\OkTextMessageDto;
+use App\Modules\Ok\Jobs\SendOkFileMessageJob;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Jobs\TopicCreateJob;
@@ -51,7 +55,6 @@ class SendReplyAction
      */
     public static function execute(BotUser $botUser, string $text, ?UploadedFile $file = null, ?User $author = null): void
     {
-        // A new reply re-opens a previously closed conversation.
         if ($botUser->isClosed()) {
             $botUser->update(['is_closed' => false, 'closed_at' => null]);
         }
@@ -73,6 +76,7 @@ class SendReplyAction
             $botUser->platform === 'max' => self::sendMaxReply($botUser, $text, $file, $message),
             $botUser->platform === 'avito' => self::sendAvitoReply($botUser, $text, $file),
             $botUser->platform === 'email' => self::sendEmailReply($botUser, $text, $file, $message),
+            $botUser->platform === 'ok' => self::sendOkReply($botUser, $text, $file, $message),
             default => self::sendExternalReply($botUser, $text),
         };
 
@@ -102,13 +106,10 @@ class SendReplyAction
             return;
         }
 
-        // Determine mirror text — file-only replies get a placeholder. The
-        // «Ответ из админки:» label + newline is added by the job's prefix.
         $mirrorText = $text !== ''
             ? $text
             : '[вложение]';
 
-        // Ensure the forum topic exists before mirroring.
         if (empty($botUser->topic_id)) {
             TopicCreateJob::dispatch($botUser->id);
         }
@@ -159,6 +160,48 @@ class SendReplyAction
 
         SendAvitoSimpleMessageJob::dispatch(
             AvitoTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $botUser->chat_id,
+                'text' => $text,
+            ])
+        );
+    }
+
+    /**
+     * Deliver a manager's reply to an OK user. A file goes through a queue-safe
+     * copy; when it cannot be read, the text is still delivered.
+     *
+     * @param BotUser           $botUser
+     * @param string            $text
+     * @param UploadedFile|null $file
+     * @param Message           $message
+     *
+     * @return void
+     */
+    private static function sendOkReply(BotUser $botUser, string $text, ?UploadedFile $file, Message $message): void
+    {
+        $copy = $file !== null ? self::copyEmailAttachment($file) : null;
+
+        if ($file !== null && $copy !== null) {
+            self::recordOutgoingAttachment($message, $file);
+
+            SendOkFileMessageJob::dispatch(OkFileMessageDto::from([
+                'chat_id' => (string) $botUser->chat_id,
+                'text' => $text,
+                'mime' => $copy['mime'],
+                'name' => $copy['name'],
+                'path' => $copy['path'],
+            ]));
+
+            return;
+        }
+
+        if ($text === '') {
+            return;
+        }
+
+        SendOkSimpleMessageJob::dispatch(
+            OkTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
                 'chat_id' => $botUser->chat_id,
                 'text' => $text,
@@ -260,9 +303,6 @@ class SendReplyAction
                     default => 'sendFile',
                 };
 
-                // Record the attachment on the local Message so the admin thread
-                // can render it (MAX has no re-fetchable file id; we serve our own
-                // stored copy via its public URL).
                 self::recordOutgoingAttachment($message, $file);
 
                 SendMaxSimpleMessageJob::dispatch(
@@ -277,7 +317,6 @@ class SendReplyAction
                 return;
             }
 
-            // Upload failed: with no text there is nothing left to deliver.
             if ($text === '') {
                 Log::channel('app')->error('SendReplyAction: MAX file upload failed, nothing to send', [
                     'bot_user_id' => $botUser->id,
@@ -385,8 +424,6 @@ class SendReplyAction
     private static function sendTelegramReply(BotUser $botUser, string $text, ?UploadedFile $file, Message $message): void
     {
         if ($file !== null) {
-            // UploadedFile cannot be serialized by the queue.
-            // Copy the Livewire temp file to a controlled directory and pass the path.
             $realPath = $file->getRealPath();
 
             if ($realPath === false) {
@@ -444,8 +481,6 @@ class SendReplyAction
     {
         $attachment = $file !== null ? self::uploadVkDocument($botUser, $file) : null;
 
-        // Record the attachment locally so the admin thread can show it (VK doc
-        // URLs are not re-served here; we serve our own stored copy).
         if ($file !== null && $attachment !== null) {
             self::recordOutgoingAttachment($message, $file);
         }
@@ -476,7 +511,6 @@ class SendReplyAction
      */
     private static function uploadVkDocument(BotUser $botUser, UploadedFile $file): ?string
     {
-        // Step 1: get the messages upload server for documents.
         $serverDto = app(GetMessagesUploadServerVk::class)->execute((int) $botUser->chat_id, 'docs');
 
         $uploadUrl = is_array($serverDto->response) ? ($serverDto->response['upload_url'] ?? null) : null;
@@ -489,7 +523,6 @@ class SendReplyAction
             return null;
         }
 
-        // Step 2: upload the file to VK's server (field name "file").
         $realPath = $file->getRealPath();
         $fileHandle = $realPath !== false ? @fopen($realPath, 'rb') : false;
         if ($fileHandle === false) {
@@ -521,7 +554,6 @@ class SendReplyAction
             return null;
         }
 
-        // Step 3: persist the document in VK.
         $saveDto = app(SaveFileVk::class)->execute('docs', $uploadData);
 
         $doc = is_array($saveDto->response) ? ($saveDto->response['doc'] ?? null) : null;

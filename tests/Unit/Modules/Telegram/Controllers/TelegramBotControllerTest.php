@@ -2,10 +2,14 @@
 
 namespace Tests\Unit\Modules\Telegram\Controllers;
 
+use App\Models\BotUser;
+use App\Modules\External\Jobs\SendWebhookMessage;
+use App\Modules\Ok\Jobs\SendOkSimpleMessageJob;
 use App\Modules\Telegram\Controllers\TelegramBotController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -83,5 +87,53 @@ class TelegramBotControllerTest extends TestCase
         ]);
 
         $this->assertAbortsWith200($request);
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     */
+    private function okTopicUpdate(array $message): Request
+    {
+        BotUser::create(['chat_id' => 'chat:C900', 'platform' => 'ok', 'topic_id' => 910]);
+
+        return Request::create('api/telegram/bot', 'POST', [
+            'update_id' => 999200,
+            'message' => $message + [
+                'message_id' => 20,
+                'message_thread_id' => 910,
+                'from' => ['id' => 555, 'is_bot' => false, 'first_name' => 'Manager'],
+                'chat' => ['id' => -100555, 'type' => 'supergroup'],
+            ],
+        ]);
+    }
+
+    public function test_manager_text_in_ok_topic_is_delivered_to_ok(): void
+    {
+        Queue::fake();
+
+        (new TelegramBotController($this->okTopicUpdate(['text' => 'Ответ'])))->bot_query();
+
+        Queue::assertPushed(SendOkSimpleMessageJob::class, fn ($job) => $job->queryParams->chat_id === 'chat:C900'
+            && $job->queryParams->text === 'Ответ');
+        Queue::assertNotPushed(SendWebhookMessage::class);
+    }
+
+    public function test_edit_in_ok_topic_is_not_sent_to_the_user(): void
+    {
+        Queue::fake();
+        BotUser::create(['chat_id' => 'chat:C901', 'platform' => 'ok', 'topic_id' => 911]);
+
+        (new TelegramBotController(Request::create('api/telegram/bot', 'POST', [
+            'update_id' => 999201,
+            'edited_message' => [
+                'message_id' => 21,
+                'message_thread_id' => 911,
+                'from' => ['id' => 555, 'is_bot' => false, 'first_name' => 'Manager'],
+                'chat' => ['id' => -100555, 'type' => 'supergroup'],
+                'text' => 'Исправлено',
+            ],
+        ])))->bot_query();
+
+        Queue::assertNothingPushed();
     }
 }

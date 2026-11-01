@@ -27,6 +27,7 @@ use App\Modules\Telegram\Services\TgEmail\TgEmailMessageService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
 use App\Modules\Telegram\Services\TgMax\TgMaxMessageService;
+use App\Modules\Telegram\Services\TgOk\TgOkMessageService;
 use App\Modules\Telegram\Services\TgVk\TgVkEditService;
 use App\Modules\Telegram\Services\TgVk\TgVkMessageService;
 use App\Services\Settings\SettingsService;
@@ -158,6 +159,10 @@ class TelegramBotController
 
                 case 'email':
                     $this->controllerPlatformEmail();
+                    break;
+
+                case 'ok':
+                    $this->controllerPlatformOk();
                     break;
 
                 case 'ignore':
@@ -344,6 +349,21 @@ class TelegramBotController
 
             default:
                 throw new \Exception("Unknown event type: {$this->dataHook->typeQuery}");
+        }
+    }
+
+    /**
+     * Controller OK message. OK messages cannot be edited, so an edit in the
+     * topic stays there. An AI edit command never reaches the user.
+     *
+     * @return void
+     */
+    private function controllerPlatformOk(): void
+    {
+        if ($this->dataHook->aiTechMessage) {
+            app(EditAiMessage::class)->execute($this->dataHook);
+        } elseif ($this->dataHook->typeQuery === 'message') {
+            (new TgOkMessageService($this->dataHook))->handleUpdate();
         }
     }
 

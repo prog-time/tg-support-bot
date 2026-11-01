@@ -24,7 +24,7 @@ class ChannelStatusServiceTest extends TestCase
 
     // ── all() ────────────────────────────────────────────────────────────────
 
-    public function test_all_returns_all_five_channels(): void
+    public function test_all_returns_all_channels(): void
     {
         $settings = $this->makeSettings([]);
         $service = new ChannelStatusService($settings);
@@ -36,6 +36,7 @@ class ChannelStatusServiceTest extends TestCase
         $this->assertArrayHasKey('vk', $result);
         $this->assertArrayHasKey('max', $result);
         $this->assertArrayHasKey('email', $result);
+        $this->assertArrayHasKey('ok', $result);
     }
 
     // ── telegram() ───────────────────────────────────────────────────────────
@@ -276,5 +277,14 @@ class ChannelStatusServiceTest extends TestCase
         $mock->shouldReceive('get')->andReturn(null);
 
         return $mock;
+    }
+
+    public function test_ok_connected_only_with_token_and_webhook_secret(): void
+    {
+        $both = new ChannelStatusService($this->makeSettings(['ok.token' => 't', 'ok.webhook_secret' => 's']));
+        $noSecret = new ChannelStatusService($this->makeSettings(['ok.token' => 't', 'ok.webhook_secret' => '']));
+
+        $this->assertTrue($both->ok()['connected']);
+        $this->assertFalse($noSecret->ok()['connected']);
     }
 }

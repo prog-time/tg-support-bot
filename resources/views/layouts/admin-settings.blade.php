@@ -37,6 +37,7 @@
         [$mobileBackUrl, $mobileBackLabel] = match (true) {
             request()->routeIs('admin.settings.integrations.channel') => [route('admin.settings.integrations'), 'Интеграции'],
             request()->routeIs('admin.settings.avito') => [route('admin.settings.integrations'), 'Интеграции'],
+            request()->routeIs('admin.settings.ok') => [route('admin.settings.integrations'), 'Интеграции'],
             request()->routeIs('admin.settings.ai.provider', 'admin.settings.ai.faq') => [route('admin.settings.ai'), 'ИИ-ассистент'],
             request()->routeIs('admin.settings.ai.faq.create', 'admin.settings.ai.faq.edit') => [route('admin.settings.ai.faq'), 'Частые вопросы'],
             request()->routeIs('admin.settings.api-webhooks.source') => [route('admin.settings.api-webhooks'), 'API и вебхуки'],

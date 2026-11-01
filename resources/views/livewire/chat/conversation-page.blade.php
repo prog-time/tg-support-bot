@@ -347,6 +347,7 @@
                             'telegram' => 'Telegram',
                             'vk'       => 'VK',
                             'max'      => 'Max',
+                            'ok'       => 'Одноклассники',
                             default    => ucfirst($activeBotUser->platform),
                         };
                     @endphp
@@ -979,6 +980,7 @@
                             'telegram' => 'Telegram',
                             'vk'       => 'VK',
                             'max'      => 'Max',
+                            'ok'       => 'Одноклассники',
                             default    => ucfirst($activeBotUser->platform),
                         };
                     @endphp
