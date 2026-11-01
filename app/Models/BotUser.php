@@ -42,6 +42,9 @@ class BotUser extends Model
         'topic_id',
         'platform',
         'display_name',
+        'custom_name',
+        'internal_note',
+        'support_tags',
         'username',
         'avatar_path',
         'profile_synced_at',
@@ -53,6 +56,7 @@ class BotUser extends Model
     ];
 
     protected $casts = [
+        'support_tags' => 'array',
         'manager_last_read_at' => 'datetime',
         'profile_synced_at' => 'datetime',
     ];
