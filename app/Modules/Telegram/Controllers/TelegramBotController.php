@@ -6,6 +6,8 @@ use App\Helpers\TelegramHelper;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Admin\Services\ChannelStatusService;
+use App\Modules\Ai\Actions\AiAcceptMessage;
+use App\Modules\Ai\Actions\AiCancelMessage;
 use App\Modules\Ai\Actions\EditAiMessage;
 use App\Modules\Ai\Jobs\SendAiDraftJob;
 use App\Modules\Ai\Jobs\SendAiReplyJob;
@@ -112,9 +114,46 @@ class TelegramBotController
                     messageId: $this->dataHook->messageId,
                     chatId: $this->dataHook->typeSource === 'private' ? $this->dataHook->chatId : null,
                 );
+            } elseif (str_starts_with((string) $this->dataHook->callbackData, 'ai_message_')) {
+                $this->handleAiCallback((string) $this->dataHook->callbackData);
             }
 
             return;
+        }
+    }
+
+    /**
+     * Handle the AI draft buttons. They exist only in supergroup topics, so a
+     * callback from any other chat or with malformed data is ignored.
+     *
+     * @param string $callbackData
+     *
+     * @return void
+     */
+    private function handleAiCallback(string $callbackData): void
+    {
+        $isAccept = preg_match('/^ai_message_send_[0-9]+$/D', $callbackData) === 1;
+        $isCancel = preg_match('/^ai_message_cancel_[0-9]+$/D', $callbackData) === 1;
+
+        if (!$this->isSupergroup() || (!$isAccept && !$isCancel)) {
+            Log::channel('app')->info('TelegramBotController: ignoring AI callback', [
+                'source' => 'ai_callback_ignored',
+                'callback_data' => $callbackData,
+                'type_source' => $this->dataHook->typeSource,
+            ]);
+
+            return;
+        }
+
+        Log::channel('app')->info('TelegramBotController: AI callback', [
+            'source' => $isAccept ? 'ai_callback_accept' : 'ai_callback_cancel',
+            'callback_data' => $callbackData,
+        ]);
+
+        if ($isAccept) {
+            app(AiAcceptMessage::class)->execute($this->dataHook);
+        } else {
+            app(AiCancelMessage::class)->execute($this->dataHook);
         }
     }
 
@@ -139,6 +178,11 @@ class TelegramBotController
             if ($this->dataHook->typeSource === 'supergroup') {
                 if ($this->dataHook->text === '/contact' && $this->isSupergroup()) {
                     app(SendContactMessage::class)->execute($this->botUser);
+                    return;
+                }
+
+                if ($this->dataHook->aiTechMessage) {
+                    app(EditAiMessage::class)->execute($this->dataHook);
                     return;
                 }
             }
@@ -180,10 +224,6 @@ class TelegramBotController
         if ($this->botUser->isBanned() && $this->dataHook->typeSource === 'private') {
             app(SendBannedMessage::class)->execute($this->botUser);
             return;
-        } elseif ($this->dataHook->aiTechMessage) {
-            if (str_contains($this->dataHook->text, 'ai_message_edit_')) {
-                app(EditAiMessage::class)->execute($this->dataHook);
-            }
         } else {
             switch ($this->dataHook->typeQuery) {
                 case 'message':
@@ -289,8 +329,8 @@ class TelegramBotController
     /**
      * Trigger AI generation for the incoming user message, if the gating rules pass.
      *
-     * Posts the AI output as the AI bot in the supergroup topic (visual marker for managers)
-     * and, when auto-reply is on, also delivers the same text to the user from the main bot.
+     * Posts the AI output to the supergroup topic with the AI label and, when
+     * auto-reply is on, also delivers the same text to the user.
      *
      * @return void
      */
