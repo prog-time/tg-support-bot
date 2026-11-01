@@ -13,7 +13,7 @@ use Livewire\Component;
 /**
  * Per-channel integration configuration page.
  *
- * Handles config forms for Telegram, Telegram AI bot, VK, and MAX channels.
+ * Handles config forms for Telegram, VK, and MAX channels.
  * Reads/writes via SettingsService (secrets are stored encrypted).
  *
  * The primary «Сохранить» button runs a verify-before-save flow via connect():
@@ -26,9 +26,6 @@ use Livewire\Component;
  *   4. On success → persist via the existing saveX() path, register the webhook
  *      (for telegram|vk|max), and show the success notice.
  *
- * For telegram_ai the flow is identical except there is no webhook registration
- * step (webhook is set via `php artisan ai-bot:set-webhook`).
- *
  * save() (settings-only, no verify/webhook) remains available for tests that
  * call it directly.
  *
@@ -36,7 +33,7 @@ use Livewire\Component;
  * The Telegram page now manages only the bot token and webhook secret key.
  *
  * Route: /admin/settings/integrations/{channel}
- *        where channel ∈ {telegram, telegram_ai, vk, max}
+ *        where channel ∈ {telegram, vk, max}
  *
  * Access: authenticated users via route middleware.
  * Layout: custom dark-sidebar admin layout (layouts.admin-settings).
@@ -44,7 +41,7 @@ use Livewire\Component;
 #[Layout('layouts.admin-settings')]
 class IntegrationChannelPage extends Component
 {
-    /** @var string The current channel slug (telegram|telegram_ai|vk|max) */
+    /** @var string The current channel slug (telegram|vk|max) */
     public string $channel = 'telegram';
 
     /** @var string|null */
@@ -55,12 +52,6 @@ class IntegrationChannelPage extends Component
 
     /** @var string|null Optional fixed IP passed as `ip_address` to Telegram's setWebhook */
     public ?string $telegram_webhook_ip_address = null;
-
-    /** @var string|null AI-bot token (pre-filled from settings, like the main bot) */
-    public ?string $telegram_ai_token = null;
-
-    /** @var string|null AI-bot webhook secret (pre-filled from settings, like the main bot) */
-    public ?string $telegram_ai_secret = null;
 
     /** @var string|null */
     public ?string $vk_token = null;
@@ -111,8 +102,6 @@ class IntegrationChannelPage extends Component
      * Step 2: resolve the token to verify (entered value or stored fallback).
      * Step 3: call verifyX($token). On failure → set error notice, return without saving.
      * Step 4: persist via saveX(), register webhook (telegram|vk|max), show success notice.
-     *
-     * For telegram_ai: same flow (step 1-3 using verifyTelegram) but no webhook registration.
      */
     public function connect(SettingsService $settings, WebhookRegistrationService $webhook): void
     {
@@ -136,7 +125,6 @@ class IntegrationChannelPage extends Component
 
         $verifyResult = match ($this->channel) {
             'telegram' => $webhook->verifyTelegram($tokenToVerify, null),
-            'telegram_ai' => $webhook->verifyTelegram($tokenToVerify, null),
             'vk' => $webhook->verifyVk($tokenToVerify),
             'max' => $webhook->verifyMax($tokenToVerify),
             default => ['success' => false, 'message' => 'Неизвестный канал.'],
@@ -151,30 +139,12 @@ class IntegrationChannelPage extends Component
 
         match ($this->channel) {
             'telegram' => $this->saveTelegram($settings),
-            'telegram_ai' => $this->saveTelegramAi($settings),
             'vk' => $this->saveVk($settings),
             'max' => $this->saveMax($settings),
             default => $this->formErrors['channel'] = 'Неизвестный канал.',
         };
 
         if (! $this->saved) {
-            return;
-        }
-
-        if ($this->channel === 'telegram_ai') {
-            $botId = $verifyResult['botId'] ?? null;
-            if ($botId !== null) {
-                $settings->set('telegram_ai.id', $botId);
-            }
-
-            $botUsername = $verifyResult['botUsername'] ?? null;
-            if ($botUsername !== null && $botUsername !== '') {
-                $settings->set('telegram_ai.username', '@' . ltrim($botUsername, '@'));
-            }
-
-            $this->webhookSuccess = true;
-            $this->webhookMessage = 'Настройки AI-бота сохранены.';
-
             return;
         }
 
@@ -202,7 +172,6 @@ class IntegrationChannelPage extends Component
 
         match ($this->channel) {
             'telegram' => $this->saveTelegram($settings),
-            'telegram_ai' => $this->saveTelegramAi($settings),
             'vk' => $this->saveVk($settings),
             'max' => $this->saveMax($settings),
             default => $this->formErrors['channel'] = 'Неизвестный канал.',
@@ -267,19 +236,6 @@ class IntegrationChannelPage extends Component
             }
         }
 
-        if ($this->channel === 'telegram_ai') {
-            if (trim((string) $this->telegram_ai_token) === '') {
-                $this->formErrors['telegram_ai_token'] = 'Укажите токен AI-бота.';
-            }
-            if (trim((string) $this->telegram_ai_secret) === '') {
-                $this->formErrors['telegram_ai_secret'] = 'Укажите секретный ключ Webhook.';
-            }
-
-            if (! empty($this->formErrors)) {
-                return (string) array_key_first($this->formErrors);
-            }
-        }
-
         if ($this->channel === 'vk') {
             if (trim((string) $this->vk_token) === '') {
                 $this->formErrors['vk_token'] = 'Укажите токен VK.';
@@ -326,7 +282,6 @@ class IntegrationChannelPage extends Component
     {
         $tokenField = match ($this->channel) {
             'telegram' => $this->telegram_token,
-            'telegram_ai' => $this->telegram_ai_token,
             'vk' => $this->vk_token,
             'max' => $this->max_token,
             default => null,
@@ -334,7 +289,6 @@ class IntegrationChannelPage extends Component
 
         $settingsKey = match ($this->channel) {
             'telegram' => 'telegram.token',
-            'telegram_ai' => 'telegram_ai.token',
             'vk' => 'vk.token',
             'max' => 'max.token',
             default => null,
@@ -353,7 +307,6 @@ class IntegrationChannelPage extends Component
 
         $label = match ($this->channel) {
             'telegram' => 'Telegram',
-            'telegram_ai' => 'AI-бота',
             'vk' => 'VK',
             'max' => 'MAX',
             default => 'платформы',
@@ -370,9 +323,6 @@ class IntegrationChannelPage extends Component
         $this->telegram_token = (string) ($settings->get('telegram.token') ?? '');
         $this->telegram_secret_key = (string) ($settings->get('telegram.secret_key') ?? '');
         $this->telegram_webhook_ip_address = (string) ($settings->get('telegram.webhook_ip_address') ?? '');
-
-        $this->telegram_ai_token = (string) ($settings->get('telegram_ai.token') ?? '');
-        $this->telegram_ai_secret = (string) ($settings->get('telegram_ai.secret') ?? '');
 
         $this->vk_token = (string) ($settings->get('vk.token') ?? '');
         $this->vk_secret_key = (string) ($settings->get('vk.secret_key') ?? '');
@@ -403,25 +353,6 @@ class IntegrationChannelPage extends Component
         }
 
         $settings->set('telegram.webhook_ip_address', trim((string) $this->telegram_webhook_ip_address));
-
-        $this->saved = true;
-    }
-
-    /**
-     * Validate and save Telegram AI bot channel settings.
-     */
-    private function saveTelegramAi(SettingsService $settings): void
-    {
-        if (! empty($this->formErrors)) {
-            return;
-        }
-
-        if ($this->telegram_ai_token !== '' && $this->telegram_ai_token !== null) {
-            $settings->set('telegram_ai.token', $this->telegram_ai_token);
-        }
-        if ($this->telegram_ai_secret !== '' && $this->telegram_ai_secret !== null) {
-            $settings->set('telegram_ai.secret', $this->telegram_ai_secret);
-        }
 
         $this->saved = true;
     }

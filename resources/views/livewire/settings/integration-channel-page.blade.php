@@ -17,20 +17,6 @@
                             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
                         </svg>
                     </div>
-                @elseif ($channel === 'telegram_ai')
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl" style="background:#229ED9">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7"
-                             fill="none" viewBox="0 0 24 24" stroke="#ffffff" stroke-width="2">
-                            <g stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 8V4H8" />
-                                <rect width="16" height="12" x="4" y="8" rx="2" />
-                                <path d="M2 14h2" />
-                                <path d="M20 14h2" />
-                                <path d="M15 13v2" />
-                                <path d="M9 13v2" />
-                            </g>
-                        </svg>
-                    </div>
                 @elseif ($channel === 'vk')
                     <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 24 24" fill="#0077FF">
@@ -55,14 +41,12 @@
                 <div>
                     <h2 class="text-lg font-bold text-text-primary">
                         @if ($channel === 'telegram') Подключить Telegram
-                        @elseif ($channel === 'telegram_ai') Бот AI помощника
                         @elseif ($channel === 'vk') Подключить ВКонтакте
                         @else Подключить MAX
                         @endif
                     </h2>
                     <p class="mt-0.5 text-xs text-text-secondary">
                         @if ($channel === 'telegram') Настройте бота для приёма обращений
-                        @elseif ($channel === 'telegram_ai') Отдельный бот ИИ-помощника для черновиков и автоответов
                         @elseif ($channel === 'vk') Настройте сообщество для приёма обращений
                         @else Настройте бота для приёма обращений из MAX
                         @endif
@@ -134,52 +118,6 @@
                                 placeholder="149.154.166.110"
                                 class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
                                     @if (!empty($formErrors['telegram_webhook_ip_address'])) border-red-400 @endif"
-                            />
-                        </x-admin.form-field>
-
-                    </div>
-
-                @elseif ($channel === 'telegram_ai')
-
-                    <div class="space-y-5">
-
-                        {{-- Токен AI-бота --}}
-                        <x-admin.form-field
-                            label="Токен AI-бота"
-                            for="telegram_ai_token"
-                            hint="Токен отдельного бота для черновиков и автоответов ИИ"
-                            :required="true"
-                            :error="$formErrors['telegram_ai_token'] ?? null"
-                        >
-                            <input
-                                id="telegram_ai_token"
-                                type="password"
-                                required
-                                wire:model="telegram_ai_token"
-                                autocomplete="new-password"
-                                placeholder="110201543:AAHdqTcvCH1vGWJxfSeo..."
-                                class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
-                                    @if (!empty($formErrors['telegram_ai_token'])) border-red-400 @endif"
-                            />
-                        </x-admin.form-field>
-
-                        {{-- Секретный ключ Webhook AI-бота --}}
-                        <x-admin.form-field
-                            label="Секретный ключ Webhook"
-                            for="telegram_ai_secret"
-                            hint="Для верификации входящих запросов от AI-бота"
-                            :required="true"
-                            :error="$formErrors['telegram_ai_secret'] ?? null"
-                        >
-                            <input
-                                id="telegram_ai_secret"
-                                type="password"
-                                required
-                                wire:model="telegram_ai_secret"
-                                autocomplete="new-password"
-                                placeholder="your-secret-key"
-                                class="block w-full rounded-lg border border-border-light bg-bg-input px-3.5 py-2.5 text-sm text-text-primary placeholder-text-secondary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20
-                                    @if (!empty($formErrors['telegram_ai_secret'])) border-red-400 @endif"
                             />
                         </x-admin.form-field>
 
@@ -349,12 +287,6 @@
                                 'Добавьте бота как администратора в группу',
                                 'Включите "Темы" в настройках группы',
                             ],
-                            'telegram_ai' => [
-                                'Создайте второй бот через @BotFather (это AI-бот)',
-                                'Добавьте AI-бота как администратора в ту же супергруппу',
-                                'Сохраните токен и секретный ключ на этой странице',
-                                'Зарегистрируйте вебхук командой: docker exec -it pet php artisan ai-bot:set-webhook',
-                            ],
                             'vk' => [
                                 'Создайте сообщество VK или откройте существующее',
                                 'Перейдите в настройки сообщества Управление → Дополнительно → Работа с API',
@@ -372,7 +304,6 @@
 
                         $docsUrl = match ($channel) {
                             'telegram' => 'https://docs.tg-support-bot.ru/docs/telegram-bot.html',
-                            'telegram_ai' => 'https://docs.tg-support-bot.ru/docs/ai-bot.html',
                             'vk' => 'https://docs.tg-support-bot.ru/docs/vk-group.html',
                             'max' => 'https://docs.tg-support-bot.ru/docs/max-bot.html',
                             default => 'https://docs.tg-support-bot.ru/',
