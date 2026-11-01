@@ -108,7 +108,7 @@ class AdminServiceProvider extends ServiceProvider
 
                 Route::get('/integrations/{channel}', IntegrationChannelPage::class)
                     ->name('integrations.channel')
-                    ->where('channel', 'telegram|telegram_ai|vk|max');
+                    ->where('channel', 'telegram|vk|max');
 
                 Route::get('/ai', AiAssistantPage::class)
                     ->name('ai');

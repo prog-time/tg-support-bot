@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * Thin service wrapper around platform-specific webhook registration.
  *
  * Each method mirrors the logic in the existing artisan commands
- * (TelegramSetWebhook, AiBotSetWebhook) but returns a structured result
+ * (TelegramSetWebhook) but returns a structured result
  * instead of writing to the console, so Livewire actions can display
  * success/error notifications.
  *
