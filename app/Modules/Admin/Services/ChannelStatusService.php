@@ -14,7 +14,6 @@ use App\Services\Settings\SettingsService;
  *
  * Required keys per platform:
  *   Telegram    — telegram.token (secret), telegram.secret_key (secret)
- *   Telegram AI — telegram_ai.token (secret)
  *   VK          — vk.token (secret), vk.secret_key (secret), vk.confirm_code (secret)
  *   MAX         — max.token (secret), max.secret_key (secret)
  *
@@ -36,7 +35,6 @@ class ChannelStatusService
     {
         return [
             'telegram' => $this->telegram(),
-            'telegram_ai' => $this->telegramAi(),
             'vk' => $this->vk(),
             'max' => $this->max(),
             'email' => $this->email(),
@@ -56,21 +54,6 @@ class ChannelStatusService
     {
         $connected = $this->isNonEmpty('telegram.token')
             && $this->isNonEmpty('telegram.secret_key');
-
-        return [
-            'connected' => $connected,
-            'label' => $connected ? 'Подключён' : 'Не настроен',
-        ];
-    }
-
-    /**
-     * Telegram AI bot channel status.
-     *
-     * @return array{connected: bool, label: string}
-     */
-    public function telegramAi(): array
-    {
-        $connected = $this->isNonEmpty('telegram_ai.token');
 
         return [
             'connected' => $connected,
