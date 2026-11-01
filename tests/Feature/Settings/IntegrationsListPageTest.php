@@ -173,4 +173,21 @@ class IntegrationsListPageTest extends TestCase
         Livewire::test(IntegrationsListPage::class)
             ->assertSee('Подключить');
     }
+
+    public function test_renders_ok_card_with_status_and_link(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
+        $settings = app(SettingsService::class);
+
+        Livewire::test(IntegrationsListPage::class)
+            ->assertSee('Одноклассники')
+            ->assertSee(route('admin.settings.ok'))
+            ->assertSet('channelStatuses.ok.connected', false);
+
+        $settings->set('ok.token', 't');
+        $settings->set('ok.webhook_secret', 's');
+
+        Livewire::test(IntegrationsListPage::class)
+            ->assertSet('channelStatuses.ok.connected', true);
+    }
 }
