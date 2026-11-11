@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\BotUser;
 use App\Modules\Api\Services\FileService;
 use App\Modules\Telegram\Actions\GetChat;
+use App\Modules\Telegram\Api\TelegramHttp;
 use App\Modules\Vk\Api\VkMethods;
 use App\Services\Settings\SettingsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -36,7 +37,6 @@ class EnrichBotUserProfileJob implements ShouldQueue
      */
     public function handle(): void
     {
-        // TTL guard — skip if profile was synced recently.
         if (
             $this->botUser->profile_synced_at !== null
             && $this->botUser->profile_synced_at->diffInDays(now()) < self::SYNC_TTL_DAYS
@@ -81,7 +81,7 @@ class EnrichBotUserProfileJob implements ShouldQueue
 
             if ($filePath !== null) {
                 $token = (string) app(SettingsService::class)->get('telegram.token');
-                $response = Http::get("https://api.telegram.org/file/bot{$token}/{$filePath}");
+                $response = TelegramHttp::client()->get("https://api.telegram.org/file/bot{$token}/{$filePath}");
 
                 if ($response->ok()) {
                     $storagePath = "avatars/bot-user-{$this->botUser->id}.jpg";
@@ -96,7 +96,6 @@ class EnrichBotUserProfileJob implements ShouldQueue
             }
         }
 
-        // No photo or download failed — still mark synced so we don't retry immediately.
         $this->botUser->update(['profile_synced_at' => now()]);
     }
 

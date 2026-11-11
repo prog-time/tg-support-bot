@@ -136,6 +136,27 @@ class SendOkFileMessageJobTest extends TestCase
         $this->telegramJob()->handle($ok, new OkAttachmentStorage());
     }
 
+    public function test_telegram_download_goes_through_telegram_proxy(): void
+    {
+        config(['traffic_source.telegram.proxy' => 'socks5h://10.0.0.1:1080']);
+        $proxies = [];
+
+        Http::fake(function ($request, array $options) use (&$proxies) {
+            $proxies[] = $options['proxy'] ?? null;
+
+            return str_contains($request->url(), '/getFile')
+                ? Http::response(['ok' => true, 'result' => ['file_path' => 'photos/1.jpg']])
+                : Http::response('bytes');
+        });
+        $ok = Mockery::mock(OkMethods::class);
+        $ok->shouldReceive('uploadFile')->once()->andReturn('tok');
+        $ok->shouldReceive('sendAttachment')->once()->andReturn([]);
+
+        $this->telegramJob()->handle($ok, new OkAttachmentStorage());
+
+        $this->assertSame(['socks5h://10.0.0.1:1080', 'socks5h://10.0.0.1:1080'], $proxies);
+    }
+
     public function test_failed_delivery_is_reported_in_the_topic_and_logged_without_token(): void
     {
         Queue::fake();

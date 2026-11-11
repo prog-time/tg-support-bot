@@ -2,6 +2,7 @@
 
 namespace App\Modules\Vk\Actions;
 
+use App\Modules\Telegram\Api\TelegramHttp;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -23,7 +24,7 @@ class UploadFileVk
         try {
             $urlQuery = $upload_url;
 
-            $responseFile = Http::get($fullFilePath);
+            $responseFile = TelegramHttp::clientFor($fullFilePath)->get($fullFilePath);
 
             if ($responseFile->failed()) {
                 throw new \Exception("Failed to download Telegram file: {$fullFilePath}");

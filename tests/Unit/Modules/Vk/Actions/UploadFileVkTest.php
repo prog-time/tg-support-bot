@@ -104,4 +104,27 @@ class UploadFileVkTest extends TestCase
 
         $this->assertNotEmpty($responseData['file']);
     }
+
+    public function test_only_telegram_download_goes_through_telegram_proxy(): void
+    {
+        config(['traffic_source.telegram.proxy' => 'socks5h://10.0.0.1:1080']);
+        $proxiesByHost = [];
+
+        Http::fake(function ($request, array $options) use (&$proxiesByHost) {
+            $proxiesByHost[parse_url($request->url(), PHP_URL_HOST)] = $options['proxy'] ?? null;
+
+            return str_contains($request->url(), 'api.telegram.org')
+                ? Http::response('FILE_CONTENT')
+                : Http::response(['file' => 'ABCD1234']);
+        });
+
+        $result = app(UploadFileVk::class)->execute(
+            'https://pu.vk.com/upload',
+            'https://api.telegram.org/file/botTOKEN/documents/file.pdf',
+        );
+
+        $this->assertSame('ABCD1234', $result['file']);
+        $this->assertSame('socks5h://10.0.0.1:1080', $proxiesByHost['api.telegram.org']);
+        $this->assertNull($proxiesByHost['pu.vk.com']);
+    }
 }
