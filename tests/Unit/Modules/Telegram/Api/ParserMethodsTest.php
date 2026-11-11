@@ -94,4 +94,55 @@ class ParserMethodsTest extends TestCase
         $this->assertEquals(500, $response['response_code']);
         $this->assertStringContainsString('File is empty and cannot be sent', $response['result']);
     }
+
+    public function test_post_query_uses_telegram_proxy(): void
+    {
+        config(['traffic_source.telegram.proxy' => 'socks5h://10.0.0.1:1080']);
+        $sentOptions = [];
+
+        Http::fake(function ($request, array $options) use (&$sentOptions) {
+            $sentOptions = $options;
+
+            return Http::response(['ok' => true, 'result' => []]);
+        });
+
+        ParserMethods::postQuery('https://api.telegram.org/botX/sendMessage', ['text' => 'hi']);
+
+        $this->assertSame('socks5h://10.0.0.1:1080', $sentOptions['proxy'] ?? null);
+    }
+
+    public function test_post_query_without_proxy_sends_no_proxy_option(): void
+    {
+        config(['traffic_source.telegram.proxy' => null]);
+        $sentOptions = [];
+
+        Http::fake(function ($request, array $options) use (&$sentOptions) {
+            $sentOptions = $options;
+
+            return Http::response(['ok' => true, 'result' => []]);
+        });
+
+        ParserMethods::postQuery('https://api.telegram.org/botX/sendMessage', ['text' => 'hi']);
+
+        $this->assertArrayNotHasKey('proxy', $sentOptions);
+    }
+
+    public function test_attach_query_uses_telegram_proxy(): void
+    {
+        config(['traffic_source.telegram.proxy' => 'http://10.0.0.1:3128']);
+        $sentOptions = [];
+
+        Http::fake(function ($request, array $options) use (&$sentOptions) {
+            $sentOptions = $options;
+
+            return Http::response(['ok' => true, 'result' => []]);
+        });
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'tgproxy') . '.txt';
+        file_put_contents($tempPath, 'content');
+
+        ParserMethods::attachQuery('https://api.telegram.org/botX/sendDocument', ['uploaded_file_path' => $tempPath, 'chat_id' => 1]);
+
+        $this->assertSame('http://10.0.0.1:3128', $sentOptions['proxy'] ?? null);
+    }
 }

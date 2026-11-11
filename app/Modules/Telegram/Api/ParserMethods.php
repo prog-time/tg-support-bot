@@ -3,7 +3,6 @@
 namespace App\Modules\Telegram\Api;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use phpDocumentor\Reflection\Exception as phpDocumentorException;
@@ -22,8 +21,7 @@ class ParserMethods
     public static function postQuery(string $urlQuery, array|string $queryParams = [], array $queryHeading = []): array
     {
         try {
-            $resultQuery = Http::withHeaders($queryHeading)
-                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+            $resultQuery = TelegramHttp::client()->withHeaders($queryHeading)
                 ->post($urlQuery, $queryParams)
                 ->json();
 
@@ -58,8 +56,7 @@ class ParserMethods
                 $urlQuery .= '?' . http_build_query($queryParams);
             }
 
-            $resultQuery = Http::withHeaders($queryHeading)
-                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+            $resultQuery = TelegramHttp::client()->withHeaders($queryHeading)
                 ->withoutVerifying()
                 ->get($urlQuery)
                 ->json();
@@ -87,7 +84,6 @@ class ParserMethods
             }
 
             if (!empty($queryParams['uploaded_file_path'])) {
-                // Path-based upload (used when UploadedFile cannot be serialized in a job)
                 $tempPath = $queryParams['uploaded_file_path'];
                 unset($queryParams['uploaded_file_path']);
 
@@ -102,8 +98,7 @@ class ParserMethods
                     throw new phpDocumentorException('Cannot open temporary file');
                 }
 
-                $resultQuery = Http::attach($attachType, $fileHandle, $safeName)
-                    ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                $resultQuery = TelegramHttp::client()->attach($attachType, $fileHandle, $safeName)
                     ->post($urlQuery, $queryParams)
                     ->json();
 
@@ -138,12 +133,11 @@ class ParserMethods
                 $extension = $attachData->getClientOriginalExtension();
                 $safeName = Str::uuid() . ($extension ? '.' . $extension : '');
 
-                $resultQuery = Http::attach(
+                $resultQuery = TelegramHttp::client()->attach(
                     $attachType,
                     fopen($tempPath, 'rb'),
                     $safeName
                 )
-                    ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
                     ->post($urlQuery, $queryParams)
                     ->json();
             }
