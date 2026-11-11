@@ -162,7 +162,7 @@ $token = '1234567890:AABBcc_my_telegram_token_here';        // hardcoded secret
 - `ai.openai_api_key`, `ai.deepseek_client_secret`, `ai.gigachat_client_secret` (+ client ids / base urls / models / cert) — AI providers
 - Non-secret access keys (`telegram.group_id`, `telegram_ai.username`, `avito.client_id`, `avito.user_id`, `avito.base_url`, etc.) also live in `settings` but are stored unencrypted
 
-**Infrastructure secrets (`.env` only):** `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`. Per-source bearer tokens live in the `external_source_access_tokens` table.
+**Infrastructure secrets (`.env` only):** `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_*`, `TG_LOGGER_TOKEN`, `TELEGRAM_PROXY` (may carry proxy credentials). Per-source bearer tokens live in the `external_source_access_tokens` table.
 
 **Handling rules for DB settings secrets:**
 - Secrets (`is_secret = true` in `SettingKeyRegistry`) are encrypted via `Crypt::encrypt()` and surfaced in the admin UI as `<input type="password">` fields
@@ -170,6 +170,11 @@ $token = '1234567890:AABBcc_my_telegram_token_here';        // hardcoded secret
 - Blank-submission guard: if the UI field is left empty, do NOT overwrite the stored encrypted value
 - In logs, do not include any key whose `is_secret = true` in `SettingKeyRegistry`
 - Read credentials via `SettingsService::get()` — never via `config()`/`env()` (the access branches were removed)
+
+**Outbound Telegram proxy (`TELEGRAM_PROXY`):**
+- All server-side requests to `api.telegram.org` must be built through `App\Modules\Telegram\Api\TelegramHttp` (`client()` for Telegram-only URLs, `clientFor($url)` for URLs that may point at another host) so they honour `TELEGRAM_PROXY` and `TELEGRAM_FORCE_IPV4`; never call `Http::` directly for Telegram
+- The proxy is applied only when the host is exactly `api.telegram.org`; other channels and AI providers never go through it
+- HTTPS is tunnelled (CONNECT), so the proxy does not see the bot token; never log the `TELEGRAM_PROXY` value (it may contain `user:pass`)
 
 ---
 
