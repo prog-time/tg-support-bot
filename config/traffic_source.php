@@ -10,5 +10,8 @@ return [
     'telegram' => [
         // use IPv4 only to connect to Telegram API — infra flag, stays in .env
         'force_ipv4' => (bool) env('TELEGRAM_FORCE_IPV4', false),
+
+        // HTTP/SOCKS proxy for outgoing Telegram Bot API requests, e.g. socks5h://user:pass@host:1080
+        'proxy' => env('TELEGRAM_PROXY'),
     ],
 ];
