@@ -21,6 +21,118 @@ If design is missing → stop and design.
 
 ## 2. Application Architecture
 
+### C4 Level 1 — System Context
+
+```mermaid
+flowchart LR
+    client(["`Customer
+*writes to support on any channel*`"])
+    manager(["`Manager / Admin
+*answers customers, configures the system*`"])
+
+    system["`**TG Support Bot**
+*Laravel 12*
+Routes customer messages to managers
+and replies back on the same channel`"]
+
+    subgraph channels ["Customer channels"]
+        tg["Telegram Bot API"]
+        vk["VK API"]
+        max["Max API"]
+        avito["Avito Messenger API"]
+        ok["OK Bot API"]
+        mail["`Mail server
+IMAP / SMTP`"]
+    end
+
+    tggroup["`Telegram supergroup
+*forum topic per customer*`"]
+    ai["`AI providers
+OpenAI / DeepSeek / GigaChat`"]
+    ext["`External Sources
+*third-party systems, website widget*`"]
+
+    client --> channels
+    channels <-->|"webhooks in, replies out"| system
+    ext <-->|"REST API in, webhooks out"| system
+    system <-->|"topics, messages, AI drafts"| tggroup
+    manager -->|"MANAGER_INTERFACE=telegram_group"| tggroup
+    manager -->|"/admin (admin_panel mode, settings)"| system
+    system -->|"draft answers"| ai
+
+    classDef sys fill:#1168bd,stroke:#0b4884,color:#fff
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef extsys fill:#999,stroke:#6b6b6b,color:#fff
+    class system sys
+    class client,manager person
+    class tg,vk,max,avito,ok,mail,tggroup,ai,ext extsys
+```
+
+### C4 Level 2 - Containers
+
+```mermaid
+flowchart TB
+    manager(["Manager / Admin"])
+    outside["`External systems
+*Telegram, VK, Max, Avito, OK,
+External Sources, widget*`"]
+    outbound["`Outbound APIs
+*messengers, SMTP, AI providers,
+External Source webhooks*`"]
+    imap["Mail server (IMAP)"]
+
+    subgraph stack ["TG Support Bot - docker compose"]
+        nginx["`**nginx**
+*container: nginx, :443*
+TLS, static files, public/widget/widget.js`"]
+        app["`**app**
+*container: pet, PHP-FPM + Laravel 12*
+Webhooks, External REST API,
+Livewire admin panel, Telescope`"]
+        queue["`**queue worker**
+*container: laravel_queue*
+queue:work - SendXxxJob to every channel`"]
+        scheduler["`**scheduler**
+*container: laravel_scheduler*
+schedule:work - email:poll every minute,
+telescope:prune daily`"]
+        db[("`**PostgreSQL**
+*container: pgdb*
+bot_users, messages, settings,
+ai_messages, jobs...`")]
+        files[("`**storage/**
+*bind mount*
+attachments, settings cache, logs`")]
+    end
+
+    outside -->|"HTTPS webhooks / REST"| nginx
+    manager -->|"HTTPS /admin"| nginx
+    nginx -->|"FastCGI"| app
+    app <-->|"data + job queue"| db
+    app <--> files
+    queue -->|"pull jobs"| db
+    queue <--> files
+    queue -->|"HTTPS"| outbound
+    scheduler -->|"IMAP poll"| imap
+    scheduler --> db
+    app -->|"`sync calls: verify credentials,
+register webhooks`"| outbound
+
+    classDef cont fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef store fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef extsys fill:#999,stroke:#6b6b6b,color:#fff
+    class nginx,app,queue,scheduler cont
+    class db,files store
+    class manager person
+    class outside,outbound,imap extsys
+```
+
+Notes:
+- The queue worker only receives jobs when `QUEUE_CONNECTION=database`; with `QUEUE_CONNECTION=sync` (the `.env.example` value) jobs run inline inside `app` and `laravel_queue` sits idle.
+- There is no separate live-chat server: the website widget is a static script served by nginx and talks to `app` over the External module's widget endpoints (`X-Widget-Key` via `WidgetGate`, fetch polling).
+- Update these diagrams when adding a channel, container or external dependency; do not add C4 Level 3/4 here - module and layer detail lives in the Layer Diagram below and in `CLAUDE.md`.
+
 ### Layer Diagram
 
 ```mermaid
