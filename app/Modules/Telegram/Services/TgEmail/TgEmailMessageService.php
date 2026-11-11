@@ -7,12 +7,12 @@ use App\Models\Message;
 use App\Modules\Email\DTOs\EmailMessageDto;
 use App\Modules\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Email\Services\EmailThreadStore;
+use App\Modules\Telegram\Api\TelegramHttp;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
 use App\Services\Settings\SettingsService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -170,7 +170,7 @@ class TgEmailMessageService extends FromTgMessageService
             throw new \Exception('Failed to get Telegram file URL', 1);
         }
 
-        $response = Http::get($telegramFileUrl);
+        $response = TelegramHttp::client()->get($telegramFileUrl);
         if ($response->failed()) {
             throw new \Exception("Failed to download Telegram file: status={$response->status()}", 1);
         }
