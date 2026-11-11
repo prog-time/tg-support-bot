@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  */
 class WebhookRegistrationService
 {
-    private const TIMEOUT_MESSAGE = 'Не удалось подключиться к Telegram API: превышено время ожидания соединения. Проверьте доступность api.telegram.org с сервера (см. настройку TELEGRAM_FORCE_IPV4).';
+    private const TIMEOUT_MESSAGE = 'Не удалось подключиться к Telegram API: превышено время ожидания соединения. Проверьте доступность api.telegram.org с сервера (см. настройки TELEGRAM_PROXY и TELEGRAM_FORCE_IPV4).';
 
     public function __construct(
         private readonly SettingsService $settings,

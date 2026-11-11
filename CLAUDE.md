@@ -409,6 +409,7 @@ public static function execute(BotUser $botUser): TelegramAnswerDto
 - Never use raw SQL string concatenation — use Eloquent / query builder
 - Never commit `.env` files or hardcode secrets
 - Never log tokens, passwords, or API keys
+- Server-side requests to `api.telegram.org` go through `App\Modules\Telegram\Api\TelegramHttp` (`client()` / `clientFor($url)`), never `Http::` directly — it applies the infra `.env` options `TELEGRAM_PROXY` (HTTP/SOCKS proxy for servers in Russia, Telegram host only) and `TELEGRAM_FORCE_IPV4`
 
 ---
 

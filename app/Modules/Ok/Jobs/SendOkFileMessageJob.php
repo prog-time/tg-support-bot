@@ -9,6 +9,7 @@ use App\Modules\Ok\Api\OkMethods;
 use App\Modules\Ok\DTOs\OkFileMessageDto;
 use App\Modules\Ok\DTOs\OkTextMessageDto;
 use App\Modules\Ok\Services\OkAttachmentStorage;
+use App\Modules\Telegram\Api\TelegramHttp;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Services\Settings\SettingsService;
@@ -17,7 +18,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -142,7 +142,7 @@ class SendOkFileMessageJob implements ShouldQueue
 
         try {
             $url = TelegramHelper::getFileTelegramPath((string) $this->file->telegramFileId);
-            $response = $url !== null ? Http::timeout(60)->get($url) : null;
+            $response = $url !== null ? TelegramHttp::clientFor($url)->timeout(60)->get($url) : null;
             $status = $response?->status();
 
             if ($response?->successful()) {

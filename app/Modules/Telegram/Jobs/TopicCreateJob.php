@@ -111,7 +111,6 @@ class TopicCreateJob implements ShouldQueue
                 throw new \Exception('Name parts not found');
             }
 
-            // parsing template
             preg_match_all('/{([^}]+)}/', $templateTopicName, $matches);
             if (empty($matches[1])) {
                 throw new \Exception('Params template topic name not found');
@@ -119,15 +118,10 @@ class TopicCreateJob implements ShouldQueue
 
             $topicName = $templateTopicName;
             foreach (array_unique($matches[1]) as $param) {
-                // Missing params collapse to an empty string instead of aborting
-                // the whole name: a template like «{first_name} {last_name}» must
-                // still work for a user who has no surname (or a VK/MAX profile
-                // that only carries a single display name).
                 $value = (string) ($nameParts[$param] ?? '');
                 $topicName = str_replace('{' . $param . '}', $value, $topicName);
             }
 
-            // Tidy up the whitespace left where empty params used to be.
             $topicName = trim((string) preg_replace('/\s{2,}/', ' ', $topicName));
             if ($topicName === '') {
                 throw new \Exception('Empty topic name');
@@ -135,8 +129,29 @@ class TopicCreateJob implements ShouldQueue
 
             return $topicName;
         } catch (\Throwable $e) {
+            return $this->fallbackTopicName($botUser);
+        }
+    }
+
+    /**
+     * Topic name without a usable template. An OK chat id like `chat:C5b411ad1c700`
+     * says nothing to a manager, so OK prefers the sender's name.
+     *
+     * @param BotUser $botUser
+     *
+     * @return string
+     */
+    private function fallbackTopicName(BotUser $botUser): string
+    {
+        if ($botUser->platform !== 'ok') {
             return '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
         }
+
+        $label = $botUser->display_name
+            ?: $botUser->username
+            ?: '#' . preg_replace('/^chat:/', '', (string) $botUser->chat_id);
+
+        return $label . ' (ok)';
     }
 
     /**
@@ -162,23 +177,17 @@ class TopicCreateJob implements ShouldQueue
             return $this->telegramNameParts((int) $botUser->chat_id);
         }
 
-        // Pull a profile for platforms that fetch it asynchronously (VK) so the
-        // name is available at topic-creation time rather than on the next sync.
         if (empty($botUser->display_name)) {
             try {
                 (new EnrichBotUserProfileJob($botUser))->handle();
                 $botUser->refresh();
             } catch (\Throwable) {
-                // Best effort — fall through to whatever is already stored.
             }
         }
 
         $displayName = (string) ($botUser->display_name ?? '');
         $username = (string) ($botUser->username ?? '');
 
-        // No name and no username: there is nothing readable to label the topic
-        // with, so signal the caller to use the «#id (platform)» fallback rather
-        // than render a template down to just the bare platform literal.
         if ($displayName === '' && $username === '') {
             return [];
         }
@@ -224,8 +233,6 @@ class TopicCreateJob implements ShouldQueue
             ];
             $parts = array_intersect_key($chatData, array_flip($neededKeys));
 
-            // Expose a combined «name»/«display_name» too, so a template written
-            // with those params works the same across every platform.
             $combined = trim(($chatData['first_name'] ?? '') . ' ' . ($chatData['last_name'] ?? ''));
             if ($combined !== '') {
                 $parts['name'] = $combined;

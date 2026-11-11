@@ -2,6 +2,7 @@
 
 namespace App\Modules\Max\Actions;
 
+use App\Modules\Telegram\Api\TelegramHttp;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +29,7 @@ class UploadFileMax
     public function execute(string $telegramFileUrl, string $filename, string $type): ?string
     {
         try {
-            $fileResponse = Http::get($telegramFileUrl);
+            $fileResponse = TelegramHttp::clientFor($telegramFileUrl)->get($telegramFileUrl);
             if ($fileResponse->failed()) {
                 throw new \Exception("Failed to download from Telegram: status={$fileResponse->status()} url={$telegramFileUrl}");
             }
