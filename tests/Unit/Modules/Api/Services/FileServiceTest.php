@@ -61,4 +61,22 @@ class FileServiceTest extends TestCase
         $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
         $this->assertEquals('inline; filename="test.pdf"', $response->headers->get('Content-Disposition'));
     }
+
+    public function test_download_file_goes_through_telegram_proxy(): void
+    {
+        config(['traffic_source.telegram.proxy' => 'socks5h://10.0.0.1:1080']);
+        $proxies = [];
+
+        Http::fake(function ($request, array $options) use (&$proxies) {
+            $proxies[] = $options['proxy'] ?? null;
+
+            return str_contains($request->url(), '/getFile')
+                ? Http::response(['ok' => true, 'result' => ['file_path' => 'images/picture.jpg']])
+                : Http::response('IMAGE_CONTENT');
+        });
+
+        $this->service->downloadFile('456');
+
+        $this->assertSame(['socks5h://10.0.0.1:1080', 'socks5h://10.0.0.1:1080'], $proxies);
+    }
 }

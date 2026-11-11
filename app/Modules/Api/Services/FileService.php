@@ -2,9 +2,9 @@
 
 namespace App\Modules\Api\Services;
 
+use App\Modules\Telegram\Api\TelegramHttp;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -99,7 +99,7 @@ class FileService
      */
     public function getTelegramFile(string $fileId): array
     {
-        return Http::get("https://api.telegram.org/bot{$this->botToken}/getFile", [
+        return TelegramHttp::client()->get("https://api.telegram.org/bot{$this->botToken}/getFile", [
             'file_id' => $fileId,
         ])->json();
     }
@@ -113,7 +113,7 @@ class FileService
     {
         $fileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$filePath}";
 
-        $fileResponse = Http::get($fileUrl);
+        $fileResponse = TelegramHttp::client()->get($fileUrl);
         if (!$fileResponse->ok()) {
             abort(502, 'Не удалось получить файл');
         }
