@@ -30,7 +30,9 @@ readonly class MaxUpdateDto
         try {
             $data = $request->all();
 
-            $attachments = $data['message']['body']['attachments'] ?? [];
+            $attachments = $data['message']['body']['attachments']
+                ?? $data['message']['link']['message']['attachments']
+                ?? [];
 
             $sender = $data['message']['sender'] ?? [];
 
@@ -39,7 +41,9 @@ readonly class MaxUpdateDto
                 type: $data['update_type'] ?? $data['type'],
                 from_id: $data['message']['sender']['user_id'],
                 id: $data['message']['body']['mid'] ?? '',
-                text: $data['message']['body']['text'] ?? null,
+                text: $data['message']['body']['text']
+                    ?? $data['message']['link']['message']['text']
+                    ?? null,
                 rawData: $data,
                 listFileUrl: self::getListUrlAttachments($attachments),
                 listAttachments: self::getListAttachments($attachments),

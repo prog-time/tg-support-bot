@@ -43,6 +43,45 @@ class ConversationPage extends Component
 
     public string $search = '';
 
+    public string $supportCustomName = '';
+    public string $supportInternalNote = '';
+    public string $supportTagsInput = '';
+
+    public function saveSupportProfile(): void
+    {
+        if (! $this->activeBotUserId) {
+            return;
+        }
+
+        $this->validate([
+            'supportCustomName' => 'nullable|string|max:150',
+            'supportInternalNote' => 'nullable|string|max:3000',
+            'supportTagsInput' => 'nullable|string|max:500',
+        ]);
+
+        $tags = array_values(array_unique(array_filter(array_map(
+            static fn ($value) => trim($value),
+            explode(',', $this->supportTagsInput)
+        ))));
+
+        if (count($tags) > 12 || collect($tags)->contains(fn ($tag) => mb_strlen($tag) > 40)) {
+            $this->addError('supportTagsInput', 'До 12 тегов, не более 40 символов каждый.');
+            return;
+        }
+
+        $user = BotUser::findOrFail($this->activeBotUserId);
+        $user->update([
+            'custom_name' => trim($this->supportCustomName) ?: null,
+            'internal_note' => trim($this->supportInternalNote) ?: null,
+            'support_tags' => $tags,
+        ]);
+
+        $this->activeBotUser = $user->fresh(['externalUser']);
+        $this->loadDialogList();
+        $this->dispatch('support-profile-saved');
+    }
+
+
     public string $statusFilter = 'all';
 
     public ?int $activeBotUserId = null;
@@ -171,7 +210,11 @@ class ConversationPage extends Component
             )
             ->when(
                 $this->search !== '',
-                fn ($q) => $q->where('chat_id', 'like', '%' . $this->search . '%')
+                fn ($q) => $q->where(function ($query) {
+                    $query->where('chat_id', 'like', '%' . $this->search . '%')
+                        ->orWhere('display_name', 'ilike', '%' . $this->search . '%')
+                        ->orWhere('custom_name', 'ilike', '%' . $this->search . '%');
+                })
             )
             ->when($this->statusFilter === 'open', fn ($q) => $q->where('is_closed', false))
             ->when($this->statusFilter === 'closed', fn ($q) => $q->where('is_closed', true))
@@ -311,6 +354,9 @@ class ConversationPage extends Component
 
         $this->activeBotUserId = $botUserId;
         $this->activeBotUser = BotUser::with(['externalUser'])->find($botUserId);
+        $this->supportCustomName = (string) ($this->activeBotUser?->custom_name ?? '');
+        $this->supportInternalNote = (string) ($this->activeBotUser?->internal_note ?? '');
+        $this->supportTagsInput = implode(', ', $this->activeBotUser?->support_tags ?? []);
 
         if ($this->activeBotUser) {
             $this->markConversationRead($this->activeBotUser);
